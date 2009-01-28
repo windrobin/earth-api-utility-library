@@ -1,0 +1,97 @@
+# Copyright 2008 Google Inc.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#      http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+DISTNAME=extensions
+DIST=dist
+TEST=test
+DOCS=docs
+DOCS_TEMPLATE=jsdoc
+GEOJS=lib/third-party/geojs
+# TLIB = toolkit lib dir
+TLIB=${GEOJS}/lib
+LIB=lib
+LICENSE_HEADER_JS=lib/license-header.js
+SRC=src
+TMP=tmp
+COMPRESS=java -jar ${TLIB}/yuicompressor-2.4.2.jar
+JSCOVERAGE=${TLIB}/jscoverage
+FIND_SRC_CLAUSES=-name \*.js -not -name \*.jscoverage.js
+AWK_TEST_RANGE="/\/\*\*\*IGNORE_BEGIN\*\*\*\//,/\/\*\*\*IGNORE_END\*\*\*\//"
+
+dist: makegeojs concat
+	mkdir -p ${DIST}
+	# NOTE: this packages geojs with concat GEarthExtensions	
+	cat ${GEOJS}/dist/geo.js > ${DIST}/${DISTNAME}.js
+	echo >> ${DIST}/${DISTNAME}.js
+	cat ${LICENSE_HEADER_JS} ${TMP}/concat.js >> ${DIST}/${DISTNAME}.js
+	
+	${COMPRESS} ${TMP}/concat.js -o ${TMP}/pack.js
+	cat ${GEOJS}/dist/geo.pack.js > ${DIST}/${DISTNAME}.pack.js
+	echo >> ${DIST}/${DISTNAME}.pack.js
+	cat ${LICENSE_HEADER_JS} ${TMP}/pack.js >> ${DIST}/${DISTNAME}.pack.js
+
+lint:
+	find ${SRC} -name \*.js -exec echo \; -exec echo {} \; \
+		-exec java -classpath .:${TLIB}/rhino.jar \
+		org.mozilla.javascript.tools.shell.Main ${TLIB}/jslint.js {} \;
+
+tests: makegeojs consolidatetests concat
+	mkdir -p ${TEST}
+	cp -rf ${TLIB}/test/* ${TEST}
+	cp -rf ${LIB}/test/* ${TEST}
+	cp ${GEOJS}/dist/geo.js ${TEST}
+	cp ${TMP}/tests.js ${TEST}/${DISTNAME}.tests.js
+	cp ${TMP}/concat.js ${TEST}/${DISTNAME}.js
+
+coveragetests: consolidatetests instrument concat tests
+	cp -rf ${TMP}/${SRC}/* ${TEST}
+
+docs: concat
+	java -classpath .:${TLIB}/rhino.jar \
+		org.mozilla.javascript.tools.shell.Main \
+		${TLIB}/jsdoc-toolkit/app/run.js -a \
+		-t=${TLIB}/jsdoc-toolkit/templates/${DOCS_TEMPLATE}/ \
+		-d=${DOCS} ${TMP}/concat.js -j=${TLIB}/jsdoc-toolkit/app/run.js
+
+clean: cleangeojs
+	rm -rf ${TMP}
+	rm -rf ${DIST}
+	rm -rf ${DOCS}
+	rm -rf ${TEST}
+
+# INTERNAL #####################################################################
+
+makegeojs:
+	make -C ${GEOJS} dist
+
+cleangeojs:
+	make -C ${GEOJS} clean
+
+concat: consolidatetests
+	# strip license header while concatenating
+	for f in `find ${TMP}/${SRC} ${FIND_SRC_CLAUSES} | sort`; do awk 'NR==1,/\/\*/{skp=1} /\*\//{if(skp==1){skp=0;next;}} {if(skp==1)next; else print}' "$$f"; done >> ${TMP}/concat.js
+
+instrument:
+	$(if $(wildcard ${JSCOVERAGE}),,$(error "jscoverage is missing. See the project Wiki."))
+	mkdir -p ${TMP}/instrumented
+	${JSCOVERAGE} ${TMP}/${SRC} ${TMP}/instrumented
+	rm -rf ${TMP}/${SRC}
+	mv ${TMP}/instrumented ${TMP}/src
+
+consolidatetests:
+	rm -rf ${TMP}
+	mkdir -p ${TMP}
+	echo > ${TMP}/tests.js
+	cp -rf ${SRC} ${TMP}
+	for f in `find ${SRC} ${FIND_SRC_CLAUSES} | sort`; do awk ${AWK_TEST_RANGE} "$$f"; done >> ${TMP}/tests.js
+	for f in `find ${SRC} ${FIND_SRC_CLAUSES} | sort`; do awk ${AWK_TEST_RANGE}"{next} {print}" "$$f" > ${TMP}/"$$f"; done
