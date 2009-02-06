@@ -18,7 +18,7 @@ limitations under the License.
   GEarthExtensions.prototype.util.serializeView = function() {
     var camera = this.pluginInstance.getView().copyAsCamera(
         this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return encodeCamera_({
+    return this.util.encodeCamera_({
       lat: camera.getLatitude(),
       lng: camera.getLongitude(),
       altitude: camera.getAltitude(),
@@ -29,7 +29,7 @@ limitations under the License.
 
   // TODO: docs
   GEarthExtensions.prototype.util.deserializeView = function(s) {
-    var cameraProps = decodeCamera_(s);
+    var cameraProps = this.util.decodeCamera_(s);
     var camera = this.pluginInstance.createCamera('');
     
     // TODO: isFinite checks

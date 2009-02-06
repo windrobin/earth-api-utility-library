@@ -65,7 +65,7 @@ docs: concat
 
 clean: cleangeojs
 	rm -rf ${TMP}
-	rm -rf ${DIST}
+	rm ${DIST}/*.js
 	rm -rf ${DOCS}
 	rm -rf ${TEST}
 
