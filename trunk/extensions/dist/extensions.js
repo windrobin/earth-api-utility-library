@@ -480,14 +480,12 @@ geo.Path.prototype.containsPoint = function(point) {
   return oddNodes;
 };
 
-/*
-
-**
+/**
  * Returns the approximate area of the polygon formed by the path when the path
  * is closed.
  * Taken from http://econym.googlepages.com/epoly.htm and
  * NOTE: this method only works with non-intersecting polygons.
- *
+ */
 geo.Path.prototype.area = function() {
   var a = 0;
   var b = this.Bounds();
@@ -503,7 +501,6 @@ geo.Path.prototype.area = function() {
   }
   return Math.abs(a * 0.5);
 }
-*/
 /**
  * Creates a new point from the given parameters.
  * @param {PointSpec} point The point data.
@@ -800,11 +797,10 @@ geo.Polygon.prototype.containsPoint = function(point) {
   return true;
 };
 
-/*
-**
+/**
  * Returns the approximate area of the polygon.
- *
-GPolygon.prototype.area = function() {
+ */
+geo.Polygon.prototype.area = function() {
   // start with outer boundary area
   var area = this.outerBoundary_.area();
   
@@ -816,7 +812,7 @@ GPolygon.prototype.area = function() {
   
   return area;
 }
-*/
+
 /**
  * The geo.util namespace contains generic JavaScript and JS/Geo utility
  * functions.
@@ -3026,7 +3022,7 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
   GEarthExtensions.prototype.util.serializeView = function() {
     var camera = this.pluginInstance.getView().copyAsCamera(
         this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return encodeCamera_({
+    return this.util.encodeCamera_({
       lat: camera.getLatitude(),
       lng: camera.getLongitude(),
       altitude: camera.getAltitude(),
@@ -3037,7 +3033,7 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 
   // TODO: docs
   GEarthExtensions.prototype.util.deserializeView = function(s) {
-    var cameraProps = decodeCamera_(s);
+    var cameraProps = this.util.decodeCamera_(s);
     var camera = this.pluginInstance.createCamera('');
     
     // TODO: isFinite checks
