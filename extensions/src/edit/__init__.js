@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * The GEarthExtensions#edit class/namespace hybrid contains methods for
- * allowing editing of Earth features.
+ * Contains methods for allowing user-interactive editing of features inside
+ * the Google Earth Plugin.
  * @namespace
  */
 GEarthExtensions.prototype.edit = {isnamespace_:true};

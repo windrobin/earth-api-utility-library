@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * The GEarthExtensions#util class/namespace hybrid contains miscellaneous
+ * This class/namespace hybrid contains miscellaneous
  * utility functions and shortcuts for the Earth API.
  * @namespace
  */

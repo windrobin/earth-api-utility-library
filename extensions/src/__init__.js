@@ -14,9 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * GEarthExtensions is the root class/namespace hybrid for the Earth API
- * utility library.
- * @class GEarthExtensions
+ * @class The root class/namespace hybrid for the Earth API extensions library.
+ * This class groups functionality into namespaces such as
+ * {@link GEarthExtensions#dom } and {@link GEarthExtensions#fx }.
+ * @example
+ * var gex = new GEarthExtensions(ge); // ge is an instance of GEPlugin
+ * gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
+ *                          // is effectively a namespace grouping
+ *                          // functionality
  */
 var GEarthExtensions = function(pluginInstance) {
   // create class
