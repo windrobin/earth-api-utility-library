@@ -1,0 +1,45 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions.edit Namespace.
+
+Contains methods for allowing user-interactive editing of features inside the Google Earth Plugin.
+
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+
+
+
+
+----
+=Static Methods=
+
+==endDraggable(placemark)==
+
+Stop a placemark from being draggable
+
+
+===Parameters:===
+
+  * *placemark*   
+
+----
+
+==makeDraggable(placemark, options)==
+
+
+
+
+===Parameters:===
+
+  * *placemark*   
+  * *options*   
+
+
+
+

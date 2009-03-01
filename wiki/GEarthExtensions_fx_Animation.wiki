@@ -1,0 +1,55 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions.fx.Animation Class.
+
+
+
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+----
+=Class Constructor=
+
+==GEarthExtensions.fx.Animation()==
+
+Abstract base class for GEarthExtensions#fx animations
+
+
+
+
+
+----
+=Methods=
+
+==renderFrame(t)==
+
+Render the frame at time t after the animation was started.
+
+
+===Parameters:===
+
+  * *t* _{{{number}}}_ 
+    The time in seconds of the frame to render.
+
+----
+
+==start()==
+
+Start the animation.
+
+
+----
+
+==stop()==
+
+Stop the animation.
+
+
+
+
+

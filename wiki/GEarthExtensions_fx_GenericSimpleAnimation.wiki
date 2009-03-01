@@ -1,0 +1,43 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions.fx.GenericSimpleAnimation Class.
+
+
+
+Extends
+	[ ]
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+----
+=Class Constructor=
+
+==GEarthExtensions.fx.GenericSimpleAnimation()==
+
+Generic class for fixed-duration animations.
+
+
+
+
+
+----
+=Methods=
+
+==renderFrame(t)==
+
+
+
+
+===Parameters:===
+
+  * *t*  
+    
+
+
+
+

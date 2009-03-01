@@ -1,0 +1,69 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions.fx Namespace.
+
+Contains various animation/effects tools for use in the Google Earth API.
+
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+
+
+
+
+----
+=Static Methods=
+
+==animateProperty(obj, property, options)==
+
+Animate a numeric property on a plugin object.
+
+
+===Parameters:===
+
+  * *obj*   
+  * *property*   
+  * *options*   
+
+----
+
+==bounce(placemark, options)==
+
+Bounce a placemark once.
+
+
+===Parameters:===
+
+  * *placemark*   
+  * *options*   
+
+----
+
+==cancel(feature)==
+
+Cancel all animations on a given feature, potentially leaving them in an intermediate visual state.
+
+
+===Parameters:===
+
+  * *feature*   
+
+----
+
+==rewind(feature)==
+
+Cancel all animations on a given feature and revert them to their t = 0 state.
+
+
+===Parameters:===
+
+  * *feature*   
+
+
+
+

@@ -1,0 +1,190 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions.util Namespace.
+
+This class/namespace hybrid contains miscellaneous utility functions and shortcuts for the Earth API.
+
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+
+
+
+
+----
+=Static Methods=
+
+==clearAllJsData(feature)==
+
+Clears all JS-side data for the given KmlFeature.
+
+
+===Parameters:===
+
+  * *feature* _{{{KmlFeature}}}_  The feature to clear data on.
+
+----
+
+==clearJsDataValue(feature, key)==
+
+Clears the JS-side data for the given KmlFeature associated with the given key.
+
+
+===Parameters:===
+
+  * *feature* _{{{KmlFeature}}}_  The feature to clear data on.
+  * *key* _{{{string}}}_  The data key whose value should be cleared.
+
+----
+
+==decodeCamera_(s)==
+
+
+
+
+===Parameters:===
+
+  * *s*   
+
+----
+
+==deserializeView(s)==
+
+
+
+
+===Parameters:===
+
+  * *s*   
+
+----
+
+==displayKml(url, options)==
+
+
+
+
+===Parameters:===
+
+  * *url*   
+  * *options*   
+
+----
+
+==displayKmlString(str, options)==
+
+
+
+
+===Parameters:===
+
+  * *str*   
+  * *options*   
+
+----
+
+==encodeCamera_(cam)==
+
+******** helper functions, most of which are from http://code.google.com/apis/maps/documentation/include/polyline.js **********
+
+
+===Parameters:===
+
+  * *cam*   
+
+----
+
+==getCamera(altitudeMode)==
+
+Gets the current view as a KmlCamera.
+
+
+===Parameters:===
+
+  * *altitudeMode* _{{{number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting camera should be in.
+
+===Returns:===
+KmlCamera
+
+
+Returns the current view as a KmlCamera.
+
+
+
+----
+
+==getJsDataValue(feature, key)==
+
+Gets the JS-side data for the given KmlFeature associated with the given key. WARNING: This method currently stores custom data in the feature's &lt;snippet&gt;. Data must be cleared out with clearJsData before manipulating the snippet or using getKml.
+
+
+===Parameters:===
+
+  * *feature* _{{{KmlFeature}}}_  The feature to get data for.
+  * *key*   
+
+----
+
+==getLookAt(altitudeMode)==
+
+Gets the current view as a KmlLookAt.
+
+
+===Parameters:===
+
+  * *altitudeMode* _{{{number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting LookAt should be in.
+
+===Returns:===
+KmlLookAt
+
+
+Returns the current view as a KmlLookAt.
+
+
+
+----
+
+==hasJsData(feature)==
+
+Returns whether or not the KmlFeature has any JS-side data.
+
+
+===Parameters:===
+
+  * *feature* _{{{KmlFeature}}}_  The feature to inquire about.
+
+----
+
+==lookAt()==
+
+Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes the same parameters as GEarthExtensions#dom.LookAt.
+
+
+----
+
+==serializeView()==
+
+
+
+
+----
+
+==setJsDataValue(feature, key, value)==
+
+Sets the JS-side data for the given KmlFeature associated with the given key to the passed in value. WARNING: This method currently stores custom data in the feature's &lt;snippet&gt;. Data must be cleared out with clearJsData before manipulating the snippet or using getKml.
+
+
+===Parameters:===
+
+  * *feature* _{{{KmlFeature}}}_  The feature to get data for.
+  * *key*   
+  * *value*   
+
+
+
+

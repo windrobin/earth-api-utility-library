@@ -1,0 +1,426 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions.dom Namespace.
+
+Contains DOM builder functions (createXX) and DOM manipulation/traversal functions.
+
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+
+
+
+
+----
+=Static Methods=
+
+==clearFeatures()==
+
+Removes all top-level features from the Earth object's DOM.
+
+
+----
+
+==createCamera(point, options)==
+
+Creates a new camera object with the given parameters.
+
+
+===Parameters:===
+
+  * *point* _{{{PointSpec}}}_ (Optional) The point at which to place the camera.
+  * *options* _{{{object}}}_  The parameters of the camera object to create.
+    * *point* _{{{PointSpec}}}_ (Optional) The point at which to place the camera.
+    * *copy* _{{{boolean}}}_ (Optional) Whether or not to copy parameters from the existing view if they aren't explicitly specified in the options.
+    * *heading* _{{{number}}}_ (Optional) The camera heading/direction.
+    * *tilt* _{{{number}}}_ (Optional) The camera tilt.
+    * *range* _{{{number}}}_ (Optional) The camera roll.
+
+===Returns:===
+KmlCamera
+
+
+----
+
+==createDocument(children, options)==
+
+Creates a new document with the given parameters.
+
+
+===Parameters:===
+
+  * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this document.
+  * *options* _{{{object}}}_  The parameters of the document to create.
+    * *name* _{{{string}}}_ (Optional) The name of the feature.
+    * *visibility* _{{{boolean}}}_ (Optional) Whether or not the feature should be visible.
+    * *description* _{{{string}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
+    * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this document.
+
+===Returns:===
+KmlDocument
+
+
+----
+
+==createFolder(children, options)==
+
+Creates a new folder with the given parameters.
+
+
+===Parameters:===
+
+  * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this folder.
+  * *options* _{{{object}}}_  The parameters of the folder to create.
+    * *name* _{{{string}}}_ (Optional) The name of the feature.
+    * *visibility* _{{{boolean}}}_ (Optional) Whether or not the feature should be visible.
+    * *description* _{{{string}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
+    * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this folder.
+
+===Returns:===
+KmlFolder
+
+
+----
+
+==createGroundOverlay()==
+
+Creates a new ground overlay with the given parameters.
+
+
+----
+
+==createLinearRing(path, options)==
+
+Creates a new linear ring geometry with the given parameters.
+
+
+===Parameters:===
+
+  * *path* _{{{PathSpec}}}_ (Optional) The path data. The first coordinate doesn't need to be repeated at the end.
+  * *options* _{{{object}}}_  The parameters of the linear ring to create.
+    * *path* _{{{PathSpec}}}_ (Optional) The path data. The first coordinate doesn't need to be repeated at the end.
+    * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
+    * *extrude* _{{{boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
+    * *tessellate* _{{{boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
+
+===Returns:===
+KmlLinearRing
+
+
+----
+
+==createLineString(path, options)==
+
+Creates a new line string geometry with the given parameters.
+
+
+===Parameters:===
+
+  * *path* _{{{PathSpec}}}_ (Optional) The path data.
+  * *options* _{{{object}}}_  The parameters of the line string to create.
+    * *path* _{{{PathSpec}}}_ (Optional) The path data.
+    * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
+    * *extrude* _{{{boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
+    * *tessellate* _{{{boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
+
+===Returns:===
+KmlLineString
+
+
+----
+
+==createLineStringPlacemark()==
+
+
+
+
+===See:===
+
+[GEarthExtensions_dom_createPlacemark GEarthExtensions.dom.createPlacemark]
+
+
+----
+
+==createLink(href, options)==
+
+Creates a new link object with the given parameters.
+
+
+===Parameters:===
+
+  * *href* _{{{string}}}_ (Optional) The link href.
+  * *options* _{{{object}}}_  The link parameters.
+    * *href* _{{{string}}}_ (Optional) The link href.
+    * *refreshMode* _{{{KmlRefreshModeEnum}}}_ (Optional) The link refresh mode.
+    * *refreshInterval* _{{{number}}}_ (Optional) The link refresh interval, in seconds.
+    * *viewRefreshMode* _{{{KmlViewRefreshModeEnum}}}_ (Optional) The view-based refresh mode.
+
+===Returns:===
+KmlLink
+
+
+----
+
+==createLookAt(point, options)==
+
+Creates a new lookat object with the given parameters.
+
+
+===Parameters:===
+
+  * *point* _{{{PointSpec}}}_ (Optional) The point to look at.
+  * *options* _{{{object}}}_  The parameters of the lookat object to create.
+    * *point* _{{{PointSpec}}}_ (Optional) The point to look at.
+    * *copy* _{{{boolean}}}_ (Optional) Whether or not to copy parameters from the existing view if they aren't explicitly specified in the options.
+    * *heading* _{{{number}}}_ (Optional) The lookat heading/direction.
+    * *tilt* _{{{number}}}_ (Optional) The lookat tilt.
+    * *range* _{{{number}}}_ (Optional) The range of the camera (distance from the lookat point).
+
+===Returns:===
+KmlLookAt
+
+
+----
+
+==createModel(link, options)==
+
+Creates a new model geometry with the given parameters.
+
+
+===Parameters:===
+
+  * *link* _{{{LinkSpec}}}_ (Optional) The remote link this model should use.
+  * *options* _{{{object}}}_  The parameters of the model to create.
+    * *link* _{{{LinkSpec}}}_ (Optional) The remote link this model should use.
+    * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
+    * *location* _{{{PointSpec}}}_ (Optional) The location of the model.
+    * *scale* _{{{number|number[]}}}_ (Optional) The scale factor of the model.
+    * *orientation* _{{{object}}}_ (Optional) The orientation of the model.
+    * *orientation.heading* _{{{number}}}_ (Optional) The model heading.
+    * *orientation.tilt* _{{{number}}}_ (Optional) The model tilt.
+    * *orientation.roll* _{{{number}}}_ (Optional) The model roll.
+
+===Returns:===
+KmlPolygon
+
+
+----
+
+==createMultiGeometry(geometries, options)==
+
+Creates a new multi-geometry with the given parameters.
+
+
+===Parameters:===
+
+  * *geometries* _{{{KmlGeometry[]}}}_ (Optional) The child geometries.
+  * *options* _{{{object}}}_  The parameters of the multi-geometry to create.
+    * *geometries* _{{{KmlGeometry[]}}}_ (Optional) The child geometries.
+
+===Returns:===
+KmlMultiGeometry
+
+
+----
+
+==createNetworkLink(link, options)==
+
+Creates a new network link with the given parameters.
+
+
+===Parameters:===
+
+  * *link* _{{{LinkSpec}}}_ (Optional) An object describing the link to use for this network link.
+  * *options* _{{{object}}}_  The parameters of the network link to create.
+    * *name* _{{{string}}}_ (Optional) The name of the feature.
+    * *visibility* _{{{boolean}}}_ (Optional) Whether or not the feature should be visible.
+    * *description* _{{{string}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
+    * *link* _{{{LinkSpec}}}_ (Optional) The link to use.
+
+===Returns:===
+KmlNetworkLink
+
+
+----
+
+==createPlacemark(options)==
+
+Creates a new placemark with the given parameters.
+
+
+===Parameters:===
+
+  * *options* _{{{object}}}_  The parameters of the placemark to create.
+    * *name* _{{{string}}}_ (Optional) The name of the feature.
+    * *visibility* _{{{boolean}}}_ (Optional) Whether or not the feature should be visible.
+    * *description* _{{{string}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
+    * *point* _{{{PointSpec}}}_ (Optional) A point geometry to use in the placemark.
+    * *lineString* _{{{LineStringSpec}}}_ (Optional) A line string geometry to use in the placemark.
+    * *linearRing* _{{{LinearRingSpec}}}_ (Optional) A linear ring geometry to use in the placemark.
+    * *polygon* _{{{PolygonSpec}}}_ (Optional) A polygon geometry to use in the placemark.
+    * *model* _{{{ModelSpec}}}_ (Optional) A model geometry to use in the placemark.
+    * *geometries* _{{{MultiGeometrySpec}}}_ (Optional) A multi-geometry to use in the placemark.
+
+===Returns:===
+KmlPlacemark
+
+
+----
+
+==createPoint(point, options)==
+
+Creates a new point geometry with the given parameters.
+
+
+===Parameters:===
+
+  * *point* _{{{PointSpec}}}_ (Optional) The point data.
+  * *options* _{{{object}}}_  The parameters of the point object to create.
+    * *point* _{{{PointSpec}}}_ (Optional) The point data.
+    * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
+    * *extrude* _{{{boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
+
+===Returns:===
+KmlPoint
+
+
+----
+
+==createPointPlacemark()==
+
+
+
+
+===See:===
+
+[GEarthExtensions_dom_createPlacemark GEarthExtensions.dom.createPlacemark]
+
+
+----
+
+==createPolygon(polygon, options)==
+
+Creates a new polygon geometry with the given parameters.
+
+
+===Parameters:===
+
+  * *polygon* _{{{PolygonSpec}}}_ (Optional) The polygon data.
+  * *options* _{{{object}}}_  The parameters of the polygon to create.
+    * *polygon* _{{{PolygonSpec}}}_ (Optional) The polygon data.
+    * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
+    * *extrude* _{{{boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
+    * *tessellate* _{{{boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
+
+===Returns:===
+KmlPolygon
+
+
+----
+
+==createPolygonPlacemark()==
+
+
+
+
+===See:===
+
+[GEarthExtensions_dom_createPlacemark GEarthExtensions.dom.createPlacemark]
+
+
+----
+
+==createStyle(options)==
+
+Creates a new style with the given parameters.
+
+
+===Parameters:===
+
+  * *options* _{{{object}}}_  The style parameters.
+    * *icon* _{{{string|object}}}_ (Optional) The icon href or an icon object literal.
+    * *icon.href* _{{{string}}}_ (Optional) The icon href.
+    * *icon.scale* _{{{number}}}_ (Optional) The icon scaling factor.
+    * *icon.color* _{{{ColorSpec}}}_ (Optional) The color of the icon.
+    * *label* _{{{ColorSpec|object}}}_ (Optional) The label color or a label object literal.
+    * *label.scale* _{{{number}}}_ (Optional) The label scaling factor.
+    * *label.color* _{{{ColorSpec}}}_ (Optional) The color of the label.
+    * *line* _{{{ColorSpec|object}}}_ (Optional) The line color or a line object literal.
+    * *line.width* _{{{number}}}_ (Optional) The line width.
+    * *line.color* _{{{ColorSpec}}}_ (Optional) The line color.
+    * *poly* _{{{ColorSpec|object}}}_ (Optional) The polygon color or a polygon style object literal.
+    * *poly.fill* _{{{boolean}}}_ (Optional) Whether or not the polygon will be filled.
+    * *poly.outline* _{{{boolean}}}_ (Optional) Whether or not the polygon will have an outline.
+    * *poly.color* _{{{ColorSpec}}}_ (Optional) The color of the polygon fill.
+
+===Returns:===
+KmlStyle
+
+
+----
+
+==getObjectById(id, options)==
+
+Gets the object in the Earth DOM with the given id.
+
+
+===Parameters:===
+
+  * *id* _{{{string}}}_  The id of the object to retrieve.
+  * *options*   
+
+===Returns:===
+
+
+
+Returns the object with the given id, or null if it was not found.
+
+
+
+----
+
+==removeObject(object)==
+
+Removes the given object from the Earth object's DOM.
+
+
+===Parameters:===
+
+  * *object* _{{{KmlObject}}}_  The object to remove.
+
+----
+
+==setVec2(vec2, options)==
+
+Parse hotspot TODO: docs
+
+
+===Parameters:===
+
+  * *vec2*   
+  * *options*   
+
+----
+
+==walk(options)==
+
+Walks a KML object, calling a given visit function for each object in the KML DOM. The lone argument must be either a visit function or an options literal.
+
+
+===Parameters:===
+
+  * *options* _{{{Object}}}_ (Optional) The walk options:
+    * *visitCallback* _{{{Function}}}_ (Optional) The function to call upon visiting a node in the DOM. The 'this' variable in the callback function will be bound to the object being visited. The lone argument passed to this function will be an object literal for the call context. To get the current application-specific call context, use the 'current' property of the context object. To set the context for all child calls, set the 'child' property of the context object. To stop the walking process, return false in the function.
+    * *rootObject* _{{{KmlObject}}}_ (Optional) The root of the KML object hierarchy to walk.
+    * *features* _{{{boolean}}}_ (Optional) Descend into feature containers? Default true.
+    * *geometries* _{{{boolean}}}_ (Optional) Descend into geometry containers? Default false.
+    * *rootContext* _{{{Object}}}_ (Optional) The application-specific context to pass to the root item.
+
+
+
+

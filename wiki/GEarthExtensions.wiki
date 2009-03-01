@@ -1,0 +1,96 @@
+#labels Phase-Reference
+
+This is the reference for the GEarthExtensions Class.
+
+The root class/namespace hybrid for the Earth API extensions library. This class groups functionality into namespaces such as [GEarthExtensions_dom GEarthExtensions.dom] and [GEarthExtensions_fx GEarthExtensions.fx].
+
+
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+----
+=Class Constructor=
+
+==GEarthExtensions(pluginInstance)==
+
+
+
+
+
+===Example:===
+
+{{{
+var gex = new GEarthExtensions(ge); // ge is an instance of GEPlugin
+gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
+                         // is effectively a namespace grouping
+                         // functionality
+}}}
+
+
+===Parameters:===
+
+  * *pluginInstance*  
+    
+
+
+
+----
+=Static Methods=
+
+==checkParameters(explicitParams, allowAll, paramSpec)==
+
+Checks a given parameters object against an parameter spec, throwing exceptions as necessary, and returning the resulting options object with defaults filled in.
+
+
+===Parameters:===
+
+  * *explicitParams* _{{{object}}}_  The parameters object to check.
+  * *allowAll* _{{{boolean}}}_  Whether or not to allow all parameters, or limit allowed parameters to those listed in the parameter spec.
+  * *paramSpec* _{{{object}}}_  The parameter spec, which should be an object whose properties are the properties expected in the given parameters object and whose property values are GEarthExtensions.REQUIRED if the property is required or some other value to set a default value.
+
+===Returns:===
+
+
+
+Returns a shallow copy of the given parameters object, cleaned up according to the parameters spec and with default values filled in.
+
+
+
+----
+
+==isInstanceOfEarthInterface(object, type)==
+
+Determines whether or not the given object is directly an instance of the specified Earth API type.
+
+
+===Parameters:===
+
+  * *object* _{{{object}}}_  The object to test.
+  * *type* _{{{string}}}_  The Earth API type string, i.e. 'KmlPlacemark'
+
+----
+
+==parseColor(arg)==
+
+Converts between various color formats, i.e. '#rrggbb', to the KML color format ('aabbggrr')
+
+
+===Parameters:===
+
+  * *arg* _{{{string}}}_  The source color value.
+
+===Returns:===
+
+
+
+A string in KML color format, i.e. 'aabbggrr'
+
+
+
+
+
+
