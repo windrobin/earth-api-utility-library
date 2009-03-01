@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * The GEarthExtensions#dom class/namespace hybrid contains both DOM builder
- * functions and DOM manipulation functions.
- * @class
+ * Contains DOM builder functions (createXX) and DOM
+ * manipulation/traversal functions.
+ * @namespace
  */
 GEarthExtensions.prototype.dom = {isnamespace_:true};
 

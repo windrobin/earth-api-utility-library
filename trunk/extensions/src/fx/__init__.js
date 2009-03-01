@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * The GEarthExtensions#fx class/namespace hybrid contains various
- * animation/effects tools for use in the Earth API.
+ * Contains various animation/effects tools for use in the Google Earth API.
  * @namespace
  */
 GEarthExtensions.prototype.fx = {isnamespace_:true};

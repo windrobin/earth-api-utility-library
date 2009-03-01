@@ -90,8 +90,13 @@ GEarthExtensions.mergeDefaults = function(explicitOptions, defaults) {
 */
 // TODO: unit test
 
+/** @private */
 GEarthExtensions.AUTO = Infinity; // for dom builder (auto property setters)
+
+/** @private */
 GEarthExtensions.ALLOWED = null;
+
+/** @private */
 GEarthExtensions.REQUIRED = undefined;
 
 /**
@@ -156,6 +161,7 @@ GEarthExtensions.checkParameters = function(explicitParams,
 /**
  * Creates a new 'class' from the provided constructor function and mixes in
  * members of provided mixin classes.
+ * @private
  */
 GEarthExtensions.createClass_ = function() {
   var mixins = [];

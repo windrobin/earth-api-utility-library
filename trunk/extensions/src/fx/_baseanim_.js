@@ -15,6 +15,7 @@ limitations under the License.
 */
 /**
  * Returns the singleton animation manager for the plugin instance.
+ * @private
  */
 GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
   if (!this.animationManager_) {
@@ -27,6 +28,7 @@ GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
 /**
  * Private singleton class for managing GEarthExtensions#fx animations in a
  * plugin instance.
+ * @private
  */
 GEarthExtensions.prototype.fx.AnimationManager_ = GEarthExtensions.createClass_(
 function(extInstance) {
@@ -135,21 +137,22 @@ function() {
 
 /**
  * Abstract base class for GEarthExtensions#fx animations
+ * @class
  */
-GEarthExtensions.prototype.fx.Animation_ =
+GEarthExtensions.prototype.fx.Animation =
 GEarthExtensions.createClass_(function() { });
 
 /**
  * Start the animation.
  */
-GEarthExtensions.prototype.fx.Animation_.prototype.start = function() {
+GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
   this.extInstance.fx.getAnimationManager_().startAnimation(this);
 };
 
 /**
  * Stop the animation.
  */
-GEarthExtensions.prototype.fx.Animation_.prototype.stop = function() {
+GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
   this.renderFrame(0);
 };
@@ -159,14 +162,16 @@ GEarthExtensions.prototype.fx.Animation_.prototype.stop = function() {
  * @param {number} t The time in seconds of the frame to render.
  * @abstract
  */
-GEarthExtensions.prototype.fx.Animation_.prototype.renderFrame = function(t){ };
+GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t){ };
 
 /**
  * Generic class for fixed-duration animations.
+ * @class
+ * @extends Animation
  */
 GEarthExtensions.prototype.fx.GenericSimpleAnimation =
 GEarthExtensions.createClass_(
-  [GEarthExtensions.prototype.fx.Animation_],
+  [GEarthExtensions.prototype.fx.Animation],
 function(extInstance, duration, renderFn) {
   this.extInstance = extInstance;
   this.duration = duration;

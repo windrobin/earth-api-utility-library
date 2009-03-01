@@ -247,6 +247,7 @@ function test_dom_createPlacemark_styles() {
 
 /**
  * @see GEarthExtensions#dom.createPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.createPointPlacemark =
 GEarthExtensions.domBuilder_({
@@ -256,6 +257,7 @@ GEarthExtensions.domBuilder_({
 
 /**
  * @see GEarthExtensions#dom.createPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.createLineStringPlacemark =
 GEarthExtensions.domBuilder_({
@@ -265,6 +267,7 @@ GEarthExtensions.domBuilder_({
 
 /**
  * @see GEarthExtensions#dom.createPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.createPolygonPlacemark =
 GEarthExtensions.domBuilder_({
@@ -397,6 +400,7 @@ GEarthExtensions.prototype.dom.createOverlay_ = GEarthExtensions.domBuilder_({
 
 /**
  * Creates a new ground overlay with the given parameters.
+ * @function
  */
 // TODO: documentation
 GEarthExtensions.prototype.dom.createGroundOverlay =
