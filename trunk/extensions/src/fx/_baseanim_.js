@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -126,7 +126,6 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.renderCurrentFrame_ =
 function() {
   for (var i = this.animations_.length - 1; i >= 0; i--) {
     var animation = this.animations_[i];
-    var me = this;
     animation.obj.renderFrame(this.globalTime_ - animation.startGlobalTime);
   }
   
@@ -159,7 +158,7 @@ GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
 
 /**
  * Render the frame at time t after the animation was started.
- * @param {number} t The time in seconds of the frame to render.
+ * @param {Number} t The time in seconds of the frame to render.
  * @abstract
  */
 GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t){ };

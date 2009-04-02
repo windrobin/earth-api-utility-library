@@ -33,7 +33,7 @@ Render the frame at time t after the animation was started.
 
 ===Parameters:===
 
-  * *t* _{{{number}}}_ 
+  * *t* _{{{Number}}}_ 
     The time in seconds of the frame to render.
 
 ----

@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,35 +16,34 @@ limitations under the License.
 /**
  * Creates a new style with the given parameters.
  * @function
- * @param {object} options The style parameters.
- 
- * @param {string|object} [options.icon] The icon href or an icon
+ * @param {Object} options The style parameters.
+ * @param {String|Object} [options.icon] The icon href or an icon
  *     object literal.
- * @param {string} [options.icon.href] The icon href.
- * @param {number} [options.icon.scale] The icon scaling factor.
+ * @param {String} [options.icon.href] The icon href.
+ * @param {Number} [options.icon.scale] The icon scaling factor.
  * @param {ColorSpec} [options.icon.color] The color of the icon.
  
- * @param {ColorSpec|object} [options.label] The label color or a label
+ * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
- * @param {number} [options.label.scale] The label scaling factor.
+ * @param {Number} [options.label.scale] The label scaling factor.
  * @param {ColorSpec} [options.label.color] The color of the label.
 
- * @param {ColorSpec|object} [options.line] The line color or a line
+ * @param {ColorSpec|Object} [options.line] The line color or a line
  *     object literal.
- * @param {number} [options.line.width] The line width.
+ * @param {Number} [options.line.width] The line width.
  * @param {ColorSpec} [options.line.color] The line color.
 
- * @param {ColorSpec|object} [options.poly] The polygon color or a polygon style
+ * @param {ColorSpec|Object} [options.poly] The polygon color or a polygon style
  *     object literal.
- * @param {boolean} [options.poly.fill] Whether or not the polygon will be
+ * @param {Boolean} [options.poly.fill] Whether or not the polygon will be
  *     filled.
- * @param {boolean} [options.poly.outline] Whether or not the polygon will have
+ * @param {Boolean} [options.poly.outline] Whether or not the polygon will have
  *     an outline.
  * @param {ColorSpec} [options.poly.color] The color of the polygon fill.
 
  * @type KmlStyle
  */
-GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
   apiInterface: ['KmlStyle', 'KmlStyleMap'],
   apiFactoryFn: 'createStyle',
   propertySpec: {
@@ -57,7 +56,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
     // set icon style
     if (options.icon) {
       var iconStyle = styleObj.getIconStyle();
-    
+
       if (typeof options.icon == 'string') {
         options.icon = { href: options.icon };
       }
@@ -69,12 +68,12 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       if ('href' in options.icon) {
         icon.setHref(options.icon.href);
       } else if ('stockIcon' in options.icon) {
-        icon.setHref('http://maps.google.com/mapfiles/kml/paddle/' +
+        icon.setHref('http://maps.google.com/mapfiles/kml/' +
             options.icon.stockIcon + '.png');
       } else {
         // use default icon href
-        icon.setHref('http://maps.google.com/mapfiles/kml/paddle/' +
-            'wht-blank.png');
+        icon.setHref('http://maps.google.com/mapfiles/kml/' +
+            'paddle/wht-blank.png');
         iconStyle.getHotSpot().set(0.5, this.pluginInstance.UNITS_FRACTION,
             0, this.pluginInstance.UNITS_FRACTION);
       }
@@ -86,7 +85,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.icon) {
         iconStyle.getColor().set(
-            GEarthExtensions.parseColor(options.icon.color));
+            this.util.parseColor(options.icon.color));
       }
       if ('hotSpot' in options.icon) {
         this.dom.setVec2(iconStyle.getHotSpot(), options.icon.hotSpot);
@@ -108,7 +107,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.label) {
         labelStyle.getColor().set(
-            GEarthExtensions.parseColor(options.label.color));
+            this.util.parseColor(options.label.color));
       }
       // TODO: add colormode
     }
@@ -127,7 +126,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.line) {
         lineStyle.getColor().set(
-            GEarthExtensions.parseColor(options.line.color));
+            this.util.parseColor(options.line.color));
       }
       // TODO: add colormode
     }
@@ -149,7 +148,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.poly) {
         polyStyle.getColor().set(
-            GEarthExtensions.parseColor(options.poly.color));
+            this.util.parseColor(options.poly.color));
       }
       // TODO: add colormode
     }

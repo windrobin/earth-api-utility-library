@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@ limitations under the License.
 */
 (function() {
   // NOTE: this is shared across all GEarthExtensions instances
-  // dictionary mapping feature's jstag (uuid) --> feature's js data dictionary
-  var jsDataDicts_ = {};
-  
+  // dictionary mapping objects's jstag (uuid) to an object literal
+  // { object: <object>, data: <object's js data dictionary> }
+  var jsData_ = {};
+
   /* randomUUID.js - Version 1.0
   *
   * Copyright 2008, Robert Kieffer
@@ -34,6 +35,7 @@ limitations under the License.
 
   /**
   * Create and return a "version 4" RFC-4122 UUID string.
+  * @private
   */
   function randomUUID() {
     var s = [], itoh = '0123456789ABCDEF', i = 0;
@@ -50,7 +52,7 @@ limitations under the License.
 
     // Convert to hex chars
     for (i = 0; i < 36; i++) {
-      s[i] = itoh[s[i]];
+      s[i] = itoh.charAt(s[i]);
     }
 
     // Insert '-'s
@@ -58,172 +60,143 @@ limitations under the License.
 
     return s.join('');
   }
-  
-  var jsTagRegex_ = /##JSTAG:([0-9a-f\-]+)##/i;
-  
+
   /**
    * @private
    */
-  function getJsTag_(feature) {
-    var jsTag = feature.getSnippet().match(jsTagRegex_);
-    if (jsTag) {
-      jsTag = jsTag[1];
+  function getJsTag_(object) {
+    // TODO: use unique id from Earth API
+    for (var tag in jsData_) {
+      if (jsData_[tag].object.equals(object))
+        return tag;
     }
-    
-    return jsTag;
+
+    return null;
   }
-  
+
   /**
-   * @private
-   */
-  function setJsTag_(feature, jsTag) {
-    if (getJsTag_(feature)) {
-      feature.setSnippet(feature.getSnippet().replace(jsTagRegex_, ''));
-    }
-    
-    if (jsTag) {
-      feature.setSnippet(
-          '##JSTAG:' + jsTag + '##' +
-          feature.getSnippet());
-    }
-  }
-  
-  /**
-   * Returns whether or not the KmlFeature has any JS-side data.
-   * @param {KmlFeature} feature The feature to inquire about.
+   * Returns whether or not the KmlObject has any JS-side data.
+   * @param {KmlObject} object The plugin object to inquire about.
    * @public
    */
-  GEarthExtensions.prototype.util.hasJsData = function(feature) {
-    var jsTag = getJsTag_(feature);
-    return (jsTag && jsTag in jsDataDicts_) ? true : false;
+  GEarthExtensions.prototype.util.hasJsData = function(object) {
+    return getJsTag_(object) ? true : false;
   };
-  
+
   /**
-   * Clears all JS-side data for the given KmlFeature.
-   * @param {KmlFeature} feature The feature to clear data on.
+   * Clears all JS-side data for the given KmlObject.
+   * @param {KmlObject} object The plugin object to clear data on.
    */
-  GEarthExtensions.prototype.util.clearAllJsData = function(feature) {
-    var jsTag = getJsTag_(feature);
+  GEarthExtensions.prototype.util.clearAllJsData = function(object) {
+    var jsTag = getJsTag_(object);
     if (jsTag) {
-      setJsTag_(feature, null);
-      delete jsDataDicts_[jsTag];
+      delete jsData_[jsTag];
     }
   };
 
   /**
-   * Gets the JS-side data for the given KmlFeature associated with the given
+   * Gets the JS-side data for the given KmlObject associated with the given
    * key.
-   * WARNING: This method currently stores custom data in the feature's
-   * &lt;snippet&gt;. Data must be cleared out with clearJsData before
-   * manipulating the snippet or using getKml.
-   * @param {KmlFeature} feature The feature to get data for.
+   * @param {KmlObject} object The plugin object to get data for.
+   * @param {String} key The JSData key to request.
    * @public
    */
-  GEarthExtensions.prototype.util.getJsDataValue = function(feature, key) {
-    var jsTag = getJsTag_(feature);
-    if (jsTag &&
-        jsTag in jsDataDicts_ &&
-        key in jsDataDicts_[jsTag]) {
-      return jsDataDicts_[jsTag][key];
+  GEarthExtensions.prototype.util.getJsDataValue = function(object, key) {
+    var jsTag = getJsTag_(object);
+    if (jsTag && key in jsData_[jsTag].data) {
+      return jsData_[jsTag].data[key];
     }
-    
+
     // TODO: null or undefined?
     return undefined;
   };
-  
+
   /**
-   * Sets the JS-side data for the given KmlFeature associated with the given
+   * Sets the JS-side data for the given KmlObject associated with the given
    * key to the passed in value.
-   * WARNING: This method currently stores custom data in the feature's
-   * &lt;snippet&gt;. Data must be cleared out with clearJsData before
-   * manipulating the snippet or using getKml.
-   * @param {KmlFeature} feature The feature to get data for.
+   * @param {KmlObject} object The object to get data for.
    * @public
    */
   GEarthExtensions.prototype.util.setJsDataValue =
-  function(feature, key, value) {
-    var jsTag = getJsTag_(feature);
+  function(object, key, value) {
+    var jsTag = getJsTag_(object);
     if (!jsTag) {
-      // no current data dictionary, create a jstag to inject into the
-      // feature's snippet
+      // no current data dictionary, create a jstag for this object
       jsTag = null;
-      while (!jsTag || jsTag in jsDataDicts_) {
+      while (!jsTag || jsTag in jsData_) {
         jsTag = randomUUID();
       }
-      
-      // inject the jsTag into the snippet
-      setJsTag_(feature, jsTag);
-      
+
       // create an empty data dict
-      jsDataDicts_[jsTag] = {};
+      jsData_[jsTag] = { object: object, data: {} };
     }
-    
+
     // set the data
-    jsDataDicts_[jsTag][key] = value;
+    jsData_[jsTag].data[key] = value;
   };
-  
+
   /**
-   * Clears the JS-side data for the given KmlFeature associated with the given
+   * Clears the JS-side data for the given KmlObject associated with the given
    * key.
-   * @param {KmlFeature} feature The feature to clear data on.
-   * @param {string} key The data key whose value should be cleared.
+   * @param {KmlObject} object The plugin object to clear data on.
+   * @param {String} key The data key whose value should be cleared.
    */
-  GEarthExtensions.prototype.util.clearJsDataValue = function(feature, key) {
-    var jsTag = getJsTag_(feature);
+  GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
+    var jsTag = getJsTag_(object);
     if (jsTag &&
-        jsTag in jsDataDicts_ &&
-        key in jsDataDicts_[jsTag]) {
-      delete jsDataDicts_[jsTag][key];
-      
+        key in jsData_[jsTag].data) {
+      delete jsData_[jsTag].data[key];
+
       // check if the data dict is empty... if so, cleanly remove it
-      for (var k in jsDataDicts_[jsTag]) {
+      for (var k in jsData_[jsTag].data) {
         return; // not empty
       }
-      
+
       // data dict is empty
-      this.util.clearAllJsData(feature);
+      this.util.clearAllJsData(object);
     }
   };
-  
+
   /***IGNORE_BEGIN***/
   function test_util_JsData() {
     var pm1 = testext_.dom.addPointPlacemark([0, 0], { name: 'Test PM 1' });
     var pm2 = testext_.dom.addPointPlacemark([0, 1], { name: 'Test PM 2' });
-    
+
     pm2.setSnippet('foo bar');
-    
+
     // set the values
     testext_.util.setJsDataValue(pm1, 'a', 1);
     testext_.util.setJsDataValue(pm1, 'b', 2);
     testext_.util.setJsDataValue(pm2, 'a', 3);
     testext_.util.setJsDataValue(pm2, 'b', 4);
-    
+
     // check the values
     assertEquals(1, testext_.util.getJsDataValue(pm1, 'a'));
     assertEquals(2, testext_.util.getJsDataValue(pm1, 'b'));
     assertEquals(3, testext_.util.getJsDataValue(pm2, 'a'));
     assertEquals(4, testext_.util.getJsDataValue(pm2, 'b'));
-    
+
     // clear the values
     testext_.util.clearJsDataValue(pm1, 'a');
     testext_.util.clearJsDataValue(pm1, 'b');
     testext_.util.clearJsDataValue(pm2, 'a');
     testext_.util.clearJsDataValue(pm2, 'b');
-    
+
     // make sure they were cleared
     assertUndefined(testext_.util.getJsDataValue(pm1, 'a'));
     assertUndefined(testext_.util.getJsDataValue(pm1, 'b'));
     assertUndefined(testext_.util.getJsDataValue(pm2, 'a'));
     assertUndefined(testext_.util.getJsDataValue(pm2, 'b'));
-    
+
     // assert there are no values left
     assertFalse(testext_.util.hasJsData(pm1));
     assertFalse(testext_.util.hasJsData(pm2));
-    
+
     // assert the snippets are back to normal
-    assertEquals('', pm1.getSnippet());
-    assertEquals('foo bar', pm2.getSnippet());
-    
+    // DEPRECATED: snippets are no longer used for jsdata tag storage
+    //assertEquals('', pm1.getSnippet());
+    //assertEquals('foo bar', pm2.getSnippet());
+
     // tear down
     testext_.dom.removeObject(pm1);
     testext_.dom.removeObject(pm2);

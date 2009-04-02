@@ -48,9 +48,9 @@ Checks a given parameters object against an parameter spec, throwing exceptions 
 
 ===Parameters:===
 
-  * *explicitParams* _{{{object}}}_  The parameters object to check.
-  * *allowAll* _{{{boolean}}}_  Whether or not to allow all parameters, or limit allowed parameters to those listed in the parameter spec.
-  * *paramSpec* _{{{object}}}_  The parameter spec, which should be an object whose properties are the properties expected in the given parameters object and whose property values are GEarthExtensions.REQUIRED if the property is required or some other value to set a default value.
+  * *explicitParams* _{{{Object}}}_  The parameters object to check.
+  * *allowAll* _{{{Boolean}}}_  Whether or not to allow all parameters, or limit allowed parameters to those listed in the parameter spec.
+  * *paramSpec* _{{{Object}}}_  The parameter spec, which should be an object whose properties are the properties expected in the given parameters object and whose property values are GEarthExtensions.REQUIRED if the property is required or some other value to set a default value.
 
 ===Returns:===
 
@@ -69,27 +69,8 @@ Determines whether or not the given object is directly an instance of the specif
 
 ===Parameters:===
 
-  * *object* _{{{object}}}_  The object to test.
-  * *type* _{{{string}}}_  The Earth API type string, i.e. 'KmlPlacemark'
-
-----
-
-==parseColor(arg)==
-
-Converts between various color formats, i.e. '#rrggbb', to the KML color format ('aabbggrr')
-
-
-===Parameters:===
-
-  * *arg* _{{{string}}}_  The source color value.
-
-===Returns:===
-
-
-
-A string in KML color format, i.e. 'aabbggrr'
-
-
+  * *object* _{{{Object}}}_  The object to test.
+  * *type* _{{{String}}}_  The Earth API type string, i.e. 'KmlPlacemark'
 
 
 

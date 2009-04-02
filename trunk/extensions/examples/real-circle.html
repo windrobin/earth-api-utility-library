@@ -44,7 +44,7 @@ var center = new geo.Point(la.getLatitude(), la.getLongitude());
 gex.dom.addPlacemark({
     name: 'A',
     point: center,
-    stockIcon: 'red-circle'
+    stockIcon: 'paddle/red-circle'
   });
 
 for (var j = 0; j &lt; distances.length; j++)
@@ -53,7 +53,7 @@ for (var j = 0; j &lt; distances.length; j++)
         name: headings[k].toString(),
         point: geo.math.destination(center, {distance: distances[j],
                                              heading: headings[k]}),
-        stockIcon: 'wht-blank'
+        stockIcon: 'paddle/wht-blank'
       });
 </textarea><br/>
 <input type="button" onclick="eval(document.getElementById('code').value);" value="Run"/>

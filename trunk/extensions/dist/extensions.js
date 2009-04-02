@@ -19,7 +19,7 @@ limitations under the License.
  * the library compatible with the Google Geo APIs (Maps, Earth, KML, etc.)
  * @namespace
  */
-geo = {isnamespace_:true};
+var geo = {isnamespace_:true};
 /*
 see https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference:Objects:Array:map
 */
@@ -39,8 +39,244 @@ if (!('map' in Array.prototype)) {
     }
 
     return res;
-  }
+  };
 }
+/**
+ * Create a new bounds object from the given parameters.
+ * @param {geo.Bounds|geo.Point} [sw|bounds] Either an existing bounds object
+ *     to copy, or the southwest coordinate of the new bounds object.
+ * @param {geo.Point} [ne] The northeast coordinate of the new bounds object.
+ */
+geo.Bounds = function() {
+  // TODO: accept instances of GLatLngBounds
+
+  // 1 argument constructor
+  if (arguments.length == 1) {
+    // copy constructor
+    if (arguments[0].constructor === geo.Bounds) {
+      var bounds = arguments[0];
+      this.sw_ = new geo.Point(bounds.southWestBottom());
+      this.ne_ = new geo.Point(bounds.northEastTop());
+
+    // anything else, treated as the lone coordinate
+    } else {
+      this.sw_ = this.ne_ = new geo.Point(arguments[0]);
+
+    }
+
+  // Two argument constructor -- a northwest and southeast coordinate
+  } else if (arguments.length == 2) {
+    var sw = new geo.Point(arguments[0]);
+    var ne = new geo.Point(arguments[1]);
+
+    // handle degenerate cases
+    if (!sw && !ne) {
+      return;
+    } else if (!sw) {
+      sw = ne;
+    } else if (!ne) {
+      ne = sw;
+    }
+
+    if (sw.lat() > ne.lat()) {
+      throw new RangeError('Bounds southwest coordinate cannot be north of ' +
+                           'the northeast coordinate');
+    }
+
+    if (sw.altitude() > ne.altitude()) {
+      throw new RangeError('Bounds southwest coordinate cannot be north of ' +
+                           'the northeast coordinate');
+    }
+
+    // TODO: check for incompatible altitude modes
+
+    this.sw_ = sw;
+    this.ne_ = ne;
+  }
+};
+
+/**
+ * The bounds' southwest, bottom coordinate.
+ * @type geo.Point
+ */
+geo.Bounds.prototype.southWestBottom = function() {
+  return this.sw_;
+};
+geo.Bounds.prototype.sw_ = null;
+
+/**
+ * The bounds' northeast, top coordinate.
+ * @type geo.Point
+ */
+geo.Bounds.prototype.northEastTop = function() {
+  return this.ne_;
+};
+geo.Bounds.prototype.ne_ = null;
+
+/**
+ * Returns whether or not the bounds intersect the antimeridian.
+ * @type Boolean
+ */
+geo.Bounds.prototype.crossesAntimeridian = function() {
+  return (this.sw_.lng() > this.ne_.lng());
+};
+
+/**
+ * Returns whether or not the bounds have an altitude component.
+ * @type Boolean
+ */
+geo.Bounds.prototype.is3D = function() {
+  return !this.isEmpty() && (this.sw_.is3D() || this.ne_.is3D());
+};
+
+/**
+ * Returns whether or not the given point is inside the bounds.
+ * @param {geo.Point} point The point to test.
+ * @type Boolean
+ */
+geo.Bounds.prototype.containsPoint = function(point) {
+  if (this.isEmpty())
+    return false;
+
+  // check latitude
+  if (!(this.sw_.lat() <= point.lat() && point.lat() <= this.ne_.lat())) {
+    return false;
+  }
+
+  // check altitude
+  if (this.is3D() && !(this.sw_.altitude() <= point.altitude() &&
+                       point.altitude() <= this.ne_.altitude())) {
+    return false;
+  }
+
+  // check longitude
+  if (this.crossesAntimeridian()) {
+    return (point.lng() <= this.ne_.lng() || point.lng() >= this.sw_.lng());
+  } else {
+    return (this.sw_.lng() <= point.lng() && point.lng() <= this.ne_.lng());
+  }
+};
+
+/**
+ * Gets the longitudinal span of the given west and east coordinates.
+ * @private
+ * @param {Number} west
+ * @param {Number} east
+ */
+geo.Bounds.lngSpan_ = function(west, east) {
+  return (west > east) ? (east + 360 - west) : (east - west);
+};
+
+/**
+ * Extends the bounds object by the given point, if the bounds don't already
+ * contain the point. Longitudinally, the bounds will be extended either east
+ * or west, whichever results in a smaller longitudinal span.
+ * @param point
+ */
+geo.Bounds.prototype.extend = function(point) {
+  if (this.containsPoint(point)) {
+    return;
+  }
+
+  if (this.isEmpty()) {
+    this.sw_ = this.ne_ = point;
+    return;
+  }
+
+  // extend up or down
+  var newBottom = this.sw_.altitude();
+  var newTop = this.ne_.altitude();
+
+  if (this.is3D()) {
+    newBottom = Math.min(this.sw_.altitude(), point.altitude());
+    newTop = Math.min(this.ne_.altitude(), point.altitude());
+  }
+
+  // extend north or south
+  var newSouth = Math.min(this.sw_.lat(), point.lat());
+  var newNorth = Math.max(this.ne_.lat(), point.lat());
+
+  // try extending east and try extending west, and use the one that
+  // has the smaller longitudinal span
+  var extendEastLngSpan = geo.Bounds.lngSpan_(this.sw_.lng(), point.lng());
+  var extendWestLngSpan = geo.Bounds.lngSpan_(point.lng(), this.ne_.lng());
+
+  var newWest = this.sw_.lng();
+  var newEast = this.ne_.lng();
+
+  if (extendEastLngSpan <= extendWestLngSpan) {
+    newEast = point.lng();
+  } else {
+    newWest = point.lng();
+  }
+
+  // update the bounds' coordinates
+  this.sw_ = new geo.Point(newSouth, newWest, newBottom);
+  this.ne_ = new geo.Point(newNorth, newEast, newTop);
+};
+
+/**
+ * Returns the bounds' latitude, longitude, and altitude span as an object
+ * literal.
+ * @return {Object} Returns an object literal containing 'lat', 'lng', and
+ *     'altitude' properties. Altitude will be null in the case that the bounds
+ *     aren't 3D.
+ */
+geo.Bounds.prototype.span = function() {
+  return {
+    lat: (this.ne_.lat() - this.sw_.lat()),
+    lng: geo.Bounds.lngSpan_(this.sw_.lng(), this.ne_.lng()),
+    altitude: this.is3D() ? (this.ne_.altitude() - this.sw_.altitude()) : null
+  };
+};
+
+/**
+ * Determines whether or not the bounds object is empty, i.e. whether or not it
+ * has no known associated points.
+ * @type Boolean
+ */
+geo.Bounds.prototype.isEmpty = function() {
+  return (this.sw_ == null && this.sw_ == null);
+};
+
+/**
+ * Gets the center of the bounds.
+ * @type geo.Point
+ */
+geo.Bounds.prototype.getCenter = function() {
+  if (this.isEmpty())
+    return null;
+
+  return new geo.Point(
+    (this.sw_.lat() + this.ne_.lat()) / 2,
+    this.crossesAntimeridian() ?
+        geo.math.normalizeLng(
+            this.sw_.lng() +
+            geo.Bounds.lngSpan_(this.sw_.lng(), this.ne_.lng()) / 2) :
+        (this.sw_.lng() + this.ne_.lng()) / 2,
+    (this.sw_.altitude() + this.ne_.altitude()) / 2);
+};
+
+/**
+ * Determines whether or not the bounds occupy the entire latitudinal range.
+ * @type Boolean
+ */
+geo.Bounds.prototype.isFullLat = function() {
+  return (this.sw_.lat() == -90 && this.ne_.lng() == 90);
+};
+
+/**
+ * Determines whether or not the bounds occupy the entire longitudinal range.
+ * @type Boolean
+ */
+geo.Bounds.prototype.isFullLng = function() {
+  return (this.sw_.lng() == -180 && this.ne_.lng() == 180);
+};
+
+// TODO: equals(other)
+// TODO: intersects(other)
+// TODO: containsBounds(other)
+// TODO: geo.ALTITUDE_NONE to differentiate 2D/3D coordinates
 geo.ALTITUDE_CLAMP_TO_GROUND = 0;
 geo.ALTITUDE_RELATIVE_TO_GROUND = 1;
 geo.ALTITUDE_ABSOLUTE = 2;
@@ -49,22 +285,20 @@ geo.ALTITUDE_ABSOLUTE = 2;
  */
 geo.math = {isnamespace_:true};
 /**
- * Converts an angle from degrees to radians.
- * @param {Number} rad The angle in degrees.
+ * Converts an angle from radians to degrees.
  * @type Number
- * @return Returns the angle, converted to radians.
+ * @return Returns the angle, converted to degrees.
  */
-if (!('toRadians' in Number.prototype)) {
+if (!('toDegrees' in Number.prototype)) {
   Number.prototype.toDegrees = function() {
     return this * 180 / Math.PI;
   };
 }
 
 /**
- * Converts an angle from radians to degrees.
- * @param {Number} rad The angle in radians.
+ * Converts an angle from degrees to radians.
  * @type Number
- * @return Returns the angle, converted to degrees.
+ * @return Returns the angle, converted to radians.
  */
 if (!('toRadians' in Number.prototype)) {
   Number.prototype.toRadians = function() {
@@ -80,6 +314,33 @@ if (!('toRadians' in Number.prototype)) {
 geo.math.normalizeAngle = function(angleRad) {
   angleRad = angleRad % (2 * Math.PI);
   return angleRad >= 0 ? angleRad : angleRad + 2 * Math.PI;
+};
+
+/**
+ * Normalizes a latitude to the [-90,90] range. Latitudes above 90 or
+ * below -90 are capped, not wrapped.
+ * @param {Number} lat The latitude to normalize, in degrees.
+ * @type Number
+ * @return Returns the latitude, fit within the [-90,90] range.
+ */
+geo.math.normalizeLat = function(lat) {
+  return Math.max(-90, Math.min(90, lat));
+};
+
+/**
+ * Normalizes a longitude to the [-180,180] range. Longitudes above 180
+ * or below -180 are wrapped.
+ * @param {Number} lng The longitude to normalize, in degrees.
+ * @type Number
+ * @return Returns the latitude, fit within the [-90,90] range.
+ */
+geo.math.normalizeLng = function(lng) {
+  if (lng % 360 == 180) {
+    return 180;
+  }
+
+  lng = lng % 360;
+  return lng < -180 ? lng + 360 : lng > 180 ? lng - 360 : lng;
 };
 
 /**
@@ -150,11 +411,11 @@ geo.math.angularDistance = function(point1, point2) {
 }
 */
 geo.math.angularDistance = function(point1, point2) {
-  var phi1 = point1.lat.toRadians();
-  var phi2 = point2.lat.toRadians();
+  var phi1 = point1.lat().toRadians();
+  var phi2 = point2.lat().toRadians();
   
-  var d_phi = (point2.lat - point1.lat).toRadians();
-  var d_lmd = (point2.lng - point1.lng).toRadians();
+  var d_phi = (point2.lat() - point1.lat()).toRadians();
+  var d_lmd = (point2.lng() - point1.lng()).toRadians();
   
   var A = Math.pow(Math.sin(d_phi / 2), 2) +
           Math.cos(phi1) * Math.cos(phi2) *
@@ -182,11 +443,11 @@ geo.math.angularDistance = function(point1, point2) {
  *     in the [0,360) degree range.
  */
 geo.math.heading = function(start, dest) {
-  var phi1 = start.lat.toRadians();
-  var phi2 = dest.lat.toRadians();
+  var phi1 = start.lat().toRadians();
+  var phi2 = dest.lat().toRadians();
   var cos_phi2 = Math.cos(phi2);
   
-  var d_lmd = (dest.lng - start.lng).toRadians();
+  var d_lmd = (dest.lng() - start.lng()).toRadians();
   
   return geo.math.normalizeAngle(Math.atan2(
       Math.sin(d_lmd) * cos_phi2,
@@ -199,10 +460,10 @@ geo.math.bearing = geo.math.heading;
 /**
  * Calculates an intermediate point on the geodesic between the two given
  * points.
- * (see http://williams.best.vwh.net/avform.htm#Intermediate)
+ * @note http://williams.best.vwh.net/avform.htm#Intermediate
  * @param {geo.Point} point1 The first point.
  * @param {geo.Point} point2 The second point.
- * @param {number} [fraction=0.5] The fraction of distance between the first
+ * @param {Number} [fraction] The fraction of distance between the first
  *     and second points.
  * @type geo.Point
  */
@@ -212,10 +473,10 @@ geo.math.midpoint = function(point1, point2, fraction) {
     fraction = 0.5;
   }
   
-  var phi1 = point1.lat.toRadians();
-  var phi2 = point2.lat.toRadians();
-  var lmd1 = point1.lng.toRadians();
-  var lmd2 = point2.lng.toRadians();
+  var phi1 = point1.lat().toRadians();
+  var phi2 = point2.lat().toRadians();
+  var lmd1 = point1.lng().toRadians();
+  var lmd2 = point2.lng().toRadians();
   
   var cos_phi1 = Math.cos(phi1);
   var cos_phi2 = Math.cos(phi2);
@@ -246,19 +507,18 @@ geo.math.midpoint = function(point1, point2, fraction) {
  * and distance, from the given start point.
  * (see http://www.movable-type.co.uk/scripts/latlong.html)
  * @param {geo.Point} start The start point.
- * @param {object} options The heading and distance object literal.
- * @param {number} options.heading The initial heading, in degrees.
- * @param {number} options.distance The distance along the geodesic, in meters.
+ * @param {Object} options The heading and distance object literal.
+ * @param {Number} options.heading The initial heading, in degrees.
+ * @param {Number} options.distance The distance along the geodesic, in meters.
  * @type geo.Point
  */
-geo.math.destination = function(point, options) {
+geo.math.destination = function(start, options) {
   if (!('heading' in options && 'distance' in options)) {
     throw new TypeError('destination() requres both heading and ' +
                         'distance options.');
   }
   
-  var phi1 = point.lat.toRadians();
-  var lmd1 = point.lng.toRadians();
+  var phi1 = start.lat().toRadians();
   
   var sin_phi1 = Math.sin(phi1);
   
@@ -279,11 +539,11 @@ geo.math.destination = function(point, options) {
         Math.sin(heading_rad) *
           sin_angularDistance * Math.cos(phi2),
         cos_angularDistance - sin_phi1 * Math.sin(phi2)).toDegrees() +
-        point.lng);
+        start.lng());
 };
 /**
  * Creates a new path from the given parameters.
- * @param {PathSpec} path The path data.
+ * @param {geo.Path|geo.Point[]|KmlLineString} path The path data.
  * @constructor
  */
 geo.Path = function() {
@@ -337,14 +597,14 @@ geo.Path = function() {
     }
   
   // Assume each argument is a PointSpec, i.e.
-  // new Path(p1, p2, p3) ==> new Point([p1, p2, p3])
+  // new Path(p1, p2, p3) ==>
+  //    new Path([new Point(p1), new Point(p2), new Point(p3)])
   } else {
     coordArraySrc = arguments;
   }
   
   // construct from an array (presumably of PoinySpecs)
   if (coordArraySrc) {
-    // TODO: type check
     for (i = 0; i < coordArraySrc.length; i++) {
       this.coords_.push(new geo.Point(coordArraySrc[i]));
     }
@@ -357,7 +617,7 @@ geo.Path = function() {
 
 /**
  * The path's coordinates array.
- * @type number
+ * @type Number
  * @private
  */
 geo.Path.prototype.coords_ = null; // don't use mutable objects here
@@ -373,7 +633,7 @@ geo.Path.prototype.toString = function() {
 /**
  * Determines whether or not the given path is the same as this one.
  * @param {geo.Path} p2 The other path.
- * @type boolean
+ * @type Boolean
  */
 geo.Path.prototype.equals = function(p2) {
   for (var i = 0; i < p2.numCoords(); i++) {
@@ -463,15 +723,15 @@ geo.Path.prototype.distance = function() {
  */
 geo.Path.prototype.containsPoint = function(point) {
   var oddNodes = false;
-  var y = point.lat;
-  var x = point.lng;
+  var y = point.lat();
+  var x = point.lng();
   for (var i = 0; i < this.coords_.length; i++) {
     var j = (i + 1) % this.coords_.length;
-    if (((this.coords_[i].lat < y && this.coords_[j].lat >= y) ||
-         (this.coords_[j].lat < y && this.coords_[i].lat >= y)) &&
-        (this.coords_[i].lng + (y - this.coords_[i].lat) /
-                               (this.coords_[j].lat - this.coords_[i].lat) *
-                               (this.coords_[j].lng - this.coords_[i].lng)
+    if (((this.coords_[i].lat() < y && this.coords_[j].lat() >= y) ||
+         (this.coords_[j].lat() < y && this.coords_[i].lat() >= y)) &&
+        (this.coords_[i].lng() + (y - this.coords_[i].lat()) /
+                               (this.coords_[j].lat() - this.coords_[i].lat()) *
+                               (this.coords_[j].lng() - this.coords_[i].lng())
          < x)) {
       oddNodes = !oddNodes;
     }
@@ -480,35 +740,35 @@ geo.Path.prototype.containsPoint = function(point) {
   return oddNodes;
 };
 
-/**
- * Returns the approximate area of the polygon formed by the path when the path
- * is closed.
- * Taken from http://econym.googlepages.com/epoly.htm and
- * NOTE: this method only works with non-intersecting polygons.
- */
-geo.Path.prototype.area = function() {
-  var a = 0;
-  var b = this.Bounds();
-  var x0 = b.getSouthWest().lng();
-  var y0 = b.getSouthWest().lat();
-  for (var i=0; i < this.getVertexCount(); i++) {
-    var j = (i + 1) % this.coords_.length;
-    var x1 = this.getVertex(i).distanceFrom(new GLatLng(this.getVertex(i).lat(),x0));
-    var x2 = this.getVertex(j).distanceFrom(new GLatLng(this.getVertex(j).lat(),x0));
-    var y1 = this.getVertex(i).distanceFrom(new GLatLng(y0,this.getVertex(i).lng()));
-    var y2 = this.getVertex(j).distanceFrom(new GLatLng(y0,this.getVertex(j).lng()));
-    a += x1*y2 - x2*y1;
-  }
-  return Math.abs(a * 0.5);
-}
+///**
+// * Returns the approximate area of the polygon formed by the path when the path
+// * is closed.
+// * Taken from http://econym.googlepages.com/epoly.htm and
+// * NOTE: this method only works with non-intersecting polygons.
+// */
+//geo.Path.prototype.area = function() {
+//  var a = 0;
+//  var b = this.Bounds();
+//  var x0 = b.getSouthWest().lng();
+//  var y0 = b.getSouthWest().lat();
+//  for (var i=0; i < this.getVertexCount(); i++) {
+//    var j = (i + 1) % this.coords_.length;
+//    var x1 = this.getVertex(i).distanceFrom(new GLatLng(this.getVertex(i).lat(),x0));
+//    var x2 = this.getVertex(j).distanceFrom(new GLatLng(this.getVertex(j).lat(),x0));
+//    var y1 = this.getVertex(i).distanceFrom(new GLatLng(y0,this.getVertex(i).lng()));
+//    var y2 = this.getVertex(j).distanceFrom(new GLatLng(y0,this.getVertex(j).lng()));
+//    a += x1*y2 - x2*y1;
+//  }
+//  return Math.abs(a * 0.5);
+//};
 /**
  * Creates a new point from the given parameters.
- * @param {PointSpec} point The point data.
+ * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation} point
+ *     The point data.
  * @constructor
  */
 geo.Point = function() {
-  // TODO: accept instances of GLatLng
-  // and accept point object literals
+  // TODO: accept instances of GLatLng and accept point object literals
   var pointArraySrc = null;
   
   // 1 argument constructor
@@ -517,10 +777,10 @@ geo.Point = function() {
     
     // copy constructor
     if (point.constructor === geo.Point) {
-      this.lat = point.lat;
-      this.lng = point.lng;
-      this.altitude = point.altitude;
-      this.altitudeMode = point.altitudeMode;
+      this.lat_ = point.lat();
+      this.lng_ = point.lng();
+      this.altitude_ = point.altitude();
+      this.altitudeMode_ = point.altitudeMode();
       
     // array constructor
     } else if (geo.util.isArray(point)) {
@@ -533,17 +793,17 @@ geo.Point = function() {
       // KmlPoint and KmlLookAt constructor
       if (type == 'KmlPoint' ||
           type == 'KmlLookAt') {
-        this.lat = point.getLatitude();
-        this.lng = point.getLongitude();
-        this.altitude = point.getAltitude();
-        this.altitudeMode = point.getAltitudeMode();
+        this.lat_ = point.getLatitude();
+        this.lng_ = point.getLongitude();
+        this.altitude_ = point.getAltitude();
+        this.altitudeMode_ = point.getAltitudeMode();
       
       // KmlCoord and KmlLocation constructor
       } else if (type == 'KmlCoord' ||
                  type == 'KmlLocation') {
-        this.lat = point.getLatitude();
-        this.lng = point.getLongitude();
-        this.altitude = point.getAltitude();
+        this.lat_ = point.getLatitude();
+        this.lng_ = point.getLongitude();
+        this.altitude_ = point.getAltitude();
       
       // Error, can't create a Point from any other Earth object
       } else {
@@ -565,59 +825,88 @@ geo.Point = function() {
   // construct from an array
   if (pointArraySrc) {
     // TODO: type check
-    this.lat = pointArraySrc[0];
-    this.lng = pointArraySrc[1];
+    this.lat_ = pointArraySrc[0];
+    this.lng_ = pointArraySrc[1];
     if (pointArraySrc.length >= 3) {
-      this.altitude = pointArraySrc[2];
+      this.altitude_ = pointArraySrc[2];
       if (pointArraySrc.length >= 4) {
-        this.altitudeMode = pointArraySrc[3];
+        this.altitudeMode_ = pointArraySrc[3];
       }
     }
   }
-};
 
-/**#@+
-  @field
-*/
+  // normalize
+  this.lat_ = geo.math.normalizeLat(this.lat_);
+  this.lng_ = geo.math.normalizeLng(this.lng_);
+};
 
 /**
  * The point's latitude, in degrees.
- * @type number
+ * @type Number
  */
-geo.Point.prototype.lat = 0;
+geo.Point.prototype.lat = function() {
+  return this.lat_;
+};
+geo.Point.prototype.lat_ = 0;
 
 /**
  * The point's longitude, in degrees.
- * @type number
+ * @type Number
  */
-geo.Point.prototype.lng = 0;
+geo.Point.prototype.lng = function() {
+  return this.lng_;
+};
+geo.Point.prototype.lng_ = 0;
 
 /**
  * The point's altitude, in meters.
- * @type number
+ * @type Number
  */
-geo.Point.prototype.altitude = 0;
+geo.Point.prototype.altitude = function() {
+  return this.altitude_;
+};
+geo.Point.prototype.altitude_ = 0;
 
 /**
  * The point's altitude mode.
  * @type KmlAltitudeModeEnum
  */
-geo.Point.prototype.altitudeMode = geo.ALTITUDE_RELATIVE_TO_GROUND;
-/**#@-*/
+geo.Point.prototype.altitudeMode = function() {
+  return this.altitudeMode_;
+};
+geo.Point.prototype.altitudeMode_ = geo.ALTITUDE_RELATIVE_TO_GROUND;
+
 
 geo.Point.prototype.toString = function() {
-  return '(' + this.lat.toString() + ', ' + this.lng.toString() + ', ' +
-      this.altitude.toString() + ')';
+  return '(' + this.lat().toString() + ', ' + this.lng().toString() + ', ' +
+      this.altitude().toString() + ')';
+};
+
+/**
+ * Returns the 2D (no altitude) version of this point.
+ */
+geo.Point.prototype.flatten = function() {
+  return new geo.Point(this.lat(), this.lng());
+};
+
+/**
+ * Determines whether or not this point has an altitude component.
+ * @type Boolean
+ */
+geo.Point.prototype.is3D = function() {
+  return this.altitude_ != 0;
 };
 
 /**
  * Determines whether or not the given point is the same as this one.
  * @param {geo.Point} p2 The other point.
- * @type boolean
+ * @type Boolean
  */
 geo.Point.prototype.equals = function(p2) {
-  return this.lat == p2.lat && this.lng == p2.lng &&
-      this.altitude == p2.altitude && this.altitudeMode == p2.altitudeMode;
+  return this.lat() == p2.lat() &&
+         this.lng() == p2.lng() &&
+         this.altitude() == p2.altitude() &&
+         this.altitudeMode() == p2.altitudeMode();
 };
 
 /**
@@ -656,12 +945,14 @@ geo.Point.prototype.destination = function(options) {
 };
 /**
  * Creates a new polygon from the given parameters.
- * @param {PathSpec} outerBoundary The polygon's outer boundary.
- * @param {PathSpec[]} [innerBoundaries] The polygon's inner boundaries, if any.
+ * @param {geo.Polygon|geo.Path} outerBoundary
+ *     The polygon's outer boundary.
+ * @param {geo.Path[]} [innerBoundaries]
+ *     The polygon's inner boundaries, if any.
  * @constructor
  */
 geo.Polygon = function() {
-    // TODO: accept instances of GPolygon, GPolyline
+  // TODO: accept instances of GPolygon, GPolyline
   this.innerBoundaries_ = [];
   var i;
   
@@ -811,7 +1102,7 @@ geo.Polygon.prototype.area = function() {
   }
   
   return area;
-}
+};
 
 /**
  * The geo.util namespace contains generic JavaScript and JS/Geo utility
@@ -822,7 +1113,7 @@ geo.util = {isnamespace_:true};
 
 /**
  * Determines whether or not the object is undefined in JavaScript terms.
- * @param {object} object The object to test.
+ * @param {Object} object The object to test.
  * Taken from prototype.js
  */
 geo.util.isUndefined = function(object) {
@@ -831,7 +1122,7 @@ geo.util.isUndefined = function(object) {
 
 /**
  * Determines whether or not the object is a JavaScript array.
- * @param {object} object The object to test.
+ * @param {Object} object The object to test.
  * Taken from prototype.js
  */
 geo.util.isArray = function(object) {
@@ -841,7 +1132,7 @@ geo.util.isArray = function(object) {
 
 /**
  * Determines whether or not the object is a JavaScript function.
- * @param {object} object The object to test.
+ * @param {Object} object The object to test.
  * Taken from prototype.js
  */
 geo.util.isFunction = function(object) {
@@ -851,24 +1142,27 @@ geo.util.isFunction = function(object) {
 
 /**
  * Determines whether or not the object is an object literal/anonymous object.
- * @param {object} object The object to test.
+ * @param {Object} object The object to test.
  */
 geo.util.isObjectLiteral = function(object) {
   return object !== null && typeof object == 'object' &&
-      object.constructor === Object;
+      object.constructor === Object &&
+      !geo.util.isEarthAPIObject_(object);
 };
 
 /**
  * Determines whether or not the given object is an Earth API object.
- * @param {object} object The object to test.
+ * @param {Object} object The object to test.
+ * @private
  */
 geo.util.isEarthAPIObject_ = function(object) {
-  return object !== null && typeof object == 'function' &&
+  return object !== null &&
+      (typeof object == 'object' || typeof object == 'function') &&
       'getType' in object;
 };
 
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -883,9 +1177,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * GEarthExtensions is the root class/namespace hybrid for the Earth API
- * utility library.
- * @class GEarthExtensions
+ * @class The root class/namespace hybrid for the Earth API extensions library.
+ * This class groups functionality into namespaces such as
+ * {@link GEarthExtensions#dom } and {@link GEarthExtensions#fx }.
+ * @example
+ * var gex = new GEarthExtensions(ge); // ge is an instance of GEPlugin
+ * gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
+ *                          // is effectively a namespace grouping
+ *                          // functionality
  */
 var GEarthExtensions = function(pluginInstance) {
   // create class
@@ -898,12 +1197,11 @@ var GEarthExtensions = function(pluginInstance) {
       return fn_.apply(this_, arguments);
     };
   }
-  
-  var me = this;
+
   /** @private */
   function bindNamespaceMembers(nsParent, context) {
-    for (mstr in nsParent) {
-      member = nsParent[mstr];
+    for (var mstr in nsParent) {
+      var member = nsParent[mstr];
       
       // bind this namespace's functions to the given context
       if (geo.util.isFunction(member) &&
@@ -920,83 +1218,23 @@ var GEarthExtensions = function(pluginInstance) {
   
   bindNamespaceMembers(this, this);
 };
-/**
- * Converts between various color formats, i.e. '#rrggbb', to the KML color
- * format ('aabbggrr')
- * @param {string} arg The source color value.
- * @type {string}
- * @return A string in KML color format, i.e. 'aabbggrr'
- */
-GEarthExtensions.parseColor = function(arg) {
-  // detect #rrggbb and convert to kml color aabbggrr
-  // TODO: also accept rgb(0,0,0) format using regex, maybe even hsl?
-  if (geo.util.isArray(arg)) {
-    // expected array as [r,g,b] or [r,g,b,a]
-    
-    var pad2 = function(s) {
-      return ((s.length < 2) ? '0' : '') + s;
-    };
-
-    return pad2(((arg.length >= 4) ? arg[3].toString(16) : 'ff')) +
-           pad2(arg[2].toString(16)) +
-           pad2(arg[1].toString(16)) +
-           pad2(arg[0].toString());
-  } else if (typeof arg == 'string') {
-    // parsing a string
-    if (arg.length > 7) {
-      // if not stored as HTML color, assume it's stored as a
-      // KML color and return as is
-      // TODO: check for valid KML color using regex?
-      return arg;
-    } else if (arg.length > 4) {
-      // stored as full HTML color
-      return arg.replace(
-          /#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i,
-          'ff$3$2$1').toLowerCase();
-    } else {
-      // stored as shorthand HTML/CSS color (#fff)
-      return arg.replace(
-          /#?([0-9a-f])([0-9a-f])([0-9a-f])/i,
-          'ff$3$3$2$2$1$1').toLowerCase();
-    }
-  }
-};
-
-/**
- * Inline merges default values into a provided object literal (hash).
- */
-/*
-GEarthExtensions.mergeDefaults = function(explicitOptions, defaults) {
-  // shallow copy explicitOptions
-  var finalOptions = {};
-  for (member in (explicitOptions || {})) {
-    finalOptions[member] = explicitOptions[member];
-  }
-  
-  // copy in defaults
-  for (member in (defaults || {})) {
-    if (!(member in finalOptions)) {
-      finalOptions[member] = defaults[member];
-    }
-  }
-  
-  return finalOptions;
-};
-*/
-// TODO: unit test
-
+/** @private */
 GEarthExtensions.AUTO = Infinity; // for dom builder (auto property setters)
+
+/** @private */
 GEarthExtensions.ALLOWED = null;
+
+/** @private */
 GEarthExtensions.REQUIRED = undefined;
 
 /**
  * Checks a given parameters object against an parameter spec,
  * throwing exceptions as necessary, and returning the resulting options object
  * with defaults filled in.
- * @param {object} explicitParams The parameters object to check.
- * @param {boolean} allowAll Whether or not to allow all parameters, or limit
+ * @param {Object} explicitParams The parameters object to check.
+ * @param {Boolean} allowAll Whether or not to allow all parameters, or limit
  *     allowed parameters to those listed in the parameter spec.
- * @param {object} paramSpec The parameter spec, which should be an object whose
+ * @param {Object} paramSpec The parameter spec, which should be an object whose
  *     properties are the properties expected in the given parameters object and
  *     whose property values are GEarthExtensions.REQUIRED if the property is
  *     required or some other value to set a default value.
@@ -1011,11 +1249,11 @@ GEarthExtensions.checkParameters = function(explicitParams,
   explicitParams = explicitParams || {};
   paramSpec = paramSpec || {};
   
-  for (member in explicitParams) {
+  for (var member in explicitParams) {
     // if not allowing all, check that it's in the param spec
     if (!allowAll && !(member in paramSpec)) {
       var allowed = [];
-      for (m in paramSpec) {
+      for (var m in paramSpec) {
         allowed.push(m);
       }
       
@@ -1051,6 +1289,7 @@ GEarthExtensions.checkParameters = function(explicitParams,
 /**
  * Creates a new 'class' from the provided constructor function and mixes in
  * members of provided mixin classes.
+ * @private
  */
 GEarthExtensions.createClass_ = function() {
   var mixins = [];
@@ -1076,19 +1315,19 @@ GEarthExtensions.createClass_ = function() {
 
 /**
  * Determines whether or not the object is a GEarthExtensions namespace.
- * @param {object} object The object to test.
+ * @param {Object} object The object to test.
  * @private
  */
 GEarthExtensions.isExtensionsNamespace_ = function(object) {
   return object !== null && typeof object == 'object' &&
-      'isnamespace_' in object && member.isnamespace_;
+      'isnamespace_' in object && object.isnamespace_;
 };
 
 /**
  * Determines whether or not the given object is directly an instance
  * of the specified Earth API type.
- * @param {object} object The object to test.
- * @param {string} type The Earth API type string, i.e. 'KmlPlacemark'
+ * @param {Object} object The object to test.
+ * @param {String} type The Earth API type string, i.e. 'KmlPlacemark'
  */
 GEarthExtensions.isInstanceOfEarthInterface = function(object, type) {
   // TODO: double check that all earth interfaces are typeof 'function'
@@ -1096,16 +1335,16 @@ GEarthExtensions.isInstanceOfEarthInterface = function(object, type) {
       'getType' in object && object.getType() == type;
 };
 /**
- * The GEarthExtensions#dom class/namespace hybrid contains both DOM builder
- * functions and DOM manipulation functions.
- * @class
+ * Contains DOM builder functions (buildXX) and DOM
+ * manipulation/traversal functions.
+ * @namespace
  */
 GEarthExtensions.prototype.dom = {isnamespace_:true};
 
 /**
  * This is a sort of parametrized decorator around a fundamental constructor
  * DOM builder function,
- * it calls GEPlugin's createXX factory functions, allows for a type of
+ * it calls GEPlugin's buildXX factory functions, allows for a type of
  * inheritance, provides extra functionality such as automatic property setters,
  * default arguments (i.e. fn('bar', {cat:'dog'}) == fn({foo:'bar', cat:'dog'}))
  * and checking if the parameter is an instance of the object we're constructing
@@ -1126,7 +1365,7 @@ GEarthExtensions.domBuilder_ = function(params) {
         params.propertySpec = [];
       }
       
-      for (member in base.builderParams.propertySpec) {
+      for (var member in base.builderParams.propertySpec) {
         if (!(member in params.propertySpec)) {
           params.propertySpec[member] =
               base.builderParams.propertySpec[member];
@@ -1209,10 +1448,10 @@ GEarthExtensions.domBuilder_ = function(params) {
     options = GEarthExtensions.checkParameters(options,
         false, params.propertySpec);
     
-    // call Earth API factory function, i.e. createXx(...)
-    var newObj = this.pluginInstance[params.apiFactoryFn].call(
-                     this.pluginInstance, options.id);
-    
+    // call Earth API factory function, i.e. createXX(...)
+    var newObj = this.util.callMethod(
+                     this.pluginInstance, params.apiFactoryFn, options.id);
+
     // call constructor fn with factory-created object and options literal
     if (!geo.util.isUndefined(params.constructor)) {
       params.constructor.call(this, newObj, options);
@@ -1230,13 +1469,14 @@ GEarthExtensions.domBuilder_ = function(params) {
     }
     
     // run automatic property setters as defined in property spec
-    for (property in params.propertySpec) {
+    for (var property in params.propertySpec) {
       // TODO: abstract away into isAuto()
       if (params.propertySpec[property] === GEarthExtensions.AUTO &&
           property in options) {
         // auto setters calls newObj.setXx(options[xx]) if xx is in options
-        newObj['set' + property.substr(0,1).toUpperCase() +
-            property.substr(1)].call(newObj, options[property]);
+        this.util.callMethod(newObj,
+            'set' + property.charAt(0).toUpperCase() + property.substr(1),
+            options[property]);
       }
     }
     
@@ -1247,7 +1487,7 @@ GEarthExtensions.domBuilder_ = function(params) {
   return builderFn;
 };
 /** @ignore */
-GEarthExtensions.prototype.dom.createFeature_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
   propertySpec: {
     name: GEarthExtensions.AUTO,
     visibility: GEarthExtensions.AUTO,
@@ -1259,11 +1499,11 @@ GEarthExtensions.prototype.dom.createFeature_ = GEarthExtensions.domBuilder_({
 /**
  * Creates a new placemark with the given parameters.
  * @function
- * @param {object} options The parameters of the placemark to create.
- * @param {string} [options.name] The name of the feature.
- * @param {boolean} [options.visibility] Whether or not the feature should
+ * @param {Object} options The parameters of the placemark to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
  *     be visible.
- * @param {string} [options.description] An HTML description for the feature;
+ * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
  * @param {PointSpec} [options.point] A point geometry to use in the placemark.
  * @param {LineStringSpec} [options.lineString] A line string geometry to use
@@ -1279,9 +1519,9 @@ GEarthExtensions.prototype.dom.createFeature_ = GEarthExtensions.domBuilder_({
  * @type KmlPlacemark
  */
 // TODO: document styling
-GEarthExtensions.prototype.dom.createPlacemark = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPlacemark',
-  base: GEarthExtensions.prototype.dom.createFeature_,
+  base: GEarthExtensions.prototype.dom.buildFeature_,
   apiFactoryFn: 'createPlacemark',
   propertySpec: {
     // allowed geometries
@@ -1302,26 +1542,26 @@ GEarthExtensions.prototype.dom.createPlacemark = GEarthExtensions.domBuilder_({
     // geometries
     var geometries = [];
     if (options.point) {
-      geometries.push(this.dom.createPoint(options.point));
+      geometries.push(this.dom.buildPoint(options.point));
     }
     if (options.lineString) {
-      geometries.push(this.dom.createLineString(options.lineString));
+      geometries.push(this.dom.buildLineString(options.lineString));
     }
     if (options.linearRing) {
-      geometries.push(this.dom.createLinearRing(options.linearRing));
+      geometries.push(this.dom.buildLinearRing(options.linearRing));
     }
     if (options.polygon) {
-      geometries.push(this.dom.createPolygon(options.polygon));
+      geometries.push(this.dom.buildPolygon(options.polygon));
     }
     if (options.model) {
-      geometries.push(this.dom.createModel(options.model));
+      geometries.push(this.dom.buildModel(options.model));
     }
     if (options.geometries) {
       geometries = geometries.concat(options.geometries);
     }
   
     if (geometries.length > 1) {
-      placemarkObj.setGeometry(this.dom.createMultiGeometry(geometries));
+      placemarkObj.setGeometry(this.dom.buildMultiGeometry(geometries));
     } else if (geometries.length == 1) {
       placemarkObj.setGeometry(geometries[0]);
     }
@@ -1351,14 +1591,14 @@ GEarthExtensions.prototype.dom.createPlacemark = GEarthExtensions.domBuilder_({
         if (typeof options.style == 'string') {
           styleMap.setNormalStyleUrl(options.style);
         } else {
-          styleMap.setNormalStyle(this.dom.createStyle(options.style));
+          styleMap.setNormalStyle(this.dom.buildStyle(options.style));
         }
       
         // set highlight style
         if (typeof options.highlightStyle == 'string') {
           styleMap.setHighlightStyleUrl(options.highlightStyle);
         } else {
-          styleMap.setHighlightStyle(this.dom.createStyle(
+          styleMap.setHighlightStyle(this.dom.buildStyle(
               options.highlightStyle));
         }
       
@@ -1369,7 +1609,7 @@ GEarthExtensions.prototype.dom.createPlacemark = GEarthExtensions.domBuilder_({
         if (typeof options.style == 'string') {
           placemarkObj.setStyleUrl(options.style);
         } else {
-          placemarkObj.setStyleSelector(this.dom.createStyle(options.style));
+          placemarkObj.setStyleSelector(this.dom.buildStyle(options.style));
         }
       }
     }
@@ -1377,29 +1617,32 @@ GEarthExtensions.prototype.dom.createPlacemark = GEarthExtensions.domBuilder_({
 });
 
 /**
- * @see GEarthExtensions#dom.createPlacemark
+ * @see GEarthExtensions.dom.buildPlacemark
+ * @function
  */
-GEarthExtensions.prototype.dom.createPointPlacemark =
+GEarthExtensions.prototype.dom.buildPointPlacemark =
 GEarthExtensions.domBuilder_({
-  base: GEarthExtensions.prototype.dom.createPlacemark,
+  base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'point'
 });
 
 /**
- * @see GEarthExtensions#dom.createPlacemark
+ * @see GEarthExtensions.dom.buildPlacemark
+ * @function
  */
-GEarthExtensions.prototype.dom.createLineStringPlacemark =
+GEarthExtensions.prototype.dom.buildLineStringPlacemark =
 GEarthExtensions.domBuilder_({
-  base: GEarthExtensions.prototype.dom.createPlacemark,
+  base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'lineString'
 });
 
 /**
- * @see GEarthExtensions#dom.createPlacemark
+ * @see GEarthExtensions.dom.buildPlacemark
+ * @function
  */
-GEarthExtensions.prototype.dom.createPolygonPlacemark =
+GEarthExtensions.prototype.dom.buildPolygonPlacemark =
 GEarthExtensions.domBuilder_({
-  base: GEarthExtensions.prototype.dom.createPlacemark,
+  base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'polygon'
 });
 
@@ -1409,19 +1652,19 @@ GEarthExtensions.domBuilder_({
  * @function
  * @param {LinkSpec} [link] An object describing the link to use for this
  *     network link.
- * @param {object} options The parameters of the network link to create.
- * @param {string} [options.name] The name of the feature.
- * @param {boolean} [options.visibility] Whether or not the feature should
+ * @param {Object} options The parameters of the network link to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
  *     be visible.
- * @param {string} [options.description] An HTML description for the feature;
+ * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
  * @param {LinkSpec} [options.link] The link to use.
  * @type KmlNetworkLink
  */
-GEarthExtensions.prototype.dom.createNetworkLink =
+GEarthExtensions.prototype.dom.buildNetworkLink =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlNetworkLink',
-  base: GEarthExtensions.prototype.dom.createFeature_,
+  base: GEarthExtensions.prototype.dom.buildFeature_,
   apiFactoryFn: 'createNetworkLink',
   defaultProperty: 'link',
   propertySpec: {
@@ -1433,15 +1676,15 @@ GEarthExtensions.domBuilder_({
   },
   constructor: function(networkLinkObj, options) {
     if (options.link) {
-      networkLinkObj.setLink(this.dom.createLink(options.link));
+      networkLinkObj.setLink(this.dom.buildLink(options.link));
     }
   }
 });
 // TODO: unit tests
 
 /** @ignore */
-GEarthExtensions.prototype.dom.createContainer_ = GEarthExtensions.domBuilder_({
-  base: GEarthExtensions.prototype.dom.createFeature_,
+GEarthExtensions.prototype.dom.buildContainer_ = GEarthExtensions.domBuilder_({
+  base: GEarthExtensions.prototype.dom.buildFeature_,
   propertySpec: {
     children: GEarthExtensions.ALLOWED
   },
@@ -1459,18 +1702,18 @@ GEarthExtensions.prototype.dom.createContainer_ = GEarthExtensions.domBuilder_({
  * Creates a new folder with the given parameters.
  * @function
  * @param {KmlFeature[]} [children] The children of this folder.
- * @param {object} options The parameters of the folder to create.
- * @param {string} [options.name] The name of the feature.
- * @param {boolean} [options.visibility] Whether or not the feature should
+ * @param {Object} options The parameters of the folder to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
  *     be visible.
- * @param {string} [options.description] An HTML description for the feature;
+ * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
  * @param {KmlFeature[]} [options.children] The children of this folder.
  * @type KmlFolder
  */
-GEarthExtensions.prototype.dom.createFolder = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildFolder = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlFolder',
-  base: GEarthExtensions.prototype.dom.createContainer_,
+  base: GEarthExtensions.prototype.dom.buildContainer_,
   apiFactoryFn: 'createFolder',
   defaultProperty: 'children'
 });
@@ -1480,26 +1723,26 @@ GEarthExtensions.prototype.dom.createFolder = GEarthExtensions.domBuilder_({
  * Creates a new document with the given parameters.
  * @function
  * @param {KmlFeature[]} [children] The children of this document.
- * @param {object} options The parameters of the document to create.
- * @param {string} [options.name] The name of the feature.
- * @param {boolean} [options.visibility] Whether or not the feature should
+ * @param {Object} options The parameters of the document to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
  *     be visible.
- * @param {string} [options.description] An HTML description for the feature;
+ * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
  * @param {KmlFeature[]} [options.children] The children of this document.
  * @type KmlDocument
  */
-GEarthExtensions.prototype.dom.createDocument = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildDocument = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlDocument',
-  base: GEarthExtensions.prototype.dom.createContainer_,
+  base: GEarthExtensions.prototype.dom.buildContainer_,
   apiFactoryFn: 'createDocument',
   defaultProperty: 'children'
 });
 // TODO: unit tests
 
 /** @ignore */
-GEarthExtensions.prototype.dom.createOverlay_ = GEarthExtensions.domBuilder_({
-  base: GEarthExtensions.prototype.dom.createFeature_,
+GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
+  base: GEarthExtensions.prototype.dom.buildFeature_,
   propertySpec: {
     color: GEarthExtensions.ALLOWED,
     icon: GEarthExtensions.ALLOWED,
@@ -1510,7 +1753,7 @@ GEarthExtensions.prototype.dom.createOverlay_ = GEarthExtensions.domBuilder_({
   constructor: function(overlayObj, options) {
     // color
     if (options.color) {
-      overlayObj.getColor().set(GEarthExtensions.parseColor(options.color));
+      overlayObj.getColor().set(this.util.parseColor(options.color));
     }
   
     // icon
@@ -1528,12 +1771,13 @@ GEarthExtensions.prototype.dom.createOverlay_ = GEarthExtensions.domBuilder_({
 
 /**
  * Creates a new ground overlay with the given parameters.
+ * @function
  */
 // TODO: documentation
-GEarthExtensions.prototype.dom.createGroundOverlay =
+GEarthExtensions.prototype.dom.buildGroundOverlay =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlGroundOverlay',
-  base: GEarthExtensions.prototype.dom.createOverlay_,
+  base: GEarthExtensions.prototype.dom.buildOverlay_,
   apiFactoryFn: 'createGroundOverlay',
   defaultProperty: 'icon',
   propertySpec: {
@@ -1557,6 +1801,42 @@ GEarthExtensions.domBuilder_({
 });
 
 
+
+/**
+ * Creates a new screen overlay with the given parameters.
+ * @function
+ */
+// TODO: documentation
+GEarthExtensions.prototype.dom.buildScreenOverlay =
+GEarthExtensions.domBuilder_({
+  apiInterface: 'KmlScreenOverlay',
+  base: GEarthExtensions.prototype.dom.buildOverlay_,
+  apiFactoryFn: 'createScreenOverlay',
+  defaultProperty: 'icon',
+  propertySpec: {
+    // required properties
+    overlayXY: GEarthExtensions.REQUIRED,
+    screenXY: GEarthExtensions.REQUIRED,
+    size: GEarthExtensions.REQUIRED,
+
+    // auto properties
+    rotation: GEarthExtensions.AUTO,
+
+    // optional properties
+    rotationXY: GEarthExtensions.ALLOWED
+  },
+  constructor: function(screenOverlayObj, options) {
+    this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
+    this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
+    this.dom.setVec2(screenOverlayObj.getSize(), options.size);
+
+    if ('rotationXY' in options) {
+      this.dom.setVec2(screenOverlayObj.getRotationXY(), options.rotationXY);
+    }
+  }
+});
+// TODO: unit tests
+
 //////////////////////////////
 // GEarthExtensions#dom shortcut functions
 
@@ -1569,7 +1849,7 @@ GEarthExtensions.domBuilder_({
     GEarthExtensions.prototype.dom['add' + autoShortcut[i]] =
       function(shortcutBase) {
         return function() {
-          var obj = this.dom['create' + shortcutBase].apply(null, arguments);
+          var obj = this.dom['build' + shortcutBase].apply(null, arguments);
           this.pluginInstance.getFeatures().appendChild(obj);
           return obj;
         };
@@ -1577,7 +1857,7 @@ GEarthExtensions.domBuilder_({
   }
 })();
 /** @ignore */
-GEarthExtensions.prototype.dom.createExtrudableGeometry_ =
+GEarthExtensions.prototype.dom.buildExtrudableGeometry_ =
 GEarthExtensions.domBuilder_({
   propertySpec: {
     altitudeMode: GEarthExtensions.AUTO,
@@ -1590,17 +1870,17 @@ GEarthExtensions.domBuilder_({
  * Creates a new point geometry with the given parameters.
  * @function
  * @param {PointSpec} [point] The point data.
- * @param {object} options The parameters of the point object to create.
+ * @param {Object} options The parameters of the point object to create.
  * @param {PointSpec} [options.point] The point data.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
  * @type KmlPoint
  */
-GEarthExtensions.prototype.dom.createPoint = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPoint',
-  base: GEarthExtensions.prototype.dom.createExtrudableGeometry_,
+  base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPoint',
   defaultProperty: 'point',
   propertySpec: {
@@ -1609,10 +1889,10 @@ GEarthExtensions.prototype.dom.createPoint = GEarthExtensions.domBuilder_({
   constructor: function(pointObj, options) {
     var point = new geo.Point(options.point);
     pointObj.set(
-        point.lat,
-        point.lng,
-        point.altitude,
-        point.altitudeMode,
+        point.lat(),
+        point.lng(),
+        point.altitude(),
+        point.altitudeMode(),
         false,
         false);
   }
@@ -1623,19 +1903,19 @@ GEarthExtensions.prototype.dom.createPoint = GEarthExtensions.domBuilder_({
  * Creates a new line string geometry with the given parameters.
  * @function
  * @param {PathSpec} [path] The path data.
- * @param {object} options The parameters of the line string to create.
+ * @param {Object} options The parameters of the line string to create.
  * @param {PathSpec} [options.path] The path data.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
- * @param {boolean} [options.tessellate] Whether or not the geometry should
+ * @param {Boolean} [options.tessellate] Whether or not the geometry should
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLineString
  */
-GEarthExtensions.prototype.dom.createLineString = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLineString',
-  base: GEarthExtensions.prototype.dom.createExtrudableGeometry_,
+  base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createLineString',
   defaultProperty: 'path',
   propertySpec: {
@@ -1649,8 +1929,8 @@ GEarthExtensions.prototype.dom.createLineString = GEarthExtensions.domBuilder_({
     var path = new geo.Path(options.path);
     var numCoords = path.numCoords();
     for (var i = 0; i < numCoords; i++) {
-      coordsObj.pushLatLngAlt(path.coord(i).lat, path.coord(i).lng,
-          path.coord(i).altitude);
+      coordsObj.pushLatLngAlt(path.coord(i).lat(), path.coord(i).lng(),
+          path.coord(i).altitude());
     }
   }
 });
@@ -1661,20 +1941,20 @@ GEarthExtensions.prototype.dom.createLineString = GEarthExtensions.domBuilder_({
  * @function
  * @param {PathSpec} [path] The path data.
  *     The first coordinate doesn't need to be repeated at the end.
- * @param {object} options The parameters of the linear ring to create.
+ * @param {Object} options The parameters of the linear ring to create.
  * @param {PathSpec} [options.path] The path data.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
- * @param {boolean} [options.tessellate] Whether or not the geometry should
+ * @param {Boolean} [options.tessellate] Whether or not the geometry should
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLinearRing
  */
-GEarthExtensions.prototype.dom.createLinearRing = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLinearRing',
-  base: GEarthExtensions.prototype.dom.createLineString,
+  base: GEarthExtensions.prototype.dom.buildLineString,
   apiFactoryFn: 'createLinearRing',
   defaultProperty: 'path',
   constructor: function(linearRingObj, options) {
@@ -1691,19 +1971,19 @@ GEarthExtensions.prototype.dom.createLinearRing = GEarthExtensions.domBuilder_({
  * Creates a new polygon geometry with the given parameters.
  * @function
  * @param {PolygonSpec} [polygon] The polygon data.
- * @param {object} options The parameters of the polygon to create.
+ * @param {Object} options The parameters of the polygon to create.
  * @param {PolygonSpec} [options.polygon] The polygon data.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
- * @param {boolean} [options.tessellate] Whether or not the geometry should
+ * @param {Boolean} [options.tessellate] Whether or not the geometry should
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlPolygon
  */
-GEarthExtensions.prototype.dom.createPolygon = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPolygon',
-  base: GEarthExtensions.prototype.dom.createExtrudableGeometry_,
+  base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPolygon',
   defaultProperty: 'polygon',
   propertySpec: {
@@ -1713,12 +1993,12 @@ GEarthExtensions.prototype.dom.createPolygon = GEarthExtensions.domBuilder_({
     var polygon = new geo.Polygon(options.polygon);
   
     polygonObj.setOuterBoundary(
-        this.dom.createLinearRing(polygon.outerBoundary()));
+        this.dom.buildLinearRing(polygon.outerBoundary()));
     if (polygon.innerBoundaries().length) {
       var innerBoundaries = polygon.innerBoundaries();
       for (var i = 0; i < innerBoundaries.length; i++) {
         polygonObj.getInnerBoundaries().appendChild(
-            this.dom.createLinearRing(innerBoundaries[i]));
+            this.dom.buildLinearRing(innerBoundaries[i]));
       }
     }
   }
@@ -1729,19 +2009,19 @@ GEarthExtensions.prototype.dom.createPolygon = GEarthExtensions.domBuilder_({
  * Creates a new model geometry with the given parameters.
  * @function
  * @param {LinkSpec} [link] The remote link this model should use.
- * @param {object} options The parameters of the model to create.
+ * @param {Object} options The parameters of the model to create.
  * @param {LinkSpec} [options.link] The remote link this model should use.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {PointSpec} [options.location] The location of the model.
- * @param {number|number[]} [options.scale] The scale factor of the model.
- * @param {object} [options.orientation] The orientation of the model.
- * @param {number} [options.orientation.heading] The model heading.
- * @param {number} [options.orientation.tilt] The model tilt.
- * @param {number} [options.orientation.roll] The model roll.
+ * @param {Number|Number[]} [options.scale] The scale factor of the model.
+ * @param {Object} [options.orientation] The orientation of the model.
+ * @param {Number} [options.orientation.heading] The model heading.
+ * @param {Number} [options.orientation.tilt] The model tilt.
+ * @param {Number} [options.orientation.roll] The model roll.
  * @type KmlPolygon
  */
-GEarthExtensions.prototype.dom.createModel = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlModel',
   apiFactoryFn: 'createModel',
   defaultProperty: 'link',
@@ -1753,15 +2033,16 @@ GEarthExtensions.prototype.dom.createModel = GEarthExtensions.domBuilder_({
   },
   constructor: function(modelObj, options) {
     if (options.link) {
-      modelObj.setLink(this.dom.createLink(options.link));
+      modelObj.setLink(this.dom.buildLink(options.link));
     }
   
     if (options.location) {
       var pointObj = new geo.Point(options.location);
       var locationObj = this.pluginInstance.createLocation('');
-      locationObj.setLatLngAlt(pointObj.lat, pointObj.lng, pointObj.altitude);
+      locationObj.setLatLngAlt(pointObj.lat(), pointObj.lng(),
+          pointObj.altitude());
       modelObj.setLocation(locationObj);
-      modelObj.setAltitudeMode(pointObj.altitudeMode);
+      modelObj.setAltitudeMode(pointObj.altitudeMode());
     }
   
     if (options.scale) {
@@ -1794,11 +2075,11 @@ GEarthExtensions.prototype.dom.createModel = GEarthExtensions.domBuilder_({
  * Creates a new multi-geometry with the given parameters.
  * @function
  * @param {KmlGeometry[]} [geometries] The child geometries.
- * @param {object} options The parameters of the multi-geometry to create.
+ * @param {Object} options The parameters of the multi-geometry to create.
  * @param {KmlGeometry[]} [options.geometries] The child geometries.
  * @type KmlMultiGeometry
  */
-GEarthExtensions.prototype.dom.createMultiGeometry =
+GEarthExtensions.prototype.dom.buildMultiGeometry =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlMultiGeometry',
   apiFactoryFn: 'createMultiGeometry',
@@ -1820,17 +2101,17 @@ GEarthExtensions.domBuilder_({
 /**
  * Creates a new link object with the given parameters.
  * @function
- * @param {string} [href] The link href.
- * @param {object} options The link parameters.
- * @param {string} [options.href] The link href.
+ * @param {String} [href] The link href.
+ * @param {Object} options The link parameters.
+ * @param {String} [options.href] The link href.
  * @param {KmlRefreshModeEnum} [options.refreshMode] The link refresh mode.
- * @param {number} [options.refreshInterval] The link refresh interval,
+ * @param {Number} [options.refreshInterval] The link refresh interval,
  *     in seconds.
  * @param {KmlViewRefreshModeEnum} [options.viewRefreshMode] The view-based
  *     refresh mode.
  * @type KmlLink
  */
-GEarthExtensions.prototype.dom.createLink = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLink',
   apiFactoryFn: 'createLink',
   defaultProperty: 'href',
@@ -1846,35 +2127,34 @@ GEarthExtensions.prototype.dom.createLink = GEarthExtensions.domBuilder_({
 /**
  * Creates a new style with the given parameters.
  * @function
- * @param {object} options The style parameters.
- 
- * @param {string|object} [options.icon] The icon href or an icon
+ * @param {Object} options The style parameters.
+ * @param {String|Object} [options.icon] The icon href or an icon
  *     object literal.
- * @param {string} [options.icon.href] The icon href.
- * @param {number} [options.icon.scale] The icon scaling factor.
+ * @param {String} [options.icon.href] The icon href.
+ * @param {Number} [options.icon.scale] The icon scaling factor.
  * @param {ColorSpec} [options.icon.color] The color of the icon.
  
- * @param {ColorSpec|object} [options.label] The label color or a label
+ * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
- * @param {number} [options.label.scale] The label scaling factor.
+ * @param {Number} [options.label.scale] The label scaling factor.
  * @param {ColorSpec} [options.label.color] The color of the label.
 
- * @param {ColorSpec|object} [options.line] The line color or a line
+ * @param {ColorSpec|Object} [options.line] The line color or a line
  *     object literal.
- * @param {number} [options.line.width] The line width.
+ * @param {Number} [options.line.width] The line width.
  * @param {ColorSpec} [options.line.color] The line color.
 
- * @param {ColorSpec|object} [options.poly] The polygon color or a polygon style
+ * @param {ColorSpec|Object} [options.poly] The polygon color or a polygon style
  *     object literal.
- * @param {boolean} [options.poly.fill] Whether or not the polygon will be
+ * @param {Boolean} [options.poly.fill] Whether or not the polygon will be
  *     filled.
- * @param {boolean} [options.poly.outline] Whether or not the polygon will have
+ * @param {Boolean} [options.poly.outline] Whether or not the polygon will have
  *     an outline.
  * @param {ColorSpec} [options.poly.color] The color of the polygon fill.
 
  * @type KmlStyle
  */
-GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
   apiInterface: ['KmlStyle', 'KmlStyleMap'],
   apiFactoryFn: 'createStyle',
   propertySpec: {
@@ -1887,7 +2167,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
     // set icon style
     if (options.icon) {
       var iconStyle = styleObj.getIconStyle();
-    
+
       if (typeof options.icon == 'string') {
         options.icon = { href: options.icon };
       }
@@ -1899,12 +2179,12 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       if ('href' in options.icon) {
         icon.setHref(options.icon.href);
       } else if ('stockIcon' in options.icon) {
-        icon.setHref('http://maps.google.com/mapfiles/kml/paddle/' +
+        icon.setHref('http://maps.google.com/mapfiles/kml/' +
             options.icon.stockIcon + '.png');
       } else {
         // use default icon href
-        icon.setHref('http://maps.google.com/mapfiles/kml/paddle/' +
-            'wht-blank.png');
+        icon.setHref('http://maps.google.com/mapfiles/kml/' +
+            'paddle/wht-blank.png');
         iconStyle.getHotSpot().set(0.5, this.pluginInstance.UNITS_FRACTION,
             0, this.pluginInstance.UNITS_FRACTION);
       }
@@ -1916,7 +2196,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.icon) {
         iconStyle.getColor().set(
-            GEarthExtensions.parseColor(options.icon.color));
+            this.util.parseColor(options.icon.color));
       }
       if ('hotSpot' in options.icon) {
         this.dom.setVec2(iconStyle.getHotSpot(), options.icon.hotSpot);
@@ -1938,7 +2218,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.label) {
         labelStyle.getColor().set(
-            GEarthExtensions.parseColor(options.label.color));
+            this.util.parseColor(options.label.color));
       }
       // TODO: add colormode
     }
@@ -1957,7 +2237,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.line) {
         lineStyle.getColor().set(
-            GEarthExtensions.parseColor(options.line.color));
+            this.util.parseColor(options.line.color));
       }
       // TODO: add colormode
     }
@@ -1979,7 +2259,7 @@ GEarthExtensions.prototype.dom.createStyle = GEarthExtensions.domBuilder_({
       }
       if ('color' in options.poly) {
         polyStyle.getColor().set(
-            GEarthExtensions.parseColor(options.poly.color));
+            this.util.parseColor(options.poly.color));
       }
       // TODO: add colormode
     }
@@ -2012,9 +2292,9 @@ GEarthExtensions.prototype.dom.clearFeatures = function() {
  *     return false in the function.
  * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
  *     to walk.
- * @param {boolean} [options.features] Descend into feature containers?
+ * @param {Boolean} [options.features] Descend into feature containers?
  *     Default true.
- * @param {boolean} [options.geometries] Descend into geometry containers?
+ * @param {Boolean} [options.geometries] Descend into geometry containers?
  *     Default false.
  * @param {Object} [options.rootContext] The application-specific context to
  *     pass to the root item.
@@ -2108,7 +2388,7 @@ GEarthExtensions.prototype.dom.walk = function() {
 
 /**
  * Gets the object in the Earth DOM with the given id.
- * @param {string} id The id of the object to retrieve.
+ * @param {String} id The id of the object to retrieve.
  * @return Returns the object with the given id, or null if it was not found.
  */
 GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
@@ -2182,7 +2462,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     if (typeof options.left == 'number') {
       x = options.left;
     } else if (typeof options.left == 'string' &&
-               options.left[options.left.length - 1] == '%') {
+               options.left.charAt(options.left.length - 1) == '%') {
       x = parseFloat(options.left) / 100;
       xUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -2194,7 +2474,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
       x = options.right;
       xUnits = this.pluginInstance.UNITS_INSET_PIXELS;
     } else if (typeof options.right == 'string' &&
-               options.right[options.right.length - 1] == '%') {
+               options.right.charAt(options.right.length - 1) == '%') {
       x = 1.0 - parseFloat(options.right) / 100;
       xUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -2208,7 +2488,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     if (typeof options.bottom == 'number') {
       y = options.bottom;
     } else if (typeof options.bottom == 'string' &&
-               options.bottom[options.bottom.length - 1] == '%') {
+               options.bottom.charAt(options.bottom.length - 1) == '%') {
       y = parseFloat(options.bottom) / 100;
       yUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -2220,7 +2500,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
       y = options.top;
       yUnits = this.pluginInstance.UNITS_INSET_PIXELS;
     } else if (typeof options.top == 'string' &&
-               options.top[options.top.length - 1] == '%') {
+               options.top.charAt(options.top.length - 1) == '%') {
       y = 1.0 - parseFloat(options.top) / 100;
       yUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -2235,17 +2515,17 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
  * Creates a new lookat object with the given parameters.
  * @function
  * @param {PointSpec} [point] The point to look at.
- * @param {object} options The parameters of the lookat object to create.
+ * @param {Object} options The parameters of the lookat object to create.
  * @param {PointSpec} [options.point] The point to look at.
- * @param {boolean} [options.copy] Whether or not to copy parameters from the
+ * @param {Boolean} [options.copy] Whether or not to copy parameters from the
  *     existing view if they aren't explicitly specified in the options.
- * @param {number} [options.heading] The lookat heading/direction.
- * @param {number} [options.tilt] The lookat tilt.
- * @param {number} [options.range] The range of the camera (distance from the
+ * @param {Number} [options.heading] The lookat heading/direction.
+ * @param {Number} [options.tilt] The lookat tilt.
+ * @param {Number} [options.range] The range of the camera (distance from the
  *     lookat point).
  * @type KmlLookAt
  */
-GEarthExtensions.prototype.dom.createLookAt = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLookAt',
   apiFactoryFn: 'createLookAt',
   defaultProperty: 'point',
@@ -2275,10 +2555,10 @@ GEarthExtensions.prototype.dom.createLookAt = GEarthExtensions.domBuilder_({
     options = GEarthExtensions.checkParameters(options, true, defaults);
   
     lookAtObj.set(
-        point.lat,
-        point.lng,
-        point.altitude,
-        point.altitudeMode,
+        point.lat(),
+        point.lng(),
+        point.altitude(),
+        point.altitudeMode(),
         options.heading,
         options.tilt,
         options.range);
@@ -2290,16 +2570,16 @@ GEarthExtensions.prototype.dom.createLookAt = GEarthExtensions.domBuilder_({
  * Creates a new camera object with the given parameters.
  * @function
  * @param {PointSpec} [point] The point at which to place the camera.
- * @param {object} options The parameters of the camera object to create.
+ * @param {Object} options The parameters of the camera object to create.
  * @param {PointSpec} [options.point] The point at which to place the camera.
- * @param {boolean} [options.copy] Whether or not to copy parameters from the
+ * @param {Boolean} [options.copy] Whether or not to copy parameters from the
  *     existing view if they aren't explicitly specified in the options.
- * @param {number} [options.heading] The camera heading/direction.
- * @param {number} [options.tilt] The camera tilt.
- * @param {number} [options.range] The camera roll.
+ * @param {Number} [options.heading] The camera heading/direction.
+ * @param {Number} [options.tilt] The camera tilt.
+ * @param {Number} [options.range] The camera roll.
  * @type KmlCamera
  */
-GEarthExtensions.prototype.dom.createCamera = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlCamera',
   apiFactoryFn: 'createCamera',
   defaultProperty: 'point',
@@ -2329,10 +2609,10 @@ GEarthExtensions.prototype.dom.createCamera = GEarthExtensions.domBuilder_({
     options = GEarthExtensions.checkParameters(options, true, defaults);
   
     cameraObj.set(
-        point.lat,
-        point.lng,
-        point.altitude,
-        point.altitudeMode,
+        point.lat(),
+        point.lng(),
+        point.altitude(),
+        point.altitudeMode(),
         options.heading,
         options.tilt,
         options.roll);
@@ -2340,148 +2620,684 @@ GEarthExtensions.prototype.dom.createCamera = GEarthExtensions.domBuilder_({
 });
 // TODO: incrementLookAt
 /**
- * The GEarthExtensions#edit class/namespace hybrid contains methods for
- * allowing editing of Earth features.
+ * Contains methods for allowing user-interactive editing of features inside
+ * the Google Earth Plugin.
  * @namespace
  */
 GEarthExtensions.prototype.edit = {isnamespace_:true};
 /**
  * Make a placemark draggable.
- * NOTE: this doesn't work with multi geometries yet.
+ * TODO: make this work with multi-geometries
  */
 (function() {
   // NOTE: this is shared across all GEarthExtensions instances
-  var currentDragData_ = null;
-  
-  function makeMouseDownListener_(extInstance) {
-    return function(event) {
-      // TODO: check if getTarget() is draggable and is a placemark
-      currentDragData_ = {
-        placemark: event.getTarget(),
-        dragged: false
-      };
-      
-      // get placemark's draggable options
-      var placemarkDragData = extInstance.util.getJsDataValue(
-          currentDragData_.placemark,
-          '_GEarthExtensions_dragData').draggableOptions || {};
-      
-      // animate
-      if (placemarkDragData.bounce) {
-        extInstance.fx.cancel(currentDragData_.placemark);
-        extInstance.fx.bounce(currentDragData_.placemark, {
-          phase: 1
-        });
-      }
-    
-      // listen for mousemove on the globe
-      google.earth.addEventListener(extInstance.pluginInstance.getWindow(),
-          'mousemove', extInstance.fx.dragListeners_.mouseMove);
+  var currentDragContext_ = null;
 
-      // listen for mouseup on the window
-      google.earth.addEventListener(extInstance.pluginInstance.getWindow(),
-          'mouseup', extInstance.fx.dragListeners_.mouseUp);
+  var DRAGDATA_JSDATA_KEY = '_GEarthExtensions_dragData';
+
+  function beginDragging_(extInstance, placemark, x, y) {
+    // get placemark's drag data
+    var placemarkDragData = extInstance.util.getJsDataValue(
+        placemark, DRAGDATA_JSDATA_KEY) || {};
+
+    currentDragContext_ = {
+      placemark: placemark,
+      dragCallback: placemarkDragData.draggableOptions.dragCallback,
+      dropCallback: placemarkDragData.draggableOptions.dropCallback,
+      dragged: false
     };
+
+    // animate
+    if (placemarkDragData.draggableOptions.bounce) {
+      extInstance.fx.cancel(currentDragContext_.placemark);
+      extInstance.fx.bounce(currentDragContext_.placemark, {
+        phase: 1
+      });
+    }
+
+    // set dragging style
+    if (placemarkDragData.draggableOptions.draggingStyle) {
+      placemarkDragData.oldStyle =
+          currentDragContext_.placemark.getStyleSelector();
+      currentDragContext_.placemark.setStyleSelector(
+          placemarkDragData.draggableOptions.draggingStyle);
+    }
+
+    // show 'target' screen overlay
+    if (placemarkDragData.draggableOptions.targetScreenOverlay) {
+      var overlay = extInstance.dom.buildScreenOverlay(
+          placemarkDragData.draggableOptions.targetScreenOverlay);
+      extInstance.dom.setVec2(overlay.getOverlayXY(), { left: x, top: y });
+      extInstance.pluginInstance.getFeatures().appendChild(overlay);
+      currentDragContext_.activeTargetScreenOverlay = overlay;
+    }
   }
-  
+
   function makeMouseMoveListener_(extInstance) {
     return function(event) {
-      if (currentDragData_ && event.getDidHitGlobe()) {
+      if (currentDragContext_) {
         event.preventDefault();
-        var point = currentDragData_.placemark.getGeometry();
+
+        if (!event.getDidHitGlobe()) {
+          return;
+        }
+
+        // move 'target' screen overlay
+        if (currentDragContext_.activeTargetScreenOverlay) {
+          extInstance.dom.setVec2(
+              currentDragContext_.activeTargetScreenOverlay.getOverlayXY(),
+              { left: event.getClientX(), top: event.getClientY() });
+        }
+
+        // TODO: allow for non-point dragging (models?)
+        var point = currentDragContext_.placemark.getGeometry();
         point.setLatitude(event.getLatitude());
         point.setLongitude(event.getLongitude());
-        currentDragData_.dragged = true;
+        currentDragContext_.dragged = true;
+
+        if (currentDragContext_.dragCallback) {
+          currentDragContext_.dragCallback.call(currentDragContext_.placemark);
+        }
       }
     };
   }
-  
-  function makeMouseUpListener_(extInstance) {
-    return function(event) {
-      if (currentDragData_) {
-        // get placemark's draggable options
-        var placemarkDragData = extInstance.util.getJsDataValue(
-            currentDragData_.placemark,
-            '_GEarthExtensions_dragData').draggableOptions || {};
-        
-        // listen for mousemove on the globe
-        google.earth.removeEventListener(extInstance.pluginInstance.getWindow(),
-            'mousemove', extInstance.fx.dragListeners_.mouseMove);
 
-        // listen for mouseup on the window
-        google.earth.removeEventListener(extInstance.pluginInstance.getWindow(),
-            'mouseup', extInstance.fx.dragListeners_.mouseUp);
-        
-        // animate
-        if (placemarkDragData.bounce) {
-          extInstance.fx.cancel(currentDragData_.placemark);
-          extInstance.fx.bounce(currentDragData_.placemark, {
-            startAltitude: 0,
-            phase: 2,
-            repeat: 1,
-            dampen: 0.3
-          });
-        }
+  function stopDragging_(extInstance, abort) {
+    if (currentDragContext_) {
+      // get placemark's draggable data
+      var placemarkDragData = extInstance.util.getJsDataValue(
+          currentDragContext_.placemark, DRAGDATA_JSDATA_KEY) || {};
 
-        if (currentDragData_.dragged) {
-          // if the placemark was dragged, prevent balloons from popping up
-          event.preventDefault();
-
-          if (placemarkDragData.dropCallback) {
-            placemarkDragData.dropCallback.call(currentDragData_.placemark);
-          }
-        }
-        
-        currentDragData_ = null;
+      // unset dragging style
+      if (placemarkDragData.oldStyle) {
+        currentDragContext_.placemark.setStyleSelector(
+            placemarkDragData.oldStyle);
+        delete placemarkDragData.oldStyle;
       }
-    };
+
+      // remove 'target' screen overlay
+      if (currentDragContext_.activeTargetScreenOverlay) {
+        extInstance.pluginInstance.getFeatures().removeChild(
+            currentDragContext_.activeTargetScreenOverlay);
+        delete currentDragContext_.activeTargetScreenOverlay;
+      }
+
+      // animate
+      if (placemarkDragData.draggableOptions.bounce) {
+        extInstance.fx.cancel(currentDragContext_.placemark);
+        extInstance.fx.bounce(currentDragContext_.placemark, {
+          startAltitude: 0,
+          phase: 2,
+          repeat: 1,
+          dampen: 0.3
+        });
+      }
+
+      if (currentDragContext_.dragged &&
+          currentDragContext_.dropCallback && !abort) {
+        currentDragContext_.dropCallback.call(currentDragContext_.placemark);
+      }
+
+      currentDragContext_ = null;
+    }
   }
-  
+
+  // TODO: docs
   GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
+    this.edit.endDraggable(placemark);
+
     // TODO: assert this is a point placemark
     options = GEarthExtensions.checkParameters(options, false, {
       bounce: true,
-      dropCallback: GEarthExtensions.ALLOWED
+      dragCallback: GEarthExtensions.ALLOWED,
+      dropCallback: GEarthExtensions.ALLOWED,
+      draggingStyle: GEarthExtensions.ALLOWED,
+      targetScreenOverlay: GEarthExtensions.ALLOWED
     });
-    
-    if (!this.fx.dragListeners_) {
-      this.fx.dragListeners_ = {
-        mouseDown: makeMouseDownListener_(this),
-        mouseMove: makeMouseMoveListener_(this),
-        mouseUp: makeMouseUpListener_(this)
-      };
+
+    var me = this;
+
+    // create a mouse move listener for use once dragging has begun
+    var mouseMoveListener = makeMouseMoveListener_(me);
+
+    // create a mouse up listener for use once dragging has begun
+    var mouseUpListener;
+    mouseUpListener = function(event) {
+      if (currentDragContext_ && event.getButton() == 0) {
+        // remove listener for mousemove on the globe
+        google.earth.removeEventListener(me.pluginInstance.getWindow(),
+            'mousemove', mouseMoveListener);
+
+        // remove listener for mouseup on the window
+        google.earth.removeEventListener(me.pluginInstance.getWindow(),
+            'mouseup', mouseUpListener);
+
+        if (currentDragContext_.dragged) {
+          // if the placemark was dragged, prevent balloons from popping up
+          event.preventDefault();
+        }
+
+        stopDragging_(me);
+      }
+    };
+
+    // create a mouse down listener
+    var mouseDownListener = function(event) {
+      if (event.getButton() == 0) {
+        // TODO: check if getTarget() is draggable and is a placemark
+        beginDragging_(me, event.getTarget(),
+            event.getClientX(), event.getClientY());
+
+        // listen for mousemove on the globe
+        google.earth.addEventListener(me.pluginInstance.getWindow(),
+            'mousemove', mouseMoveListener);
+
+        // listen for mouseup on the window
+        google.earth.addEventListener(me.pluginInstance.getWindow(),
+            'mouseup', mouseUpListener);
+      }
+    };
+
+    // persist drag options for use in listeners
+    this.util.setJsDataValue(placemark, DRAGDATA_JSDATA_KEY, {
+      draggableOptions: options,
+      abortAndEndFn: function() {
+        if (currentDragContext_ &&
+            currentDragContext_.placemark.equals(placemark)) {
+          // remove listener for mousemove on the globe
+          google.earth.removeEventListener(me.pluginInstance.getWindow(),
+              'mousemove', mouseMoveListener);
+
+          // remove listener for mouseup on the window
+          google.earth.removeEventListener(me.pluginInstance.getWindow(),
+              'mouseup', mouseUpListener);
+
+          stopDragging_(me, true); // abort
+        }
+
+        google.earth.removeEventListener(placemark, 'mousedown',
+            mouseDownListener);
+      }
+    });
+
+    // listen for mousedown on the placemark
+    google.earth.addEventListener(placemark, 'mousedown', mouseDownListener);
+  };
+
+  // TODO: docs
+  GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
+    // get placemark's drag data
+    var placemarkDragData = this.util.getJsDataValue(
+        placemark, DRAGDATA_JSDATA_KEY);
+
+    // stop listening for mousedown on the window
+    if (placemarkDragData) {
+      placemarkDragData.abortAndEndFn.call();
+
+      this.util.clearJsDataValue(placemark, DRAGDATA_JSDATA_KEY);
     }
-  
-    // listen for mousedown on the window (look specifically for
-    // point placemarks)
-    google.earth.addEventListener(placemark, 'mousedown',
-        this.fx.dragListeners_.mouseDown);
+  };
+
+  // TODO: docs
+  GEarthExtensions.prototype.edit.place = function(placemark, options) {
+    // TODO: assert this is a point placemark
+    options = GEarthExtensions.checkParameters(options, false, {
+      bounce: true,
+      dragCallback: GEarthExtensions.ALLOWED,
+      dropCallback: GEarthExtensions.ALLOWED,
+      draggingStyle: GEarthExtensions.ALLOWED,
+      targetScreenOverlay: GEarthExtensions.ALLOWED
+    });
+
+    var me = this;
+
+    // create a mouse move listener
+    var mouseMoveListener = makeMouseMoveListener_(me);
+
+    // create a mouse down listener
+    var mouseDownListener;
+    mouseDownListener = function(event) {
+      if (currentDragContext_ && event.getButton() == 0) {
+        // remove listener for mousemove on the globe
+        google.earth.removeEventListener(me.pluginInstance.getWindow(),
+            'mousemove', mouseMoveListener);
+
+        // remove listener for mouseup on the window
+        google.earth.removeEventListener(me.pluginInstance.getWindow(),
+            'mousedown', mouseDownListener);
+
+        stopDragging_(me);
+      }
+    };
+
+    // persist drag options for use in listeners
+    this.util.setJsDataValue(placemark, DRAGDATA_JSDATA_KEY, {
+      draggableOptions: options,
+      abortAndEndFn: function() {
+        if (currentDragContext_ &&
+            currentDragContext_.placemark.equals(placemark)) {
+          // remove listener for mousemove on the globe
+          google.earth.removeEventListener(me.pluginInstance.getWindow(),
+              'mousemove', mouseMoveListener);
+
+          // remove listener for mouseup on the window
+          google.earth.removeEventListener(me.pluginInstance.getWindow(),
+              'mousedown', mouseDownListener);
+
+          stopDragging_(me, true); // abort
+        }
+
+        google.earth.removeEventListener(placemark, 'mousedown',
+            mouseDownListener);
+      }
+    });
+
+    // enter dragging mode right away to 'place' the placemark on the globe
+    beginDragging_(me, placemark, -999, -999);
+
+    // listen for mousemove on the window
+    google.earth.addEventListener(me.pluginInstance.getWindow(),
+        'mousemove', mouseMoveListener);
+
+    // listen for mousedown on the window
+    google.earth.addEventListener(me.pluginInstance.getWindow(),
+        'mousedown', mouseDownListener);
+  };
+}());
+(function() {
+
+  var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
+
+  GEarthExtensions.prototype.edit.drawLineString = function(lineString) {
+    var lineStringEditData = this.util.getJsDataValue(
+        lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
+    if (lineStringEditData) {
+      this.edit.endEditLineString(lineString);
+    }
+
+    var coords = lineString.getCoordinates();
+
+    var innerDoc = this.pluginInstance.parseKml(
+        '<Document>' +
+        '<Style id="_GEarthExtensions_regularPlacemark"><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '</IconStyle></Style>' +
+        '</Document>');
+
+    // TODO: options: icon for placemarks, bounce?, etc.
+
+    var me = this;
+
+    var placemarks = [];
+
+    var done = false;
+
+    var headPlacemark = null;
+
+    var drawNext;
+    drawNext = function() {
+      headPlacemark = me.dom.buildPointPlacemark([100, 0], {
+        style: '#_GEarthExtensions_regularPlacemark'
+      });
+      innerDoc.getFeatures().appendChild(headPlacemark);
+      placemarks.push(headPlacemark);
+
+      me.edit.place(headPlacemark, {
+        dropCallback: function() {
+          if (!done) {
+            coords.pushLatLngAlt(
+                headPlacemark.getGeometry().getLatitude(),
+                headPlacemark.getGeometry().getLongitude(), 0);
+
+            setTimeout(drawNext, 0);
+          }
+        }
+      });
+    };
+
+    drawNext.call(null);
+
+    var endFunction = function() {
+      me.edit.endDraggable(headPlacemark);
+
+      done = true;
+
+      me.dom.removeObject(innerDoc);
+
+      placemarks = [];
+
+      me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+
+      // TODO: user-defined completion callback
+    };
+
+    var dblclickFinishListener = function(event) {
+      event.preventDefault();
+      endFunction.call(null);
+    };
     
-    this.util.setJsDataValue(placemark, '_GEarthExtensions_dragData', {
-      draggableOptions: options
+    google.earth.addEventListener(me.pluginInstance.getWindow(), 'dblclick',
+        dblclickFinishListener);
+
+    // display the editing UI
+    this.pluginInstance.getFeatures().appendChild(innerDoc);
+
+    // set up an abort function for use in endEditLineString
+    this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
+      abortAndEndFn: function() {
+        endFunction.call(null);
+        google.earth.removeEventListener(me.pluginInstance.getWindow(),
+            'dblclick', dblclickFinishListener);
+      }
+    });
+  };
+  // TODO: interactive test
+
+  // TODO: docs
+  GEarthExtensions.prototype.edit.editLineString = function(lineString) {
+    var lineStringEditData = this.util.getJsDataValue(
+        lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
+    if (lineStringEditData) {
+      this.edit.endEditLineString(lineString);
+    }
+
+    var me = this;
+    
+    var isRing = (lineString.getType() == 'KmlLinearRing');
+    var coords = lineString.getCoordinates();
+    var numCoords = coords.getLength();
+
+    var innerDoc = this.pluginInstance.parseKml(
+        '<Document>' +
+        '<Style id="_GEarthExtensions_regularPlacemark"><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '</IconStyle></Style>' +
+        '<StyleMap id="_GEarthExtensions_midPlacemark">' +
+        '<Pair><key>normal</key>' +
+        '<Style><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '<color>60ffffff</color><scale>0.75</scale>' +
+        '</IconStyle></Style></Pair>' +
+        '<Pair><key>highlight</key>' +
+        '<styleUrl>#_GEarthExtensions_regularPlacemark</styleUrl>' +
+        '</Pair></StyleMap>' +
+        '</Document>');
+
+    // TODO: doubleclick or rightclick deletes points
+    
+    // TODO: options: icon for placemarks, bounce?, linear ring?
+
+    // TODO: it may be easier to use a linked list for all this
+
+    var coordDataArr = [];
+
+    var makeRegularDeleteEventListener_ = function(coordData) {
+      return function(event) {
+        event.preventDefault();
+
+        // shift coordinates in the KmlCoordArray up
+        // TODO: speed this up
+        for (i = coordData.index; i < numCoords - 1; i++)
+          coords.set(i, coords.get(i + 1));
+        coords.pop();
+
+        var leftCoordData = null;
+        if (coordData.index > 0 || isRing) {
+          var leftIndex = coordData.index - 1;
+          if (leftIndex < 0)
+            leftIndex += numCoords; // wrap
+
+          leftCoordData = coordDataArr[leftIndex];
+        }
+
+        numCoords--;
+
+        // at the end of the line and there's no right-mid placemark.
+        // the previous-to-last point's mid point should be removed too.
+        if (coordData.rightMidPlacemark == null && leftCoordData) {
+          me.edit.endDraggable(leftCoordData.rightMidPlacemark);
+          me.dom.removeObject(leftCoordData.rightMidPlacemark);
+          leftCoordData.rightMidPlacemark = null;
+        }
+
+        // teardown mid placemark
+        if (coordData.rightMidPlacemark) {
+          me.edit.endDraggable(coordData.rightMidPlacemark);
+          me.dom.removeObject(coordData.rightMidPlacemark);
+        }
+
+        // tear down this placemark
+        me.edit.endDraggable(coordData.regularPlacemark);
+        google.earth.removeEventListener(coordData.regularPlacemark,
+            'dblclick', coordData.deleteEventListener);
+        me.dom.removeObject(coordData.regularPlacemark);
+
+        coordDataArr.splice(coordData.index, 1);
+
+        // update all coord data indices after this removed
+        // coordinate, because indices have changed
+        for (i = 0; i < numCoords; i++) {
+          coordDataArr[i].index = i;
+        }
+
+        // call the drag listener for the previous coordinate
+        // to update the midpoint location
+        if (leftCoordData) {
+          leftCoordData.regularDragCallback.call(
+              leftCoordData.regularPlacemark, leftCoordData);
+        }
+      };
+    };
+
+    var makeRegularDragCallback_ = function(coordData) {
+      return function() {
+        // update this coordinate
+        coords.setLatLngAlt(coordData.index,
+            this.getGeometry().getLatitude(),
+            this.getGeometry().getLongitude(), 0);
+
+        // update midpoint placemarks
+        var curCoord = coords.get(coordData.index);
+
+        if (coordData.index > 0 || isRing) {
+          var leftIndex = coordData.index - 1;
+          if (leftIndex < 0)
+            leftIndex += numCoords; // wrap
+          
+          var leftMidPt = new geo.Point(coords.get(leftIndex)).midpoint(
+              new geo.Point(curCoord));
+          coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLatitude(
+              leftMidPt.lat());
+          coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLongitude(
+              leftMidPt.lng());
+        }
+
+        if (coordData.index < numCoords - 1 || isRing) {
+          var rightMidPt = new geo.Point(curCoord).midpoint(
+              new geo.Point(coords.get((coordData.index + 1) % numCoords)));
+          coordData.rightMidPlacemark.getGeometry().setLatitude(
+              rightMidPt.lat());
+          coordData.rightMidPlacemark.getGeometry().setLongitude(
+              rightMidPt.lng());
+        }
+      };
+    };
+
+    var makeMidDragCallback_ = function(coordData) {
+      // vars for the closure
+      var convertedToRegular = false;
+      var newCoordData = null;
+
+      return function() {
+        if (!convertedToRegular) {
+          // first time drag... convert this midpoint into a regular point
+
+          convertedToRegular = true;
+          var i;
+
+          // change style to regular placemark style
+          this.setStyleUrl('#_GEarthExtensions_regularPlacemark');
+
+          // shift coordinates in the KmlCoordArray down
+          // TODO: speed this up
+          coords.push(coords.get(numCoords - 1));
+          for (i = numCoords - 1; i > coordData.index + 1; i--)
+            coords.set(i, coords.get(i - 1));
+
+          numCoords++;
+
+          // create a new coordData object for the newly created
+          // coordinate
+          newCoordData = {};
+          newCoordData.index = coordData.index + 1;
+          newCoordData.regularPlacemark = this; // the converted midpoint
+
+          // replace this to-be-converted midpoint with a new midpoint
+          // placemark (will be to the left of the new coord)
+          coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+            point: coords.get(coordData.index),
+            style: '#_GEarthExtensions_midPlacemark'
+          });
+          innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+
+          me.edit.makeDraggable(coordData.rightMidPlacemark, {
+            bounce: false,
+            dragCallback: makeMidDragCallback_(coordData) // previous coord
+          });
+
+          // create a new right midpoint
+          newCoordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+            point: coords.get(coordData.index),
+            style: '#_GEarthExtensions_midPlacemark'
+          });
+          innerDoc.getFeatures().appendChild(newCoordData.rightMidPlacemark);
+
+          me.edit.makeDraggable(newCoordData.rightMidPlacemark, {
+            bounce: false,
+            dragCallback: makeMidDragCallback_(newCoordData)
+          });
+
+          // create a delete listener
+          newCoordData.deleteEventListener = makeRegularDeleteEventListener_(
+              newCoordData);
+          google.earth.addEventListener(this, 'dblclick',
+              newCoordData.deleteEventListener);
+
+          newCoordData.regularDragCallback = makeRegularDragCallback_(newCoordData);
+
+          // insert the new coordData
+          coordDataArr.splice(newCoordData.index, 0, newCoordData);
+
+          // update all placemark drag callbacks after this newly inserted
+          // coordinate, because indices have changed
+          // NOTE: the old draggable callbacks are replaced with these
+          // calls to makeDraggable
+          for (i = 0; i < numCoords; i++) {
+            coordDataArr[i].index = i;
+          }
+        }
+
+        // do regular dragging stuff
+        newCoordData.regularDragCallback.call(this, newCoordData);
+      };
+    };
+
+    // create the edit placemarks
+    for (var i = 0; i < numCoords; i++) {
+      var curCoord = coords.get(i);
+      var nextCoord = coords.get((i + 1) % numCoords);
+
+      var coordData = {};
+      coordDataArr.push(coordData);
+      coordData.index = i;
+
+      // create the regular placemark on the point
+      coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
+        style: '#_GEarthExtensions_regularPlacemark'
+      });
+      innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
+
+      coordData.regularDragCallback = makeRegularDragCallback_(coordData);
+
+      // set up drag handlers for main placemarks
+      me.edit.makeDraggable(coordData.regularPlacemark, {
+        bounce: false,
+        dragCallback: coordData.regularDragCallback
+      });
+
+      coordData.deleteEventListener =
+          makeRegularDeleteEventListener_(coordData);
+      google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
+          coordData.deleteEventListener);
+
+      // create the next midpoint placemark
+      if (i < numCoords - 1 || isRing) {
+        coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+          point: new geo.Point(curCoord).midpoint(
+              new geo.Point(nextCoord)),
+          style: '#_GEarthExtensions_midPlacemark'
+        });
+        innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+
+        // set up drag handlers for mid placemarks
+        me.edit.makeDraggable(coordData.rightMidPlacemark, {
+          bounce: false,
+          dragCallback: makeMidDragCallback_(coordData)
+        });
+      }
+    }
+
+    // display the editing UI
+    this.pluginInstance.getFeatures().appendChild(innerDoc);
+
+    // set up an abort function for use in endEditLineString
+    this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
+      innerDoc: innerDoc,
+      abortAndEndFn: function() {
+        var i;
+
+        for (i = 0; i < coordDataArr.length; i++) {
+          // teardown for regular placemark, its delete event listener
+          // and its right-mid placemark
+          google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
+              'dblclick', coordDataArr[i].deleteEventListener);
+
+          me.edit.endDraggable(coordDataArr[i].regularPlacemark);
+          
+          if (coordDataArr[i].rightMidPlacemark) {
+            me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
+          }
+        }
+
+        me.dom.removeObject(innerDoc);
+      }
     });
   };
 
-  /**
-   * Stop a placemark from being draggable
-   */
-  GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
-    // listen for mousedown on the window (look specifically for
-    // point placemarks)
-    google.earth.removeEventListener(placemark, 'mousedown',
-        this.fx.dragListeners_.mouseDown);
-    
-    this.util.clearJsDataValue(placemark, '_GEarthExtensions_dragInfo');
+  GEarthExtensions.prototype.edit.endEditLineString = function(lineString) {
+    // get placemark's drag data
+    var lineStringEditData = this.util.getJsDataValue(
+        lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+
+    // stop listening for mousedown on the window
+    if (lineStringEditData) {
+      lineStringEditData.abortAndEndFn.call(null);
+
+      this.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+    }
   };
-}());
+})();
 /**
- * The GEarthExtensions#fx class/namespace hybrid contains various
- * animation/effects tools for use in the Earth API.
+ * Contains various animation/effects tools for use in the Google Earth API.
  * @namespace
  */
 GEarthExtensions.prototype.fx = {isnamespace_:true};
 /**
  * Returns the singleton animation manager for the plugin instance.
+ * @private
  */
 GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
   if (!this.animationManager_) {
@@ -2494,6 +3310,7 @@ GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
 /**
  * Private singleton class for managing GEarthExtensions#fx animations in a
  * plugin instance.
+ * @private
  */
 GEarthExtensions.prototype.fx.AnimationManager_ = GEarthExtensions.createClass_(
 function(extInstance) {
@@ -2591,7 +3408,6 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.renderCurrentFrame_ =
 function() {
   for (var i = this.animations_.length - 1; i >= 0; i--) {
     var animation = this.animations_[i];
-    var me = this;
     animation.obj.renderFrame(this.globalTime_ - animation.startGlobalTime);
   }
   
@@ -2602,38 +3418,41 @@ function() {
 
 /**
  * Abstract base class for GEarthExtensions#fx animations
+ * @class
  */
-GEarthExtensions.prototype.fx.Animation_ =
+GEarthExtensions.prototype.fx.Animation =
 GEarthExtensions.createClass_(function() { });
 
 /**
  * Start the animation.
  */
-GEarthExtensions.prototype.fx.Animation_.prototype.start = function() {
+GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
   this.extInstance.fx.getAnimationManager_().startAnimation(this);
 };
 
 /**
  * Stop the animation.
  */
-GEarthExtensions.prototype.fx.Animation_.prototype.stop = function() {
+GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
   this.renderFrame(0);
 };
 
 /**
  * Render the frame at time t after the animation was started.
- * @param {number} t The time in seconds of the frame to render.
+ * @param {Number} t The time in seconds of the frame to render.
  * @abstract
  */
-GEarthExtensions.prototype.fx.Animation_.prototype.renderFrame = function(t){ };
+GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t){ };
 
 /**
  * Generic class for fixed-duration animations.
+ * @class
+ * @extends Animation
  */
 GEarthExtensions.prototype.fx.GenericSimpleAnimation =
 GEarthExtensions.createClass_(
-  [GEarthExtensions.prototype.fx.Animation_],
+  [GEarthExtensions.prototype.fx.Animation],
 function(extInstance, duration, renderFn) {
   this.extInstance = extInstance;
   this.duration = duration;
@@ -2795,15 +3614,18 @@ function(obj, property, options) {
       }
     }[options.easing];
   }
+
+  var propertyTitleCase = property.charAt(0).toUpperCase() +
+                          property.substr(1);
+
+  var me = this;
   
   var getter = function() {
-    return obj['get' + property.substr(0,1).toUpperCase() +
-        property.substr(1)].call(obj);
+    return me.util.callMethod(obj, 'get' + propertyTitleCase);
   };
   
   var setter = function(val) {
-    return obj['set' + property.substr(0,1).toUpperCase() +
-        property.substr(1)].call(obj, val);
+    return me.util.callMethod(obj, 'set' + propertyTitleCase, val);
   };
     
   // use EITHER start/end or delta
@@ -2839,16 +3661,108 @@ function(obj, property, options) {
   anim.start();
 };
 /**
- * The GEarthExtensions#util class/namespace hybrid contains miscellaneous
+ * This class/namespace hybrid contains miscellaneous
  * utility functions and shortcuts for the Earth API.
  * @namespace
  */
 GEarthExtensions.prototype.util = {isnamespace_:true};
+GEarthExtensions.NAMED_COLORS = {
+  'aqua': 'ffffff00',
+  'black': 'ff000000',
+  'blue': 'ffff0000',
+  'fuchsia': 'ffff00ff',
+  'gray': 'ff808080',
+  'green': 'ff008000',
+  'lime': 'ff00ff00',
+  'maroon': 'ff000080',
+  'navy': 'ff800000',
+  'olive': 'ff008080',
+  'purple': 'ff800080',
+  'red': 'ff0000ff',
+  'silver': 'ffc0c0c0',
+  'teal': 'ff808000',
+  'white': 'ffffffff',
+  'yellow': 'ff00ffff'
+};
+
+/**
+ * Converts between various color formats, i.e. '#rrggbb', to the KML color
+ * format ('aabbggrr')
+ * @param {String|Number[]} arg The source color value.
+ * @type {String}
+ * @return A string in KML color format, i.e. 'aabbggrr'
+ */
+GEarthExtensions.prototype.util.parseColor = function(arg) {
+  // detect #rrggbb and convert to kml color aabbggrr
+  // TODO: also accept 'rgb(0,0,0)' format using regex, maybe even hsl?
+  if (geo.util.isArray(arg)) {
+    // expected array as [r,g,b] or [r,g,b,a]
+
+    var pad2 = function(s) {
+      return ((s.length < 2) ? '0' : '') + s;
+    };
+
+    return pad2(((arg.length >= 4) ? arg[3].toString(16) : 'ff')) +
+           pad2(arg[2].toString(16)) +
+           pad2(arg[1].toString(16)) +
+           pad2(arg[0].toString());
+  } else if (typeof arg == 'string') {
+    // parsing a string
+    if (arg.toLowerCase() in GEarthExtensions.NAMED_COLORS) {
+      return GEarthExtensions.NAMED_COLORS[arg.toLowerCase()];
+    } if (arg.length > 7) {
+      // if not stored as HTML color, assume it's stored as a
+      // KML color and return as is
+      // TODO: check for valid KML color using regex?
+      return arg;
+    } else if (arg.length > 4) {
+      // stored as full HTML color
+      return arg.replace(
+          /#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i,
+          'ff$3$2$1').toLowerCase();
+    } else {
+      // stored as shorthand HTML/CSS color (#fff)
+      return arg.replace(
+          /#?([0-9a-f])([0-9a-f])([0-9a-f])/i,
+          'ff$3$3$2$2$1$1').toLowerCase();
+    }
+  }
+};
+
+
+// TODO: docs
+GEarthExtensions.prototype.util.blendColors = function(color1, color2,
+                                                       fraction) {
+  if (geo.util.isUndefined(fraction) || fraction === null) {
+    fraction = 0.5;
+  }
+  
+  color1 = this.util.parseColor(color1);
+  color2 = this.util.parseColor(color2);
+
+  var pad2 = function(s) {
+    return ((s.length < 2) ? '0' : '') + s;
+  };
+
+  var blendHexComponent_ = function(c1, c2) {
+    c1 = parseInt(c1, 16);
+    c2 = parseInt(c2, 16);
+
+    return pad2(Math.floor((c2 - c1) * fraction + c1).toString(16));
+  };
+
+  return blendHexComponent_(color1.substr(0,2), color2.substr(0,2)) +
+         blendHexComponent_(color1.substr(2,2), color2.substr(2,2)) +
+         blendHexComponent_(color1.substr(4,2), color2.substr(4,2)) +
+         blendHexComponent_(color1.substr(6,2), color2.substr(6,2));
+};
+// TODO: unit test
 (function() {
   // NOTE: this is shared across all GEarthExtensions instances
-  // dictionary mapping feature's jstag (uuid) --> feature's js data dictionary
-  var jsDataDicts_ = {};
-  
+  // dictionary mapping objects's jstag (uuid) to an object literal
+  // { object: <object>, data: <object's js data dictionary> }
+  var jsData_ = {};
+
   /* randomUUID.js - Version 1.0
   *
   * Copyright 2008, Robert Kieffer
@@ -2865,6 +3779,7 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 
   /**
   * Create and return a "version 4" RFC-4122 UUID string.
+  * @private
   */
   function randomUUID() {
     var s = [], itoh = '0123456789ABCDEF', i = 0;
@@ -2881,7 +3796,7 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 
     // Convert to hex chars
     for (i = 0; i < 36; i++) {
-      s[i] = itoh[s[i]];
+      s[i] = itoh.charAt(s[i]);
     }
 
     // Insert '-'s
@@ -2889,133 +3804,103 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 
     return s.join('');
   }
-  
-  var jsTagRegex_ = /##JSTAG:([0-9a-f\-]+)##/i;
-  
+
   /**
    * @private
    */
-  function getJsTag_(feature) {
-    var jsTag = feature.getSnippet().match(jsTagRegex_);
-    if (jsTag) {
-      jsTag = jsTag[1];
+  function getJsTag_(object) {
+    // TODO: use unique id from Earth API
+    for (var tag in jsData_) {
+      if (jsData_[tag].object.equals(object))
+        return tag;
     }
-    
-    return jsTag;
+
+    return null;
   }
-  
+
   /**
-   * @private
-   */
-  function setJsTag_(feature, jsTag) {
-    if (getJsTag_(feature)) {
-      feature.setSnippet(feature.getSnippet().replace(jsTagRegex_, ''));
-    }
-    
-    if (jsTag) {
-      feature.setSnippet(
-          '##JSTAG:' + jsTag + '##' +
-          feature.getSnippet());
-    }
-  }
-  
-  /**
-   * Returns whether or not the KmlFeature has any JS-side data.
-   * @param {KmlFeature} feature The feature to inquire about.
+   * Returns whether or not the KmlObject has any JS-side data.
+   * @param {KmlObject} object The plugin object to inquire about.
    * @public
    */
-  GEarthExtensions.prototype.util.hasJsData = function(feature) {
-    var jsTag = getJsTag_(feature);
-    return (jsTag && jsTag in jsDataDicts_) ? true : false;
+  GEarthExtensions.prototype.util.hasJsData = function(object) {
+    return getJsTag_(object) ? true : false;
   };
-  
+
   /**
-   * Clears all JS-side data for the given KmlFeature.
-   * @param {KmlFeature} feature The feature to clear data on.
+   * Clears all JS-side data for the given KmlObject.
+   * @param {KmlObject} object The plugin object to clear data on.
    */
-  GEarthExtensions.prototype.util.clearAllJsData = function(feature) {
-    var jsTag = getJsTag_(feature);
+  GEarthExtensions.prototype.util.clearAllJsData = function(object) {
+    var jsTag = getJsTag_(object);
     if (jsTag) {
-      setJsTag_(feature, null);
-      delete jsDataDicts_[jsTag];
+      delete jsData_[jsTag];
     }
   };
 
   /**
-   * Gets the JS-side data for the given KmlFeature associated with the given
+   * Gets the JS-side data for the given KmlObject associated with the given
    * key.
-   * WARNING: This method currently stores custom data in the feature's
-   * &lt;snippet&gt;. Data must be cleared out with clearJsData before
-   * manipulating the snippet or using getKml.
-   * @param {KmlFeature} feature The feature to get data for.
+   * @param {KmlObject} object The plugin object to get data for.
+   * @param {String} key The JSData key to request.
    * @public
    */
-  GEarthExtensions.prototype.util.getJsDataValue = function(feature, key) {
-    var jsTag = getJsTag_(feature);
-    if (jsTag &&
-        jsTag in jsDataDicts_ &&
-        key in jsDataDicts_[jsTag]) {
-      return jsDataDicts_[jsTag][key];
+  GEarthExtensions.prototype.util.getJsDataValue = function(object, key) {
+    var jsTag = getJsTag_(object);
+    if (jsTag && key in jsData_[jsTag].data) {
+      return jsData_[jsTag].data[key];
     }
-    
+
     // TODO: null or undefined?
     return undefined;
   };
-  
+
   /**
-   * Sets the JS-side data for the given KmlFeature associated with the given
+   * Sets the JS-side data for the given KmlObject associated with the given
    * key to the passed in value.
-   * WARNING: This method currently stores custom data in the feature's
-   * &lt;snippet&gt;. Data must be cleared out with clearJsData before
-   * manipulating the snippet or using getKml.
-   * @param {KmlFeature} feature The feature to get data for.
+   * @param {KmlObject} object The object to get data for.
    * @public
    */
   GEarthExtensions.prototype.util.setJsDataValue =
-  function(feature, key, value) {
-    var jsTag = getJsTag_(feature);
+  function(object, key, value) {
+    var jsTag = getJsTag_(object);
     if (!jsTag) {
-      // no current data dictionary, create a jstag to inject into the
-      // feature's snippet
+      // no current data dictionary, create a jstag for this object
       jsTag = null;
-      while (!jsTag || jsTag in jsDataDicts_) {
+      while (!jsTag || jsTag in jsData_) {
         jsTag = randomUUID();
       }
-      
-      // inject the jsTag into the snippet
-      setJsTag_(feature, jsTag);
-      
+
       // create an empty data dict
-      jsDataDicts_[jsTag] = {};
+      jsData_[jsTag] = { object: object, data: {} };
     }
-    
+
     // set the data
-    jsDataDicts_[jsTag][key] = value;
+    jsData_[jsTag].data[key] = value;
   };
-  
+
   /**
-   * Clears the JS-side data for the given KmlFeature associated with the given
+   * Clears the JS-side data for the given KmlObject associated with the given
    * key.
-   * @param {KmlFeature} feature The feature to clear data on.
-   * @param {string} key The data key whose value should be cleared.
+   * @param {KmlObject} object The plugin object to clear data on.
+   * @param {String} key The data key whose value should be cleared.
    */
-  GEarthExtensions.prototype.util.clearJsDataValue = function(feature, key) {
-    var jsTag = getJsTag_(feature);
+  GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
+    var jsTag = getJsTag_(object);
     if (jsTag &&
-        jsTag in jsDataDicts_ &&
-        key in jsDataDicts_[jsTag]) {
-      delete jsDataDicts_[jsTag][key];
-      
+        key in jsData_[jsTag].data) {
+      delete jsData_[jsTag].data[key];
+
       // check if the data dict is empty... if so, cleanly remove it
-      for (var k in jsDataDicts_[jsTag]) {
+      for (var k in jsData_[jsTag].data) {
         return; // not empty
       }
-      
+
       // data dict is empty
-      this.util.clearAllJsData(feature);
+      this.util.clearAllJsData(object);
     }
   };
-  
+
 }());
 (function() {
   // TODO: docs
@@ -3055,12 +3940,13 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
       Math.floor(fit180_(cam.lat) * 1e5),
       Math.floor(fit180_(cam.lng) * 1e5),
       Math.floor(alt / encOverflow),
-      alt % encOverflow,
+      (alt >= 0) ? alt % encOverflow :
+                   (encOverflow - Math.abs(alt) % encOverflow),
       Math.floor(fit360_(cam.heading) * 1e5),
       Math.floor(fit360_(cam.tilt) * 1e5),
       Math.floor(fit360_(cam.roll) * 1e5)
     ]);
-  }
+  };
 
   GEarthExtensions.prototype.util.decodeCamera_ = function(s) {
     var encOverflow = 1073741824;
@@ -3073,7 +3959,7 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
       tilt: arr[5] * 1e-5,
       roll: arr[6] * 1e-5
     };
-  }
+  };
   
   // modified base64 for url
   // http://en.wikipedia.org/wiki/Base64
@@ -3113,11 +3999,11 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
     var encodeString = "";
 
     while (sgn_num >= 0x20) {
-      encodeString += ALPHABET_[0x20 | (sgn_num & 0x1f)];
+      encodeString += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
       sgn_num >>= 5;
     }
 
-    encodeString += ALPHABET_[sgn_num];
+    encodeString += ALPHABET_.charAt(sgn_num);
     return encodeString;
   }
   
@@ -3125,8 +4011,6 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
     var len = encoded.length;
     var index = 0;
     var array = [];
-    var lat = 0;
-    var lng = 0;
 
     while (index < len) {
       var b;
@@ -3152,12 +4036,12 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 GEarthExtensions.prototype.util.lookAt = function() {
   //this.pluginInstance.getView().setAbstractView(this.dom.LookAt(...));
   this.pluginInstance.getView().setAbstractView(
-      this.dom.createLookAt.apply(null, arguments));
+      this.dom.buildLookAt.apply(null, arguments));
 };
 
 /**
  * Gets the current view as a KmlLookAt.
- * @param {number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
+ * @param {Number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
  *     that the resulting LookAt should be in.
  * @type KmlLookAt
  * @return Returns the current view as a KmlLookAt.
@@ -3172,7 +4056,7 @@ GEarthExtensions.prototype.util.getLookAt = function(altitudeMode) {
 
 /**
  * Gets the current view as a KmlCamera.
- * @param {number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
+ * @param {Number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
  *     that the resulting camera should be in.
  * @type KmlCamera
  * @return Returns the current view as a KmlCamera.
@@ -3185,16 +4069,75 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
   return this.pluginInstance.getView().copyAsCamera(altitudeMode);
 };
 
+/**
+ * Simply loads and shows the given KML URL in the Google Earth Plugin instance.
+ * @param {String} url The URL of the KML content to show.
+ */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
-  // TODO: auto cache buster
-  google.earth.fetchKml(this.pluginInstance, function(kmlObject) {
+  options = options || {};
+  if (options.cacheBuster) {
+    url += (url.match(/\?/) ? '&' : '?') + '_cacheBuster=' +
+        Number(new Date()).toString();
+  }
+
+  // TODO: option to choose network link or fetchKml
+  
+  google.earth.fetchKml(this.pluginInstance, url, function(kmlObject) {
     if (kmlObject) {
       this.pluginInstance.getFeatures().appendChild(kmlObject);
     }
   });
 };
 
+/**
+ * Simply loads and shows the given KML string in the Google Earth Plugin
+ * instance.
+ * @param {String} str The KML blob string to show.
+ */
 GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
   var kmlObject = this.pluginInstance.parseKml(str);
   this.pluginInstance.getFeatures().appendChild(kmlObject);
+};
+
+/**
+ * Executes the given function quickly using a Google Earth API callback
+ * hack. Future versions of this method may use other methods for batch
+ * execution.
+ * @param {Function} batchFn The function containing batch code to execute.
+ * @param {Object} [context] Optional context parameter to pass to the
+ *     function.
+ */
+GEarthExtensions.prototype.util.batchExecute = function(batchFn, context) {
+  // TODO: find a cleaner method besides fetchKml
+  var me = this;
+  google.earth.fetchKml(this.pluginInstance, '', function() {
+    batchFn.call(me, context);
+  });
+};
+
+/**
+ * Calls method on object with optional arguments. Arguments to pass to the
+ * method should be given in order after the 'method' argument.
+ * @param {Object} object The object to call the method on.
+ * @param {String} method The method to call.
+ */
+GEarthExtensions.prototype.util.callMethod = function(object, method) {
+  var i;
+
+  // strip out 'object' and 'method' arguments
+  var args = [];
+  for (i = 2; i < arguments.length; i++)
+    args.push(arguments[i]);
+
+  if (typeof object[method] == 'function') {
+    // most browsers, most object/method pairs
+    return object[method].apply(object, args);
+  } else {
+    // In the Earth API in Internet Explorer, typeof returns 'unknown'
+    var reprArgs = [];
+    for (i = 0; i < args.length; i++)
+      reprArgs.push('args[' + i + ']');
+
+    return eval('object.' + method + '(' + reprArgs.join(',') + ')');
+  }
 };

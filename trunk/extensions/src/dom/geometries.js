@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /** @ignore */
-GEarthExtensions.prototype.dom.createExtrudableGeometry_ =
+GEarthExtensions.prototype.dom.buildExtrudableGeometry_ =
 GEarthExtensions.domBuilder_({
   propertySpec: {
     altitudeMode: GEarthExtensions.AUTO,
@@ -27,17 +27,17 @@ GEarthExtensions.domBuilder_({
  * Creates a new point geometry with the given parameters.
  * @function
  * @param {PointSpec} [point] The point data.
- * @param {object} options The parameters of the point object to create.
+ * @param {Object} options The parameters of the point object to create.
  * @param {PointSpec} [options.point] The point data.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
  * @type KmlPoint
  */
-GEarthExtensions.prototype.dom.createPoint = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPoint',
-  base: GEarthExtensions.prototype.dom.createExtrudableGeometry_,
+  base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPoint',
   defaultProperty: 'point',
   propertySpec: {
@@ -46,10 +46,10 @@ GEarthExtensions.prototype.dom.createPoint = GEarthExtensions.domBuilder_({
   constructor: function(pointObj, options) {
     var point = new geo.Point(options.point);
     pointObj.set(
-        point.lat,
-        point.lng,
-        point.altitude,
-        point.altitudeMode,
+        point.lat(),
+        point.lng(),
+        point.altitude(),
+        point.altitudeMode(),
         false,
         false);
   }
@@ -60,19 +60,19 @@ GEarthExtensions.prototype.dom.createPoint = GEarthExtensions.domBuilder_({
  * Creates a new line string geometry with the given parameters.
  * @function
  * @param {PathSpec} [path] The path data.
- * @param {object} options The parameters of the line string to create.
+ * @param {Object} options The parameters of the line string to create.
  * @param {PathSpec} [options.path] The path data.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
- * @param {boolean} [options.tessellate] Whether or not the geometry should
+ * @param {Boolean} [options.tessellate] Whether or not the geometry should
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLineString
  */
-GEarthExtensions.prototype.dom.createLineString = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLineString',
-  base: GEarthExtensions.prototype.dom.createExtrudableGeometry_,
+  base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createLineString',
   defaultProperty: 'path',
   propertySpec: {
@@ -86,8 +86,8 @@ GEarthExtensions.prototype.dom.createLineString = GEarthExtensions.domBuilder_({
     var path = new geo.Path(options.path);
     var numCoords = path.numCoords();
     for (var i = 0; i < numCoords; i++) {
-      coordsObj.pushLatLngAlt(path.coord(i).lat, path.coord(i).lng,
-          path.coord(i).altitude);
+      coordsObj.pushLatLngAlt(path.coord(i).lat(), path.coord(i).lng(),
+          path.coord(i).altitude());
     }
   }
 });
@@ -98,20 +98,20 @@ GEarthExtensions.prototype.dom.createLineString = GEarthExtensions.domBuilder_({
  * @function
  * @param {PathSpec} [path] The path data.
  *     The first coordinate doesn't need to be repeated at the end.
- * @param {object} options The parameters of the linear ring to create.
+ * @param {Object} options The parameters of the linear ring to create.
  * @param {PathSpec} [options.path] The path data.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
- * @param {boolean} [options.tessellate] Whether or not the geometry should
+ * @param {Boolean} [options.tessellate] Whether or not the geometry should
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLinearRing
  */
-GEarthExtensions.prototype.dom.createLinearRing = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLinearRing',
-  base: GEarthExtensions.prototype.dom.createLineString,
+  base: GEarthExtensions.prototype.dom.buildLineString,
   apiFactoryFn: 'createLinearRing',
   defaultProperty: 'path',
   constructor: function(linearRingObj, options) {
@@ -128,19 +128,19 @@ GEarthExtensions.prototype.dom.createLinearRing = GEarthExtensions.domBuilder_({
  * Creates a new polygon geometry with the given parameters.
  * @function
  * @param {PolygonSpec} [polygon] The polygon data.
- * @param {object} options The parameters of the polygon to create.
+ * @param {Object} options The parameters of the polygon to create.
  * @param {PolygonSpec} [options.polygon] The polygon data.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {boolean} [options.extrude] Whether or not the geometry should
+ * @param {Boolean} [options.extrude] Whether or not the geometry should
  *     extrude down to the Earth's surface.
- * @param {boolean} [options.tessellate] Whether or not the geometry should
+ * @param {Boolean} [options.tessellate] Whether or not the geometry should
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlPolygon
  */
-GEarthExtensions.prototype.dom.createPolygon = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPolygon',
-  base: GEarthExtensions.prototype.dom.createExtrudableGeometry_,
+  base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPolygon',
   defaultProperty: 'polygon',
   propertySpec: {
@@ -150,12 +150,12 @@ GEarthExtensions.prototype.dom.createPolygon = GEarthExtensions.domBuilder_({
     var polygon = new geo.Polygon(options.polygon);
   
     polygonObj.setOuterBoundary(
-        this.dom.createLinearRing(polygon.outerBoundary()));
+        this.dom.buildLinearRing(polygon.outerBoundary()));
     if (polygon.innerBoundaries().length) {
       var innerBoundaries = polygon.innerBoundaries();
       for (var i = 0; i < innerBoundaries.length; i++) {
         polygonObj.getInnerBoundaries().appendChild(
-            this.dom.createLinearRing(innerBoundaries[i]));
+            this.dom.buildLinearRing(innerBoundaries[i]));
       }
     }
   }
@@ -166,19 +166,19 @@ GEarthExtensions.prototype.dom.createPolygon = GEarthExtensions.domBuilder_({
  * Creates a new model geometry with the given parameters.
  * @function
  * @param {LinkSpec} [link] The remote link this model should use.
- * @param {object} options The parameters of the model to create.
+ * @param {Object} options The parameters of the model to create.
  * @param {LinkSpec} [options.link] The remote link this model should use.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {PointSpec} [options.location] The location of the model.
- * @param {number|number[]} [options.scale] The scale factor of the model.
- * @param {object} [options.orientation] The orientation of the model.
- * @param {number} [options.orientation.heading] The model heading.
- * @param {number} [options.orientation.tilt] The model tilt.
- * @param {number} [options.orientation.roll] The model roll.
+ * @param {Number|Number[]} [options.scale] The scale factor of the model.
+ * @param {Object} [options.orientation] The orientation of the model.
+ * @param {Number} [options.orientation.heading] The model heading.
+ * @param {Number} [options.orientation.tilt] The model tilt.
+ * @param {Number} [options.orientation.roll] The model roll.
  * @type KmlPolygon
  */
-GEarthExtensions.prototype.dom.createModel = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlModel',
   apiFactoryFn: 'createModel',
   defaultProperty: 'link',
@@ -190,15 +190,16 @@ GEarthExtensions.prototype.dom.createModel = GEarthExtensions.domBuilder_({
   },
   constructor: function(modelObj, options) {
     if (options.link) {
-      modelObj.setLink(this.dom.createLink(options.link));
+      modelObj.setLink(this.dom.buildLink(options.link));
     }
   
     if (options.location) {
       var pointObj = new geo.Point(options.location);
       var locationObj = this.pluginInstance.createLocation('');
-      locationObj.setLatLngAlt(pointObj.lat, pointObj.lng, pointObj.altitude);
+      locationObj.setLatLngAlt(pointObj.lat(), pointObj.lng(),
+          pointObj.altitude());
       modelObj.setLocation(locationObj);
-      modelObj.setAltitudeMode(pointObj.altitudeMode);
+      modelObj.setAltitudeMode(pointObj.altitudeMode());
     }
   
     if (options.scale) {
@@ -227,8 +228,8 @@ GEarthExtensions.prototype.dom.createModel = GEarthExtensions.domBuilder_({
   }
 });
 /***IGNORE_BEGIN***/
-function test_dom_createModel() {
-  var model = testext_.dom.createModel({
+function test_dom_buildModel() {
+  var model = testext_.dom.buildModel({
     link: 'http://earth-api-samples.googlecode.com/svn/trunk/examples/' +
           'static/splotchy_box.dae',
     location: [37, -122, 100],
@@ -266,11 +267,11 @@ function test_dom_createModel() {
  * Creates a new multi-geometry with the given parameters.
  * @function
  * @param {KmlGeometry[]} [geometries] The child geometries.
- * @param {object} options The parameters of the multi-geometry to create.
+ * @param {Object} options The parameters of the multi-geometry to create.
  * @param {KmlGeometry[]} [options.geometries] The child geometries.
  * @type KmlMultiGeometry
  */
-GEarthExtensions.prototype.dom.createMultiGeometry =
+GEarthExtensions.prototype.dom.buildMultiGeometry =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlMultiGeometry',
   apiFactoryFn: 'createMultiGeometry',

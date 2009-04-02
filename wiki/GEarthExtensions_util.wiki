@@ -19,26 +19,63 @@ This class/namespace hybrid contains miscellaneous utility functions and shortcu
 ----
 =Static Methods=
 
-==clearAllJsData(feature)==
+==batchExecute(batchFn, context)==
 
-Clears all JS-side data for the given KmlFeature.
+Executes the given function quickly using a Google Earth API callback hack. Future versions of this method may use other methods for batch execution.
 
 
 ===Parameters:===
 
-  * *feature* _{{{KmlFeature}}}_  The feature to clear data on.
+  * *batchFn* _{{{Function}}}_  The function containing batch code to execute.
+  * *context* _{{{Object}}}_ (Optional) Optional context parameter to pass to the function.
 
 ----
 
-==clearJsDataValue(feature, key)==
+==blendColors(color1, color2, fraction)==
 
-Clears the JS-side data for the given KmlFeature associated with the given key.
+
 
 
 ===Parameters:===
 
-  * *feature* _{{{KmlFeature}}}_  The feature to clear data on.
-  * *key* _{{{string}}}_  The data key whose value should be cleared.
+  * *color1*   
+  * *color2*   
+  * *fraction*   
+
+----
+
+==callMethod(object, method)==
+
+Calls method on object with optional arguments. Arguments to pass to the method should be given in order after the 'method' argument.
+
+
+===Parameters:===
+
+  * *object* _{{{Object}}}_  The object to call the method on.
+  * *method* _{{{String}}}_  The method to call.
+
+----
+
+==clearAllJsData(object)==
+
+Clears all JS-side data for the given KmlObject.
+
+
+===Parameters:===
+
+  * *object* _{{{KmlObject}}}_  The plugin object to clear data on.
+
+----
+
+==clearJsDataValue(object, key)==
+
+Clears the JS-side data for the given KmlObject associated with the given key.
+
+
+===Parameters:===
+
+  * *object* _{{{KmlObject}}}_  The plugin object to clear data on.
+  * *key* _{{{String}}}_  The data key whose value should be cleared.
 
 ----
 
@@ -66,24 +103,24 @@ Clears the JS-side data for the given KmlFeature associated with the given key.
 
 ==displayKml(url, options)==
 
-
+Simply loads and shows the given KML URL in the Google Earth Plugin instance.
 
 
 ===Parameters:===
 
-  * *url*   
+  * *url* _{{{String}}}_  The URL of the KML content to show.
   * *options*   
 
 ----
 
 ==displayKmlString(str, options)==
 
-
+Simply loads and shows the given KML string in the Google Earth Plugin instance.
 
 
 ===Parameters:===
 
-  * *str*   
+  * *str* _{{{String}}}_  The KML blob string to show.
   * *options*   
 
 ----
@@ -106,7 +143,7 @@ Gets the current view as a KmlCamera.
 
 ===Parameters:===
 
-  * *altitudeMode* _{{{number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting camera should be in.
+  * *altitudeMode* _{{{Number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting camera should be in.
 
 ===Returns:===
 KmlCamera
@@ -118,15 +155,15 @@ Returns the current view as a KmlCamera.
 
 ----
 
-==getJsDataValue(feature, key)==
+==getJsDataValue(object, key)==
 
-Gets the JS-side data for the given KmlFeature associated with the given key. WARNING: This method currently stores custom data in the feature's &lt;snippet&gt;. Data must be cleared out with clearJsData before manipulating the snippet or using getKml.
+Gets the JS-side data for the given KmlObject associated with the given key.
 
 
 ===Parameters:===
 
-  * *feature* _{{{KmlFeature}}}_  The feature to get data for.
-  * *key*   
+  * *object* _{{{KmlObject}}}_  The plugin object to get data for.
+  * *key* _{{{String}}}_  The JSData key to request.
 
 ----
 
@@ -137,7 +174,7 @@ Gets the current view as a KmlLookAt.
 
 ===Parameters:===
 
-  * *altitudeMode* _{{{number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting LookAt should be in.
+  * *altitudeMode* _{{{Number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting LookAt should be in.
 
 ===Returns:===
 KmlLookAt
@@ -149,20 +186,39 @@ Returns the current view as a KmlLookAt.
 
 ----
 
-==hasJsData(feature)==
+==hasJsData(object)==
 
-Returns whether or not the KmlFeature has any JS-side data.
+Returns whether or not the KmlObject has any JS-side data.
 
 
 ===Parameters:===
 
-  * *feature* _{{{KmlFeature}}}_  The feature to inquire about.
+  * *object* _{{{KmlObject}}}_  The plugin object to inquire about.
 
 ----
 
 ==lookAt()==
 
 Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes the same parameters as GEarthExtensions#dom.LookAt.
+
+
+----
+
+==parseColor(arg)==
+
+Converts between various color formats, i.e. '#rrggbb', to the KML color format ('aabbggrr')
+
+
+===Parameters:===
+
+  * *arg* _{{{String|Number[]}}}_  The source color value.
+
+===Returns:===
+
+
+
+A string in KML color format, i.e. 'aabbggrr'
+
 
 
 ----
@@ -174,14 +230,14 @@ Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes 
 
 ----
 
-==setJsDataValue(feature, key, value)==
+==setJsDataValue(object, key, value)==
 
-Sets the JS-side data for the given KmlFeature associated with the given key to the passed in value. WARNING: This method currently stores custom data in the feature's &lt;snippet&gt;. Data must be cleared out with clearJsData before manipulating the snippet or using getKml.
+Sets the JS-side data for the given KmlObject associated with the given key to the passed in value.
 
 
 ===Parameters:===
 
-  * *feature* _{{{KmlFeature}}}_  The feature to get data for.
+  * *object* _{{{KmlObject}}}_  The object to get data for.
   * *key*   
   * *value*   
 

@@ -19,9 +19,31 @@ Contains methods for allowing user-interactive editing of features inside the Go
 ----
 =Static Methods=
 
+==drawLineString(lineString)==
+
+
+
+
+===Parameters:===
+
+  * *lineString*   
+
+----
+
+==editLineString(lineString)==
+
+
+
+
+===Parameters:===
+
+  * *lineString*   
+
+----
+
 ==endDraggable(placemark)==
 
-Stop a placemark from being draggable
+
 
 
 ===Parameters:===
@@ -30,7 +52,30 @@ Stop a placemark from being draggable
 
 ----
 
+==endEditLineString(lineString)==
+
+
+
+
+===Parameters:===
+
+  * *lineString*   
+
+----
+
 ==makeDraggable(placemark, options)==
+
+
+
+
+===Parameters:===
+
+  * *placemark*   
+  * *options*   
+
+----
+
+==place(placemark, options)==
 
 
 

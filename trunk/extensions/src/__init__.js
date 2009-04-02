@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,12 +34,11 @@ var GEarthExtensions = function(pluginInstance) {
       return fn_.apply(this_, arguments);
     };
   }
-  
-  var me = this;
+
   /** @private */
   function bindNamespaceMembers(nsParent, context) {
-    for (mstr in nsParent) {
-      member = nsParent[mstr];
+    for (var mstr in nsParent) {
+      var member = nsParent[mstr];
       
       // bind this namespace's functions to the given context
       if (geo.util.isFunction(member) &&

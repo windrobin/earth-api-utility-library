@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@ limitations under the License.
  * Creates a new lookat object with the given parameters.
  * @function
  * @param {PointSpec} [point] The point to look at.
- * @param {object} options The parameters of the lookat object to create.
+ * @param {Object} options The parameters of the lookat object to create.
  * @param {PointSpec} [options.point] The point to look at.
- * @param {boolean} [options.copy] Whether or not to copy parameters from the
+ * @param {Boolean} [options.copy] Whether or not to copy parameters from the
  *     existing view if they aren't explicitly specified in the options.
- * @param {number} [options.heading] The lookat heading/direction.
- * @param {number} [options.tilt] The lookat tilt.
- * @param {number} [options.range] The range of the camera (distance from the
+ * @param {Number} [options.heading] The lookat heading/direction.
+ * @param {Number} [options.tilt] The lookat tilt.
+ * @param {Number} [options.range] The range of the camera (distance from the
  *     lookat point).
  * @type KmlLookAt
  */
-GEarthExtensions.prototype.dom.createLookAt = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLookAt',
   apiFactoryFn: 'createLookAt',
   defaultProperty: 'point',
@@ -57,10 +57,10 @@ GEarthExtensions.prototype.dom.createLookAt = GEarthExtensions.domBuilder_({
     options = GEarthExtensions.checkParameters(options, true, defaults);
   
     lookAtObj.set(
-        point.lat,
-        point.lng,
-        point.altitude,
-        point.altitudeMode,
+        point.lat(),
+        point.lng(),
+        point.altitude(),
+        point.altitudeMode(),
         options.heading,
         options.tilt,
         options.range);
@@ -72,16 +72,16 @@ GEarthExtensions.prototype.dom.createLookAt = GEarthExtensions.domBuilder_({
  * Creates a new camera object with the given parameters.
  * @function
  * @param {PointSpec} [point] The point at which to place the camera.
- * @param {object} options The parameters of the camera object to create.
+ * @param {Object} options The parameters of the camera object to create.
  * @param {PointSpec} [options.point] The point at which to place the camera.
- * @param {boolean} [options.copy] Whether or not to copy parameters from the
+ * @param {Boolean} [options.copy] Whether or not to copy parameters from the
  *     existing view if they aren't explicitly specified in the options.
- * @param {number} [options.heading] The camera heading/direction.
- * @param {number} [options.tilt] The camera tilt.
- * @param {number} [options.range] The camera roll.
+ * @param {Number} [options.heading] The camera heading/direction.
+ * @param {Number} [options.tilt] The camera tilt.
+ * @param {Number} [options.range] The camera roll.
  * @type KmlCamera
  */
-GEarthExtensions.prototype.dom.createCamera = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlCamera',
   apiFactoryFn: 'createCamera',
   defaultProperty: 'point',
@@ -111,10 +111,10 @@ GEarthExtensions.prototype.dom.createCamera = GEarthExtensions.domBuilder_({
     options = GEarthExtensions.checkParameters(options, true, defaults);
   
     cameraObj.set(
-        point.lat,
-        point.lng,
-        point.altitude,
-        point.altitudeMode,
+        point.lat(),
+        point.lng(),
+        point.altitude(),
+        point.altitudeMode(),
         options.heading,
         options.tilt,
         options.roll);
