@@ -17,51 +17,54 @@ google.setOnLoadCallback(function() {
   google.earth.createInstance('map3d', function(pluginInstance) {
     ge = pluginInstance;
     ge.getWindow().setVisibility(true);
-    
+
     gex = new GEarthExtensions(pluginInstance);
-    
-    gex.util.lookAt([0, 0], { range: 800000 });
+
+    gex.util.lookAt([0, 0], { range: 600000 });
 
   }, function() {});
 });
 
+var polyPlacemark = null;
+
+function drawPoly() {
+  polyPlacemark = gex.dom.addPolygonPlacemark([], {
+    style: {
+      poly: '8000ff00',
+      line: { width: 3, color: '#0f0' }
+    }
+  });
+
+  gex.edit.drawLineString(polyPlacemark.getGeometry().getOuterBoundary());
+}
+
+function editPoly() {
+  if (!polyPlacemark) {
+    alert('You must draw a poly before editing it!');
+    return;
+  }
+
+  gex.edit.editLineString(polyPlacemark.getGeometry().getOuterBoundary());
+}
+
+function stopEditPoly() {
+  if (!polyPlacemark) {
+    alert('No poly to stop editing!');
+    return;
+  }
+
+  gex.edit.endEditLineString(polyPlacemark.getGeometry().getOuterBoundary());
+}
 
 /* ]]> */
 </script>
 </head>
 <body>
+<input type="button" onclick="drawPoly();" value="Draw Polygon"/>
+<input type="button" onclick="editPoly();" value="Edit Polygon"/>
+<input type="button" onclick="stopEditPoly();" value="Finish Edit"/>
   <div id="map3d_container" style="width: 500px; height: 500px;">
     <div id="map3d" style="height: 100%"></div>
   </div>
-<textarea id="code" style="font-family: monospace; width: 500px; height: 200px;">
-gex.dom.clearFeatures();
-
-gex.dom.addPointPlacemark([0, 0], {
-  stockIcon: 'paddle/blu-circle',
-  name: 'Champion'
-});
-
-gex.dom.addLineStringPlacemark([[0, 0], [1, 1], [2, 0], [3, 1], [4, 0]], {
-  style: {
-    line: {
-      color: '#00f',
-      width: 10
-    }
-  }
-});
-
-gex.dom.addPolygonPlacemark([[0, 0], [-1, 0], [-1, -1], [0, -1]], {
-  style: {
-    poly: {
-      color: '#ff0'
-    },
-    line: {
-      color: '#f00',
-      width: 15
-    }
-  }
-});
-</textarea><br/>
-<input type="button" onclick="eval(document.getElementById('code').value);" value="Run"/>
 </body>
 </html>

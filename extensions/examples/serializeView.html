@@ -20,7 +20,9 @@ google.setOnLoadCallback(function() {
     
     gex = new GEarthExtensions(pluginInstance);
     
-    google.earth.addEventListener(ge, 'frameend', function() {
+    document.getElementById('serializedview').value = gex.util.serializeView();
+
+    google.earth.addEventListener(ge.getView(), 'viewchange', function() {
       document.getElementById('serializedview').value = gex.util.serializeView();
     });
     

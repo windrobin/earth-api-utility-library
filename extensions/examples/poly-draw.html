@@ -17,9 +17,9 @@ google.setOnLoadCallback(function() {
   google.earth.createInstance('map3d', function(pluginInstance) {
     ge = pluginInstance;
     ge.getWindow().setVisibility(true);
-    
+
     gex = new GEarthExtensions(pluginInstance);
-    
+
     gex.util.lookAt([0, 0], { range: 800000 });
 
   }, function() {});
@@ -36,31 +36,15 @@ google.setOnLoadCallback(function() {
 <textarea id="code" style="font-family: monospace; width: 500px; height: 200px;">
 gex.dom.clearFeatures();
 
-gex.dom.addPointPlacemark([0, 0], {
-  stockIcon: 'paddle/blu-circle',
-  name: 'Champion'
-});
-
-gex.dom.addLineStringPlacemark([[0, 0], [1, 1], [2, 0], [3, 1], [4, 0]], {
+var placemark = gex.dom.addPlacemark({
+  polygon: [],
   style: {
-    line: {
-      color: '#00f',
-      width: 10
-    }
+    line: { width: 15, color: '#ff0' },
+    poly: { color: '8000ffff' }
   }
 });
 
-gex.dom.addPolygonPlacemark([[0, 0], [-1, 0], [-1, -1], [0, -1]], {
-  style: {
-    poly: {
-      color: '#ff0'
-    },
-    line: {
-      color: '#f00',
-      width: 15
-    }
-  }
-});
+gex.edit.drawLineString(placemark.getGeometry().getOuterBoundary());
 </textarea><br/>
 <input type="button" onclick="eval(document.getElementById('code').value);" value="Run"/>
 </body>

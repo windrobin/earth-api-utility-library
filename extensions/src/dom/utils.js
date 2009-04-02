@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,9 +47,9 @@ function test_dom_clearFeatures() {
  *     return false in the function.
  * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
  *     to walk.
- * @param {boolean} [options.features] Descend into feature containers?
+ * @param {Boolean} [options.features] Descend into feature containers?
  *     Default true.
- * @param {boolean} [options.geometries] Descend into geometry containers?
+ * @param {Boolean} [options.geometries] Descend into geometry containers?
  *     Default false.
  * @param {Object} [options.rootContext] The application-specific context to
  *     pass to the root item.
@@ -142,8 +142,8 @@ GEarthExtensions.prototype.dom.walk = function() {
 };
 /***IGNORE_BEGIN***/
 function test_dom_walk() {
-  var obj = testext_.dom.createFolder([ // test walking feature container
-    testext_.dom.createPlacemark({ // test walking multi-geometry
+  var obj = testext_.dom.buildFolder([ // test walking feature container
+    testext_.dom.buildPlacemark({ // test walking multi-geometry
       point: [37, -122],
       polygon: new geo.Polygon( // test walking linear ring container
         [ [-1,-1], [-1,1], [1,1], [1,-1] ], // outer boundary
@@ -195,7 +195,7 @@ function test_dom_walk() {
 
 /**
  * Gets the object in the Earth DOM with the given id.
- * @param {string} id The id of the object to retrieve.
+ * @param {String} id The id of the object to retrieve.
  * @return Returns the object with the given id, or null if it was not found.
  */
 GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
@@ -269,7 +269,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     if (typeof options.left == 'number') {
       x = options.left;
     } else if (typeof options.left == 'string' &&
-               options.left[options.left.length - 1] == '%') {
+               options.left.charAt(options.left.length - 1) == '%') {
       x = parseFloat(options.left) / 100;
       xUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -281,7 +281,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
       x = options.right;
       xUnits = this.pluginInstance.UNITS_INSET_PIXELS;
     } else if (typeof options.right == 'string' &&
-               options.right[options.right.length - 1] == '%') {
+               options.right.charAt(options.right.length - 1) == '%') {
       x = 1.0 - parseFloat(options.right) / 100;
       xUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -295,7 +295,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     if (typeof options.bottom == 'number') {
       y = options.bottom;
     } else if (typeof options.bottom == 'string' &&
-               options.bottom[options.bottom.length - 1] == '%') {
+               options.bottom.charAt(options.bottom.length - 1) == '%') {
       y = parseFloat(options.bottom) / 100;
       yUnits = this.pluginInstance.UNITS_FRACTION;
     } else {
@@ -307,7 +307,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
       y = options.top;
       yUnits = this.pluginInstance.UNITS_INSET_PIXELS;
     } else if (typeof options.top == 'string' &&
-               options.top[options.top.length - 1] == '%') {
+               options.top.charAt(options.top.length - 1) == '%') {
       y = 1.0 - parseFloat(options.top) / 100;
       yUnits = this.pluginInstance.UNITS_FRACTION;
     } else {

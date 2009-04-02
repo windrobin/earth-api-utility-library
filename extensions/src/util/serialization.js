@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,12 +51,13 @@ limitations under the License.
       Math.floor(fit180_(cam.lat) * 1e5),
       Math.floor(fit180_(cam.lng) * 1e5),
       Math.floor(alt / encOverflow),
-      alt % encOverflow,
+      (alt >= 0) ? alt % encOverflow :
+                   (encOverflow - Math.abs(alt) % encOverflow),
       Math.floor(fit360_(cam.heading) * 1e5),
       Math.floor(fit360_(cam.tilt) * 1e5),
       Math.floor(fit360_(cam.roll) * 1e5)
     ]);
-  }
+  };
 
   GEarthExtensions.prototype.util.decodeCamera_ = function(s) {
     var encOverflow = 1073741824;
@@ -69,7 +70,7 @@ limitations under the License.
       tilt: arr[5] * 1e-5,
       roll: arr[6] * 1e-5
     };
-  }
+  };
   
   // modified base64 for url
   // http://en.wikipedia.org/wiki/Base64
@@ -109,11 +110,11 @@ limitations under the License.
     var encodeString = "";
 
     while (sgn_num >= 0x20) {
-      encodeString += ALPHABET_[0x20 | (sgn_num & 0x1f)];
+      encodeString += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
       sgn_num >>= 5;
     }
 
-    encodeString += ALPHABET_[sgn_num];
+    encodeString += ALPHABET_.charAt(sgn_num);
     return encodeString;
   }
   
@@ -121,8 +122,6 @@ limitations under the License.
     var len = encoded.length;
     var index = 0;
     var array = [];
-    var lat = 0;
-    var lng = 0;
 
     while (index < len) {
       var b;
@@ -164,5 +163,5 @@ window.test_encode_decode_camera = function() {
   assertWithinThresholdPercent(0.01, cam.roll, cam2.roll);
   
   // TODO: test extremes of camera parameters
-}
+};
 /***IGNORE_END***/

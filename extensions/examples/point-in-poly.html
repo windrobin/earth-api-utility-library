@@ -23,11 +23,11 @@ google.setOnLoadCallback(function() {
     
     var pts = [[0,0], [37,-122], [-60, -50], [0,0]];
 
-    var offStyle = gex.dom.createStyle({
+    var offStyle = gex.dom.buildStyle({
       poly: '#f00'
     });
 
-    var onStyle = gex.dom.createStyle({
+    var onStyle = gex.dom.buildStyle({
       id: 'onPoly',
       poly: '#00f'
     });

@@ -39,7 +39,14 @@ gex.dom.clearFeatures();
 var pm = gex.dom.addPointPlacemark([0, 0], {
   name: 'Champion',
   icon: {
-    stockIcon: 'blu-circle',
+    stockIcon: 'paddle/blu-circle',
+    hotSpot: { left: '50%', bottom: 0 }
+  }
+});
+
+var draggingStyle = gex.dom.buildStyle({
+  icon: {
+    stockIcon: 'paddle/red-circle',
     hotSpot: { left: '50%', bottom: 0 }
   }
 });
@@ -47,6 +54,13 @@ var pm = gex.dom.addPointPlacemark([0, 0], {
 gex.edit.makeDraggable(pm, {
   dropCallback: function() {
     gex.edit.endDraggable(pm);
+  },
+  draggingStyle: draggingStyle,
+  targetScreenOverlay: {
+    icon: 'http://maps.google.com/mapfiles/kml/shapes/cross-hairs.png',
+    overlayXY: { left: 0, top: 0 },
+    screenXY: { left: '50%', top: '50%' },
+    size: { left: 32, bottom: 32 }
   }
 });
 </textarea><br/>

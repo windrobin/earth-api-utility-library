@@ -1,7 +1,7 @@
 <html>
 <head>
 <!--
-  Copyright 2008 Google Inc.
+  Copyright 2009 Google Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ var testext_ = null;
 
 google.load('earth', '1');
 google.setOnLoadCallback(function() {
+  enableUI(false);
   google.earth.createInstance('map3d', function(pluginInstance) {
+    enableUI(true);
     testplugin_ = pluginInstance;
     testplugin_.getWindow().setVisibility(true);
     testext_ = new GEarthExtensions(testplugin_);
@@ -39,7 +41,7 @@ google.setOnLoadCallback(function() {
 
 
 function exposeTestFunctionNames() {
-  var tests = [];
+  var tests = {};
   
   if (navigator.userAgent.toLowerCase().indexOf('msie') >= 0) {
     // IE doesn't support enumerating custom members of window
@@ -63,7 +65,7 @@ function exposeTestFunctionNames() {
         for (var j = 0; j < possibleTests.length; j++) {
           if (possibleTests[j] in window &&
               typeof window[possibleTests[j]] === 'function')
-            tests.push(possibleTests[j]);
+            tests[possibleTests[j]] = true;
         }
       }
     }    
@@ -71,12 +73,18 @@ function exposeTestFunctionNames() {
     for (var f in window) {
       if (f.substr(0, 5) == 'test_' &&
           typeof window[f] === 'function')
-        tests.push(f);
+        tests[f] = true;
     }
   }
-  
-  tests.sort();
-  return tests;
+
+  // convert into an array
+  var testsArr = [];
+  for (var test in tests) {
+    testsArr.push(test);
+  }
+
+  testsArr.sort();
+  return testsArr;
 }
 
 function clearResults() {
@@ -94,6 +102,15 @@ var TESTS_INTERACTIVE = 0x01;
 var TESTS_AUTOMATED = 0x02;
 var TESTS_ALL = TESTS_INTERACTIVE | TESTS_AUTOMATED;
 
+function enableUI(enable) {
+  var c = document.getElementById('run-buttons').firstChild;
+  while (c) {
+    if ('disabled' in c)
+      c.disabled = enable ? false : true;
+    c = c.nextSibling;
+  }
+}
+
 function runTests(type) {
   if (!type)
     type = TESTS_ALL;
@@ -104,23 +121,11 @@ function runTests(type) {
   var i = -1;
   
   function runNextTest() {
-    // begin testing ui
-    var c = document.getElementById('run-buttons').firstChild;
-    while (c) {
-      if ('disabled' in c)
-        c.disabled = true;
-      c = c.nextSibling;
-    }
+    enableUI(false);
     
     i++;
     if (i >= testFnNames.length) {
-      // end testing ui
-      var c = document.getElementById('run-buttons').firstChild;
-      while (c) {
-        if ('disabled' in c)
-          c.disabled = false;
-        c = c.nextSibling;
-      }
+      enableUI(true);
       return;
     }
     
@@ -171,13 +176,17 @@ function runTests(type) {
       
         // TODO: use e.stackTrace
         // log result and run next test
+        for (var k in e) {
+          messages.push(k + ' = ' + e[k].toString());
+        }
+        
         logResult(testName, false, messages.join('<br>'));
         runNextTest();
       };
     }
-    
-    try {
-      if (testFn.interactive) {
+
+    var runFunc = function() {
+      if (testFn.interactive || testFn.async) {
         testFn.call(null,
             makeSuccessFn(testName, testFn),
             makeErrorFn(testName, testFn));
@@ -185,8 +194,18 @@ function runTests(type) {
         testFn.call(null);
         makeSuccessFn(testName, testFn)();
       }
-    } catch (e) {
-      makeErrorFn(testName, testFn)(e);
+    };
+
+    var passExceptions = document.getElementById('passexceptions').checked;
+
+    if (passExceptions) {
+      runFunc.call();
+    } else {
+      try {
+        runFunc.call();
+      } catch (e) {
+        makeErrorFn(testName, testFn)(e);
+      }
     }
   }
   
@@ -241,7 +260,10 @@ function runTests(type) {
   
   <h1><code>GEarthExtensions</code> Test Runner</h1>
   <div id="run-buttons">
+    <input type="button" onclick="runTests(TESTS_AUTOMATED)" value="Run Automated Tests"/>
     <input type="button" onclick="runTests(TESTS_ALL)" value="Run All Tests"/>
+    <input type="checkbox" id="passexceptions"/>
+    <label for="passexceptions">Debugging: Pass exceptions to browser?</label>
   </div>
   <ol id="test-results"></ol>
 </body>

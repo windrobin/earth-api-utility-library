@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@ limitations under the License.
 /**
  * Creates a new link object with the given parameters.
  * @function
- * @param {string} [href] The link href.
- * @param {object} options The link parameters.
- * @param {string} [options.href] The link href.
+ * @param {String} [href] The link href.
+ * @param {Object} options The link parameters.
+ * @param {String} [options.href] The link href.
  * @param {KmlRefreshModeEnum} [options.refreshMode] The link refresh mode.
- * @param {number} [options.refreshInterval] The link refresh interval,
+ * @param {Number} [options.refreshInterval] The link refresh interval,
  *     in seconds.
  * @param {KmlViewRefreshModeEnum} [options.viewRefreshMode] The view-based
  *     refresh mode.
  * @type KmlLink
  */
-GEarthExtensions.prototype.dom.createLink = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlLink',
   apiFactoryFn: 'createLink',
   defaultProperty: 'href',

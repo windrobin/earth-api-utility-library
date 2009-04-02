@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * Contains DOM builder functions (createXX) and DOM
+ * Contains DOM builder functions (buildXX) and DOM
  * manipulation/traversal functions.
  * @namespace
  */
@@ -23,7 +23,7 @@ GEarthExtensions.prototype.dom = {isnamespace_:true};
 /**
  * This is a sort of parametrized decorator around a fundamental constructor
  * DOM builder function,
- * it calls GEPlugin's createXX factory functions, allows for a type of
+ * it calls GEPlugin's buildXX factory functions, allows for a type of
  * inheritance, provides extra functionality such as automatic property setters,
  * default arguments (i.e. fn('bar', {cat:'dog'}) == fn({foo:'bar', cat:'dog'}))
  * and checking if the parameter is an instance of the object we're constructing
@@ -44,7 +44,7 @@ GEarthExtensions.domBuilder_ = function(params) {
         params.propertySpec = [];
       }
       
-      for (member in base.builderParams.propertySpec) {
+      for (var member in base.builderParams.propertySpec) {
         if (!(member in params.propertySpec)) {
           params.propertySpec[member] =
               base.builderParams.propertySpec[member];
@@ -127,10 +127,10 @@ GEarthExtensions.domBuilder_ = function(params) {
     options = GEarthExtensions.checkParameters(options,
         false, params.propertySpec);
     
-    // call Earth API factory function, i.e. createXx(...)
-    var newObj = this.pluginInstance[params.apiFactoryFn].call(
-                     this.pluginInstance, options.id);
-    
+    // call Earth API factory function, i.e. createXX(...)
+    var newObj = this.util.callMethod(
+                     this.pluginInstance, params.apiFactoryFn, options.id);
+
     // call constructor fn with factory-created object and options literal
     if (!geo.util.isUndefined(params.constructor)) {
       params.constructor.call(this, newObj, options);
@@ -148,13 +148,14 @@ GEarthExtensions.domBuilder_ = function(params) {
     }
     
     // run automatic property setters as defined in property spec
-    for (property in params.propertySpec) {
+    for (var property in params.propertySpec) {
       // TODO: abstract away into isAuto()
       if (params.propertySpec[property] === GEarthExtensions.AUTO &&
           property in options) {
         // auto setters calls newObj.setXx(options[xx]) if xx is in options
-        newObj['set' + property.substr(0,1).toUpperCase() +
-            property.substr(1)].call(newObj, options[property]);
+        this.util.callMethod(newObj,
+            'set' + property.charAt(0).toUpperCase() + property.substr(1),
+            options[property]);
       }
     }
     

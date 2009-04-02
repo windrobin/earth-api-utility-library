@@ -1,5 +1,5 @@
 /*
-Copyright 2008 Google Inc.
+Copyright 2009 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -76,15 +76,18 @@ function(obj, property, options) {
       }
     }[options.easing];
   }
+
+  var propertyTitleCase = property.charAt(0).toUpperCase() +
+                          property.substr(1);
+
+  var me = this;
   
   var getter = function() {
-    return obj['get' + property.substr(0,1).toUpperCase() +
-        property.substr(1)].call(obj);
+    return me.util.callMethod(obj, 'get' + propertyTitleCase);
   };
   
   var setter = function(val) {
-    return obj['set' + property.substr(0,1).toUpperCase() +
-        property.substr(1)].call(obj, val);
+    return me.util.callMethod(obj, 'set' + propertyTitleCase, val);
   };
     
   // use EITHER start/end or delta
