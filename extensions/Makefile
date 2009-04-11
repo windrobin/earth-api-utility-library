@@ -16,21 +16,25 @@ DIST=dist
 TEST=test
 DOCS=docs
 DOCS_TEMPLATE=googlecode_wiki
-GEOJS=lib/third-party/geojs
 # TLIB = toolkit lib dir
 TLIB=${GEOJS}/lib
 LIB=lib
+GEOJS=${LIB}/third-party/geojs
 LICENSE_HEADER_JS=lib/license-header.js
 SRC=src
 TMP=tmp
 COMPRESS=java -jar ${TLIB}/yuicompressor-2.4.2.jar
-JSCOVERAGE=${TLIB}/jscoverage
+JSCOVERAGE=${LIB}/jscoverage
 FIND_SRC_CLAUSES=-name \*.js -not -name \*.jscoverage.js
 AWK_TEST_RANGE="/\/\*\*\*IGNORE_BEGIN\*\*\*\//,/\/\*\*\*IGNORE_END\*\*\*\//"
 
+all: tests dist docs
+
 dist: makegeojs concat
+# make sure the concat file isn't instrumented
+	[[ ! -f ${TMP}/.instrumented ]]
 	mkdir -p ${DIST}
-	# NOTE: this packages geojs with concat GEarthExtensions	
+# NOTE: this packages geojs with concat GEarthExtensions	
 	cat ${GEOJS}/dist/geo.js > ${DIST}/${DISTNAME}.js
 	echo >> ${DIST}/${DISTNAME}.js
 	cat ${LICENSE_HEADER_JS} ${TMP}/concat.js >> ${DIST}/${DISTNAME}.js
@@ -39,8 +43,10 @@ dist: makegeojs concat
 	cat ${GEOJS}/dist/geo.pack.js > ${DIST}/${DISTNAME}.pack.js
 	echo >> ${DIST}/${DISTNAME}.pack.js
 	cat ${LICENSE_HEADER_JS} ${TMP}/pack.js >> ${DIST}/${DISTNAME}.pack.js
+	@echo ------ GEarthExtensions: Dist files are ready.
 
 lint:
+	@echo ------ GEarthExtensions: Running JsLint...
 	find ${SRC} -name \*.js -exec echo \; -exec echo {} \; \
 		-exec java -classpath .:${TLIB}/rhino.jar \
 		org.mozilla.javascript.tools.shell.Main ${TLIB}/jslint.js {} \;
@@ -52,9 +58,12 @@ tests: makegeojs consolidatetests concat
 	cp ${GEOJS}/dist/geo.js ${TEST}
 	cp ${TMP}/tests.js ${TEST}/${DISTNAME}.tests.js
 	cp ${TMP}/concat.js ${TEST}/${DISTNAME}.js
+	@echo ------ GEarthExtensions: Tests are ready. Run test/test-runner.html
 
 coveragetests: consolidatetests instrument concat tests
 	cp -rf ${TMP}/${SRC}/* ${TEST}
+	@echo ------ GEarthExtensions: Covered tests are ready. \
+		Open test/jscoverage.html?test/test-runner.html in a browser.
 
 docs: concat
 	java -classpath .:${TLIB}/rhino.jar \
@@ -62,9 +71,12 @@ docs: concat
 		${TLIB}/jsdoc-toolkit/app/run.js -a \
 		-t=${TLIB}/jsdoc-toolkit/templates/${DOCS_TEMPLATE}/ \
 		-d=${DOCS} ${TMP}/concat.js -j=${TLIB}/jsdoc-toolkit/app/run.js
+	@echo ------ GEarthExtensions: Docs are ready. Copy to wiki/ folder in SVN repository.
 
 clean: cleangeojs
 	rm -rf ${TMP}
+# don't wipe out .svn/ in DIST dir
+	touch ${DIST}/dummy.js
 	rm ${DIST}/*.js
 	rm -rf ${DOCS}
 	rm -rf ${TEST}
@@ -87,6 +99,7 @@ instrument:
 	${JSCOVERAGE} ${TMP}/${SRC} ${TMP}/instrumented
 	rm -rf ${TMP}/${SRC}
 	mv ${TMP}/instrumented ${TMP}/src
+	touch ${TMP}/.instrumented
 
 consolidatetests:
 	rm -rf ${TMP}
