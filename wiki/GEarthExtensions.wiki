@@ -1,5 +1,4 @@
-#labels Phase-Reference
-
+#labels Phase-Reference,Featured
 This is the reference for the GEarthExtensions Class.
 
 The root class/namespace hybrid for the Earth API extensions library. This class groups functionality into namespaces such as [GEarthExtensions_dom GEarthExtensions.dom] and [GEarthExtensions_fx GEarthExtensions.fx].
@@ -71,7 +70,5 @@ Determines whether or not the given object is directly an instance of the specif
 
   * *object* _{{{Object}}}_  The object to test.
   * *type* _{{{String}}}_  The Earth API type string, i.e. 'KmlPlacemark'
-
-
 
 
