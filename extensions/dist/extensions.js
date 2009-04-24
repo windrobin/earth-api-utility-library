@@ -23,6 +23,7 @@ var geo = {isnamespace_:true};
 /*
 see https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference:Objects:Array:map
 */
+//#JSCOVERAGE_IF !('map' in Array.prototype)
 if (!('map' in Array.prototype)) {
   Array.prototype.map = function(mapFn) {
     var len = this.length;
@@ -41,6 +42,7 @@ if (!('map' in Array.prototype)) {
     return res;
   };
 }
+//#JSCOVERAGE_ENDIF
 /**
  * Create a new bounds object from the given parameters.
  * @param {geo.Bounds|geo.Point} [sw|bounds] Either an existing bounds object
@@ -740,27 +742,51 @@ geo.Path.prototype.containsPoint = function(point) {
   return oddNodes;
 };
 
-///**
-// * Returns the approximate area of the polygon formed by the path when the path
-// * is closed.
-// * Taken from http://econym.googlepages.com/epoly.htm and
-// * NOTE: this method only works with non-intersecting polygons.
-// */
-//geo.Path.prototype.area = function() {
-//  var a = 0;
-//  var b = this.Bounds();
-//  var x0 = b.getSouthWest().lng();
-//  var y0 = b.getSouthWest().lat();
-//  for (var i=0; i < this.getVertexCount(); i++) {
-//    var j = (i + 1) % this.coords_.length;
-//    var x1 = this.getVertex(i).distanceFrom(new GLatLng(this.getVertex(i).lat(),x0));
-//    var x2 = this.getVertex(j).distanceFrom(new GLatLng(this.getVertex(j).lat(),x0));
-//    var y1 = this.getVertex(i).distanceFrom(new GLatLng(y0,this.getVertex(i).lng()));
-//    var y2 = this.getVertex(j).distanceFrom(new GLatLng(y0,this.getVertex(j).lng()));
-//    a += x1*y2 - x2*y1;
-//  }
-//  return Math.abs(a * 0.5);
-//};
+/**
+ * Returns the latitude/longitude bounds for this path.
+ * @type geo.Bounds
+ */
+geo.Path.prototype.bounds = function() {
+  if (!this.numCoords()) {
+    return new geo.Bounds();
+  }
+
+  var bounds = new geo.Bounds(this.coord(0));
+
+  var numCoords = this.numCoords();
+  for (var i = 1; i < numCoords; i++) {
+    bounds.extend(this.coord(i));
+  }
+
+  return bounds;
+};
+// TODO: unit test
+
+/**
+ * Returns the approximate area of the polygon formed by the path when the path
+ * is closed.
+ * Taken from http://econym.googlepages.com/epoly.htm and
+ * NOTE: this method only works with non-intersecting polygons.
+ */
+geo.Path.prototype.area = function() {
+  var a = 0;
+  var b = this.bounds();
+  var x0 = b.southWestBottom().lng();
+  var y0 = b.southWestBottom().lat();
+
+  var numCoords = this.numCoords();
+  for (var i = 0; i < numCoords; i++) {
+    var j = (i + 1) % numCoords;
+    var x1 = this.coord(i).distance(new geo.Point(this.coord(i).lat(), x0));
+    var x2 = this.coord(j).distance(new geo.Point(this.coord(j).lat(), x0));
+    var y1 = this.coord(i).distance(new geo.Point(y0, this.coord(i).lng()));
+    var y2 = this.coord(j).distance(new geo.Point(y0, this.coord(j).lng()));
+    a += x1 * y2 - x2 * y1;
+  }
+
+  return Math.abs(a * 0.5);
+};
+// TODO: unit test
 /**
  * Creates a new point from the given parameters.
  * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation} point
@@ -1157,7 +1183,7 @@ geo.util.isObjectLiteral = function(object) {
  */
 geo.util.isEarthAPIObject_ = function(object) {
   return object !== null &&
-      (typeof object == 'object' || typeof object == 'function') &&
+      (typeof object == 'function' || typeof object == 'object') &&
       'getType' in object;
 };
 
@@ -1331,7 +1357,8 @@ GEarthExtensions.isExtensionsNamespace_ = function(object) {
  */
 GEarthExtensions.isInstanceOfEarthInterface = function(object, type) {
   // TODO: double check that all earth interfaces are typeof 'function'
-  return object !== null && typeof object == 'function' &&
+  return object !== null &&
+      (typeof object == 'object' || typeof object == 'function') &&
       'getType' in object && object.getType() == type;
 };
 /**
@@ -1492,7 +1519,15 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
     name: GEarthExtensions.AUTO,
     visibility: GEarthExtensions.AUTO,
     description: GEarthExtensions.AUTO,
-    snippet: GEarthExtensions.AUTO
+    snippet: GEarthExtensions.AUTO,
+    
+    // allowed properties
+    region: GEarthExtensions.ALLOWED
+  },
+  constructor: function(featureObj, options) {
+    if (options.region) {
+      featureObj.setRegion(this.dom.buildRegion(options.region));
+    }
   }
 });
 
@@ -2124,6 +2159,73 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
     viewBoundScale: GEarthExtensions.AUTO
   }
 });
+
+/**
+ * Creates a new region with the given parameters.
+ * @function
+ */
+// TODO: documentation
+GEarthExtensions.prototype.dom.buildRegion =
+GEarthExtensions.domBuilder_({
+  apiInterface: 'KmlRegion',
+  apiFactoryFn: 'createRegion',
+  propertySpec: {
+    // required properties
+    box: GEarthExtensions.REQUIRED,
+    
+    // allowed properties
+    lod: GEarthExtensions.ALLOWED
+  },
+  constructor: function(regionObj, options) {
+    // TODO: exception if any of the options are missing
+    var box = this.pluginInstance.createLatLonAltBox('');
+    
+    // center +/- span to calculate n/e/s/w
+    if (options.box.center && options.box.span) {
+      if (!geo.util.isArray(options.box.span) &&
+          typeof options.box.span === 'number') {
+        // use this one number as both the lat and long span
+        options.box.span = [options.box.span, options.box.span];
+      }
+      
+      var center = new geo.Point(options.box.center);
+      options.box.north = center.lat() + options.box.span[0] / 2;
+      options.box.south = center.lat() - options.box.span[0] / 2;
+      options.box.east = center.lng() + options.box.span[1] / 2;
+      options.box.west = center.lng() - options.box.span[1] / 2;
+    }
+    
+    box.setAltBox(options.box.north, options.box.south,
+                  options.box.east, options.box.west,
+                  options.box.rotation || 0,
+                  options.box.minAltitude || 0,
+                  options.box.maxAltitude || 0,
+                  options.box.altitudeMode ||
+                      this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND);
+    
+    // NOTE: regions MUST be given an Lod due to
+    // http://code.google.com/p/earth-api-samples/issues/detail?id=190
+    var lod = this.pluginInstance.createLod('');
+    lod.set(-1, -1, 0, 0); // default Lod
+    
+    if (options.lod && geo.util.isArray(options.lod)) {
+      // TODO: exception if it's not an array
+      if (options.lod.length == 2) {
+        // minpix, maxpix
+        lod.set(options.lod[0], options.lod[1], 0, 0);
+      } else if (options.lod.length == 4) {
+        // minpix, minfade, maxfade, maxpix
+        lod.set(options.lod[0], options.lod[3],
+                options.lod[1], options.lod[2]);
+      } else {
+        // TODO: exception
+      }
+    }
+    
+    regionObj.setLatLonAltBox(box);
+    regionObj.setLod(lod);
+  }
+});
 /**
  * Creates a new style with the given parameters.
  * @function
@@ -2133,16 +2235,25 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
  * @param {String} [options.icon.href] The icon href.
  * @param {Number} [options.icon.scale] The icon scaling factor.
  * @param {ColorSpec} [options.icon.color] The color of the icon.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the icon,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
  
  * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
  * @param {Number} [options.label.scale] The label scaling factor.
  * @param {ColorSpec} [options.label.color] The color of the label.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the label,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
 
  * @param {ColorSpec|Object} [options.line] The line color or a line
  *     object literal.
  * @param {Number} [options.line.width] The line width.
  * @param {ColorSpec} [options.line.color] The line color.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the line,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
 
  * @param {ColorSpec|Object} [options.poly] The polygon color or a polygon style
  *     object literal.
@@ -2151,6 +2262,9 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
  * @param {Boolean} [options.poly.outline] Whether or not the polygon will have
  *     an outline.
  * @param {ColorSpec} [options.poly.color] The color of the polygon fill.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the polygon,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
 
  * @type KmlStyle
  */
@@ -2165,6 +2279,22 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
   },
   constructor: function(styleObj, options) {
     // set icon style
+    var pad2 = function(s) {
+      return ((s.length < 2) ? '0' : '') + s;
+    };
+    
+    var me = this;
+    
+    var mergeColorOpacity = function(color, opacity) {
+      color = color ? me.util.parseColor(color) : 'ffffffff';
+      if (!geo.util.isUndefined(opacity)) {
+        color = pad2(Math.floor(255 * opacity).toString(16)) +
+            color.substring(2);
+      }
+      
+      return color;
+    };
+    
     if (options.icon) {
       var iconStyle = styleObj.getIconStyle();
 
@@ -2194,9 +2324,18 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('heading' in options.icon) {
         iconStyle.setHeading(options.icon.heading);
       }
-      if ('color' in options.icon) {
-        iconStyle.getColor().set(
-            this.util.parseColor(options.icon.color));
+      if ('color' in options.icon || 'opacity' in options.icon) {
+        options.icon.color = mergeColorOpacity(options.icon.color,
+                                               options.icon.opacity);
+        iconStyle.getColor().set(options.icon.color);
+      }
+      if ('opacity' in options.icon) {
+        if (!('color' in options.icon)) {
+          options.icon.color = 'ffffffff';
+        }
+        
+        options.icon.color = pad2(options.icon.opacity.toString(16)) +
+            options.icon.color.substring(2);
       }
       if ('hotSpot' in options.icon) {
         this.dom.setVec2(iconStyle.getHotSpot(), options.icon.hotSpot);
@@ -2216,9 +2355,10 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('scale' in options.label) {
         labelStyle.setScale(options.label.scale);
       }
-      if ('color' in options.label) {
-        labelStyle.getColor().set(
-            this.util.parseColor(options.label.color));
+      if ('color' in options.label || 'opacity' in options.label) {
+        options.label.color = mergeColorOpacity(options.label.color,
+                                                options.label.opacity);
+        labelStyle.getColor().set(options.label.color);
       }
       // TODO: add colormode
     }
@@ -2235,9 +2375,10 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('width' in options.line) {
         lineStyle.setWidth(options.line.width);
       }
-      if ('color' in options.line) {
-        lineStyle.getColor().set(
-            this.util.parseColor(options.line.color));
+      if ('color' in options.line || 'opacity' in options.line) {
+        options.line.color = mergeColorOpacity(options.line.color,
+                                               options.line.opacity);
+        lineStyle.getColor().set(options.line.color);
       }
       // TODO: add colormode
     }
@@ -2257,9 +2398,10 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('outline' in options.poly) {
         polyStyle.setOutline(options.poly.outline);
       }
-      if ('color' in options.poly) {
-        polyStyle.getColor().set(
-            this.util.parseColor(options.poly.color));
+      if ('color' in options.poly || 'opacity' in options.poly) {
+        options.poly.color = mergeColorOpacity(options.poly.color,
+                                               options.poly.opacity);
+        polyStyle.getColor().set(options.poly.color);
       }
       // TODO: add colormode
     }
@@ -2742,7 +2884,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     }
   }
 
-  // TODO: docs
+  /**
+   * Allows the user to drag the given placemark by using the mouse.
+   */
   GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
     this.edit.endDraggable(placemark);
 
@@ -2824,7 +2968,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     google.earth.addEventListener(placemark, 'mousedown', mouseDownListener);
   };
 
-  // TODO: docs
+  /**
+   * Prevents the given placemark from being draggable.
+   */
   GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
     // get placemark's drag data
     var placemarkDragData = this.util.getJsDataValue(
@@ -2838,7 +2984,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     }
   };
 
-  // TODO: docs
+  /**
+   * Enters a mode in which the user can place the given placemark onto the
+   * globe by clicking on the globe.
+   */
   GEarthExtensions.prototype.edit.place = function(placemark, options) {
     // TODO: assert this is a point placemark
     options = GEarthExtensions.checkParameters(options, false, {
@@ -2858,11 +3007,14 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     var mouseDownListener;
     mouseDownListener = function(event) {
       if (currentDragContext_ && event.getButton() == 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        
         // remove listener for mousemove on the globe
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousemove', mouseMoveListener);
 
-        // remove listener for mouseup on the window
+        // remove listener for mousedown on the window
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousedown', mouseDownListener);
 
@@ -2880,15 +3032,12 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           google.earth.removeEventListener(me.pluginInstance.getWindow(),
               'mousemove', mouseMoveListener);
 
-          // remove listener for mouseup on the window
+          // remove listener for mousedown on the window
           google.earth.removeEventListener(me.pluginInstance.getWindow(),
               'mousedown', mouseDownListener);
 
           stopDragging_(me, true); // abort
         }
-
-        google.earth.removeEventListener(placemark, 'mousedown',
-            mouseDownListener);
       }
     });
 
@@ -2914,31 +3063,53 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     if (lineStringEditData) {
       this.edit.endEditLineString(lineString);
     }
-
-    var coords = lineString.getCoordinates();
-
-    var innerDoc = this.pluginInstance.parseKml(
-        '<Document>' +
-        '<Style id="_GEarthExtensions_regularPlacemark"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '</IconStyle></Style>' +
-        '</Document>');
+    
+    var me = this;
 
     // TODO: options: icon for placemarks, bounce?, etc.
 
-    var me = this;
-
-    var placemarks = [];
-
     var done = false;
-
+    var placemarks = [];
     var headPlacemark = null;
+    var coords = lineString.getCoordinates();
+    var innerDoc = this.pluginInstance.parseKml(
+        '<Document>' +
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '</IconStyle></Style>' +
+        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '<scale>1.3</scale><color>ff00ff00</color>' +
+        '</IconStyle></Style>' +
+        '<StyleMap id="_GEarthExtensions_firstCoordinate">' +
+        '<Pair><key>normal</key>' +
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
+        '</Pair><Pair><key>highlight</key>' +
+        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>' +
+        '</Pair></StyleMap>' +
+        '</Document>');
 
+    var endFunction = function() {
+      me.edit.endDraggable(headPlacemark);
+      me.dom.removeObject(innerDoc);
+      me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+      placemarks = [];
+      done = true;
+
+      // TODO: user-defined completion callback
+    };
+    
+    var finishListener = function(event) {
+      event.preventDefault();
+      endFunction.call(null);
+    };
+    
     var drawNext;
     drawNext = function() {
       headPlacemark = me.dom.buildPointPlacemark([100, 0], {
-        style: '#_GEarthExtensions_regularPlacemark'
+        style: '#_GEarthExtensions_regularCoordinate'
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
       placemarks.push(headPlacemark);
@@ -2950,6 +3121,14 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
                 headPlacemark.getGeometry().getLatitude(),
                 headPlacemark.getGeometry().getLongitude(), 0);
 
+            if (placemarks.length == 1) {
+              // set up a click listener on the first placemark -- if it gets
+              // clicked, stop drawing the linestring
+              placemarks[0].setStyleUrl('#_GEarthExtensions_firstCoordinate');
+              google.earth.addEventListener(placemarks[0], 'mousedown',
+                  finishListener);
+            }
+
             setTimeout(drawNext, 0);
           }
         }
@@ -2957,28 +3136,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     };
 
     drawNext.call(null);
-
-    var endFunction = function() {
-      me.edit.endDraggable(headPlacemark);
-
-      done = true;
-
-      me.dom.removeObject(innerDoc);
-
-      placemarks = [];
-
-      me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
-
-      // TODO: user-defined completion callback
-    };
-
-    var dblclickFinishListener = function(event) {
-      event.preventDefault();
-      endFunction.call(null);
-    };
     
     google.earth.addEventListener(me.pluginInstance.getWindow(), 'dblclick',
-        dblclickFinishListener);
+        finishListener);
 
     // display the editing UI
     this.pluginInstance.getFeatures().appendChild(innerDoc);
@@ -2988,7 +3148,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       abortAndEndFn: function() {
         endFunction.call(null);
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
-            'dblclick', dblclickFinishListener);
+            'dblclick', finishListener);
       }
     });
   };
@@ -3010,11 +3170,11 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     var innerDoc = this.pluginInstance.parseKml(
         '<Document>' +
-        '<Style id="_GEarthExtensions_regularPlacemark"><IconStyle>' +
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
         '<Icon><href>http://maps.google.com/mapfiles/kml/' +
         'shapes/placemark_circle.png</href></Icon>' +
         '</IconStyle></Style>' +
-        '<StyleMap id="_GEarthExtensions_midPlacemark">' +
+        '<StyleMap id="_GEarthExtensions_midCoordinate">' +
         '<Pair><key>normal</key>' +
         '<Style><IconStyle>' +
         '<Icon><href>http://maps.google.com/mapfiles/kml/' +
@@ -3022,14 +3182,11 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         '<color>60ffffff</color><scale>0.75</scale>' +
         '</IconStyle></Style></Pair>' +
         '<Pair><key>highlight</key>' +
-        '<styleUrl>#_GEarthExtensions_regularPlacemark</styleUrl>' +
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
         '</Pair></StyleMap>' +
         '</Document>');
 
-    // TODO: doubleclick or rightclick deletes points
-    
     // TODO: options: icon for placemarks, bounce?, linear ring?
-
     // TODO: it may be easier to use a linked list for all this
 
     var coordDataArr = [];
@@ -3139,7 +3296,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           var i;
 
           // change style to regular placemark style
-          this.setStyleUrl('#_GEarthExtensions_regularPlacemark');
+          this.setStyleUrl('#_GEarthExtensions_regularCoordinate');
 
           // shift coordinates in the KmlCoordArray down
           // TODO: speed this up
@@ -3159,7 +3316,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           // placemark (will be to the left of the new coord)
           coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: coords.get(coordData.index),
-            style: '#_GEarthExtensions_midPlacemark'
+            style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
 
@@ -3171,7 +3328,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           // create a new right midpoint
           newCoordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: coords.get(coordData.index),
-            style: '#_GEarthExtensions_midPlacemark'
+            style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(newCoordData.rightMidPlacemark);
 
@@ -3186,7 +3343,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           google.earth.addEventListener(this, 'dblclick',
               newCoordData.deleteEventListener);
 
-          newCoordData.regularDragCallback = makeRegularDragCallback_(newCoordData);
+          newCoordData.regularDragCallback =
+              makeRegularDragCallback_(newCoordData);
 
           // insert the new coordData
           coordDataArr.splice(newCoordData.index, 0, newCoordData);
@@ -3205,74 +3363,78 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       };
     };
 
-    // create the edit placemarks
-    for (var i = 0; i < numCoords; i++) {
-      var curCoord = coords.get(i);
-      var nextCoord = coords.get((i + 1) % numCoords);
+    me.util.batchExecute(function() {
+      // create the edit placemarks
+      for (var i = 0; i < numCoords; i++) {
+        var curCoord = coords.get(i);
+        var nextCoord = coords.get((i + 1) % numCoords);
 
-      var coordData = {};
-      coordDataArr.push(coordData);
-      coordData.index = i;
+        var coordData = {};
+        coordDataArr.push(coordData);
+        coordData.index = i;
 
-      // create the regular placemark on the point
-      coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
-        style: '#_GEarthExtensions_regularPlacemark'
-      });
-      innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
-
-      coordData.regularDragCallback = makeRegularDragCallback_(coordData);
-
-      // set up drag handlers for main placemarks
-      me.edit.makeDraggable(coordData.regularPlacemark, {
-        bounce: false,
-        dragCallback: coordData.regularDragCallback
-      });
-
-      coordData.deleteEventListener =
-          makeRegularDeleteEventListener_(coordData);
-      google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
-          coordData.deleteEventListener);
-
-      // create the next midpoint placemark
-      if (i < numCoords - 1 || isRing) {
-        coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
-          point: new geo.Point(curCoord).midpoint(
-              new geo.Point(nextCoord)),
-          style: '#_GEarthExtensions_midPlacemark'
+        // create the regular placemark on the point
+        coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
+          style: '#_GEarthExtensions_regularCoordinate'
         });
-        innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+        innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
 
-        // set up drag handlers for mid placemarks
-        me.edit.makeDraggable(coordData.rightMidPlacemark, {
+        coordData.regularDragCallback = makeRegularDragCallback_(coordData);
+
+        // set up drag handlers for main placemarks
+        me.edit.makeDraggable(coordData.regularPlacemark, {
           bounce: false,
-          dragCallback: makeMidDragCallback_(coordData)
+          dragCallback: coordData.regularDragCallback
         });
-      }
-    }
 
-    // display the editing UI
-    this.pluginInstance.getFeatures().appendChild(innerDoc);
+        coordData.deleteEventListener =
+            makeRegularDeleteEventListener_(coordData);
+        google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
+            coordData.deleteEventListener);
+
+        // create the next midpoint placemark
+        if (i < numCoords - 1 || isRing) {
+          coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+            point: new geo.Point(curCoord).midpoint(
+                new geo.Point(nextCoord)),
+            style: '#_GEarthExtensions_midCoordinate'
+          });
+          innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+
+          // set up drag handlers for mid placemarks
+          me.edit.makeDraggable(coordData.rightMidPlacemark, {
+            bounce: false,
+            dragCallback: makeMidDragCallback_(coordData)
+          });
+        }
+      }
+
+      // display the editing UI
+      me.pluginInstance.getFeatures().appendChild(innerDoc);
+    });
 
     // set up an abort function for use in endEditLineString
-    this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
+    me.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
       innerDoc: innerDoc,
       abortAndEndFn: function() {
-        var i;
-
-        for (i = 0; i < coordDataArr.length; i++) {
-          // teardown for regular placemark, its delete event listener
-          // and its right-mid placemark
-          google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
-              'dblclick', coordDataArr[i].deleteEventListener);
-
-          me.edit.endDraggable(coordDataArr[i].regularPlacemark);
+        me.util.batchExecute(function() {
+          var i;
           
-          if (coordDataArr[i].rightMidPlacemark) {
-            me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
-          }
-        }
+          for (i = 0; i < coordDataArr.length; i++) {
+            // teardown for regular placemark, its delete event listener
+            // and its right-mid placemark
+            google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
+                'dblclick', coordDataArr[i].deleteEventListener);
 
-        me.dom.removeObject(innerDoc);
+            me.edit.endDraggable(coordDataArr[i].regularPlacemark);
+          
+            if (coordDataArr[i].rightMidPlacemark) {
+              me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
+            }
+          }
+
+          me.dom.removeObject(innerDoc);
+        });
       }
     });
   };
