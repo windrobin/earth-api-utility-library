@@ -55,7 +55,9 @@ gex.fx.animateProperty(iconStyle, 'scale', {
       end: 1, // could also use delta
       easing: 'in',
       callback: function() {
-        alert('chained animateProperty calls completed');
+        setTimeout(function() {
+          alert('chained animateProperty calls completed');
+        }, 0);
       }
     });
   }
