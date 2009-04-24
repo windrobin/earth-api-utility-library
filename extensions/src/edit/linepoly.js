@@ -23,31 +23,53 @@ limitations under the License.
     if (lineStringEditData) {
       this.edit.endEditLineString(lineString);
     }
-
-    var coords = lineString.getCoordinates();
-
-    var innerDoc = this.pluginInstance.parseKml(
-        '<Document>' +
-        '<Style id="_GEarthExtensions_regularPlacemark"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '</IconStyle></Style>' +
-        '</Document>');
+    
+    var me = this;
 
     // TODO: options: icon for placemarks, bounce?, etc.
 
-    var me = this;
-
-    var placemarks = [];
-
     var done = false;
-
+    var placemarks = [];
     var headPlacemark = null;
+    var coords = lineString.getCoordinates();
+    var innerDoc = this.pluginInstance.parseKml(
+        '<Document>' +
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '</IconStyle></Style>' +
+        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>' +
+        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
+        'shapes/placemark_circle.png</href></Icon>' +
+        '<scale>1.3</scale><color>ff00ff00</color>' +
+        '</IconStyle></Style>' +
+        '<StyleMap id="_GEarthExtensions_firstCoordinate">' +
+        '<Pair><key>normal</key>' +
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
+        '</Pair><Pair><key>highlight</key>' +
+        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>' +
+        '</Pair></StyleMap>' +
+        '</Document>');
 
+    var endFunction = function() {
+      me.edit.endDraggable(headPlacemark);
+      me.dom.removeObject(innerDoc);
+      me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+      placemarks = [];
+      done = true;
+
+      // TODO: user-defined completion callback
+    };
+    
+    var finishListener = function(event) {
+      event.preventDefault();
+      endFunction.call(null);
+    };
+    
     var drawNext;
     drawNext = function() {
       headPlacemark = me.dom.buildPointPlacemark([100, 0], {
-        style: '#_GEarthExtensions_regularPlacemark'
+        style: '#_GEarthExtensions_regularCoordinate'
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
       placemarks.push(headPlacemark);
@@ -59,6 +81,14 @@ limitations under the License.
                 headPlacemark.getGeometry().getLatitude(),
                 headPlacemark.getGeometry().getLongitude(), 0);
 
+            if (placemarks.length == 1) {
+              // set up a click listener on the first placemark -- if it gets
+              // clicked, stop drawing the linestring
+              placemarks[0].setStyleUrl('#_GEarthExtensions_firstCoordinate');
+              google.earth.addEventListener(placemarks[0], 'mousedown',
+                  finishListener);
+            }
+
             setTimeout(drawNext, 0);
           }
         }
@@ -66,28 +96,9 @@ limitations under the License.
     };
 
     drawNext.call(null);
-
-    var endFunction = function() {
-      me.edit.endDraggable(headPlacemark);
-
-      done = true;
-
-      me.dom.removeObject(innerDoc);
-
-      placemarks = [];
-
-      me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
-
-      // TODO: user-defined completion callback
-    };
-
-    var dblclickFinishListener = function(event) {
-      event.preventDefault();
-      endFunction.call(null);
-    };
     
     google.earth.addEventListener(me.pluginInstance.getWindow(), 'dblclick',
-        dblclickFinishListener);
+        finishListener);
 
     // display the editing UI
     this.pluginInstance.getFeatures().appendChild(innerDoc);
@@ -97,7 +108,7 @@ limitations under the License.
       abortAndEndFn: function() {
         endFunction.call(null);
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
-            'dblclick', dblclickFinishListener);
+            'dblclick', finishListener);
       }
     });
   };
@@ -119,11 +130,11 @@ limitations under the License.
 
     var innerDoc = this.pluginInstance.parseKml(
         '<Document>' +
-        '<Style id="_GEarthExtensions_regularPlacemark"><IconStyle>' +
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
         '<Icon><href>http://maps.google.com/mapfiles/kml/' +
         'shapes/placemark_circle.png</href></Icon>' +
         '</IconStyle></Style>' +
-        '<StyleMap id="_GEarthExtensions_midPlacemark">' +
+        '<StyleMap id="_GEarthExtensions_midCoordinate">' +
         '<Pair><key>normal</key>' +
         '<Style><IconStyle>' +
         '<Icon><href>http://maps.google.com/mapfiles/kml/' +
@@ -131,14 +142,11 @@ limitations under the License.
         '<color>60ffffff</color><scale>0.75</scale>' +
         '</IconStyle></Style></Pair>' +
         '<Pair><key>highlight</key>' +
-        '<styleUrl>#_GEarthExtensions_regularPlacemark</styleUrl>' +
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
         '</Pair></StyleMap>' +
         '</Document>');
 
-    // TODO: doubleclick or rightclick deletes points
-    
     // TODO: options: icon for placemarks, bounce?, linear ring?
-
     // TODO: it may be easier to use a linked list for all this
 
     var coordDataArr = [];
@@ -248,7 +256,7 @@ limitations under the License.
           var i;
 
           // change style to regular placemark style
-          this.setStyleUrl('#_GEarthExtensions_regularPlacemark');
+          this.setStyleUrl('#_GEarthExtensions_regularCoordinate');
 
           // shift coordinates in the KmlCoordArray down
           // TODO: speed this up
@@ -268,7 +276,7 @@ limitations under the License.
           // placemark (will be to the left of the new coord)
           coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: coords.get(coordData.index),
-            style: '#_GEarthExtensions_midPlacemark'
+            style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
 
@@ -280,7 +288,7 @@ limitations under the License.
           // create a new right midpoint
           newCoordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: coords.get(coordData.index),
-            style: '#_GEarthExtensions_midPlacemark'
+            style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(newCoordData.rightMidPlacemark);
 
@@ -295,7 +303,8 @@ limitations under the License.
           google.earth.addEventListener(this, 'dblclick',
               newCoordData.deleteEventListener);
 
-          newCoordData.regularDragCallback = makeRegularDragCallback_(newCoordData);
+          newCoordData.regularDragCallback =
+              makeRegularDragCallback_(newCoordData);
 
           // insert the new coordData
           coordDataArr.splice(newCoordData.index, 0, newCoordData);
@@ -314,74 +323,78 @@ limitations under the License.
       };
     };
 
-    // create the edit placemarks
-    for (var i = 0; i < numCoords; i++) {
-      var curCoord = coords.get(i);
-      var nextCoord = coords.get((i + 1) % numCoords);
+    me.util.batchExecute(function() {
+      // create the edit placemarks
+      for (var i = 0; i < numCoords; i++) {
+        var curCoord = coords.get(i);
+        var nextCoord = coords.get((i + 1) % numCoords);
 
-      var coordData = {};
-      coordDataArr.push(coordData);
-      coordData.index = i;
+        var coordData = {};
+        coordDataArr.push(coordData);
+        coordData.index = i;
 
-      // create the regular placemark on the point
-      coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
-        style: '#_GEarthExtensions_regularPlacemark'
-      });
-      innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
-
-      coordData.regularDragCallback = makeRegularDragCallback_(coordData);
-
-      // set up drag handlers for main placemarks
-      me.edit.makeDraggable(coordData.regularPlacemark, {
-        bounce: false,
-        dragCallback: coordData.regularDragCallback
-      });
-
-      coordData.deleteEventListener =
-          makeRegularDeleteEventListener_(coordData);
-      google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
-          coordData.deleteEventListener);
-
-      // create the next midpoint placemark
-      if (i < numCoords - 1 || isRing) {
-        coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
-          point: new geo.Point(curCoord).midpoint(
-              new geo.Point(nextCoord)),
-          style: '#_GEarthExtensions_midPlacemark'
+        // create the regular placemark on the point
+        coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
+          style: '#_GEarthExtensions_regularCoordinate'
         });
-        innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+        innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
 
-        // set up drag handlers for mid placemarks
-        me.edit.makeDraggable(coordData.rightMidPlacemark, {
+        coordData.regularDragCallback = makeRegularDragCallback_(coordData);
+
+        // set up drag handlers for main placemarks
+        me.edit.makeDraggable(coordData.regularPlacemark, {
           bounce: false,
-          dragCallback: makeMidDragCallback_(coordData)
+          dragCallback: coordData.regularDragCallback
         });
-      }
-    }
 
-    // display the editing UI
-    this.pluginInstance.getFeatures().appendChild(innerDoc);
+        coordData.deleteEventListener =
+            makeRegularDeleteEventListener_(coordData);
+        google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
+            coordData.deleteEventListener);
+
+        // create the next midpoint placemark
+        if (i < numCoords - 1 || isRing) {
+          coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+            point: new geo.Point(curCoord).midpoint(
+                new geo.Point(nextCoord)),
+            style: '#_GEarthExtensions_midCoordinate'
+          });
+          innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+
+          // set up drag handlers for mid placemarks
+          me.edit.makeDraggable(coordData.rightMidPlacemark, {
+            bounce: false,
+            dragCallback: makeMidDragCallback_(coordData)
+          });
+        }
+      }
+
+      // display the editing UI
+      me.pluginInstance.getFeatures().appendChild(innerDoc);
+    });
 
     // set up an abort function for use in endEditLineString
-    this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
+    me.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
       innerDoc: innerDoc,
       abortAndEndFn: function() {
-        var i;
-
-        for (i = 0; i < coordDataArr.length; i++) {
-          // teardown for regular placemark, its delete event listener
-          // and its right-mid placemark
-          google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
-              'dblclick', coordDataArr[i].deleteEventListener);
-
-          me.edit.endDraggable(coordDataArr[i].regularPlacemark);
+        me.util.batchExecute(function() {
+          var i;
           
-          if (coordDataArr[i].rightMidPlacemark) {
-            me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
-          }
-        }
+          for (i = 0; i < coordDataArr.length; i++) {
+            // teardown for regular placemark, its delete event listener
+            // and its right-mid placemark
+            google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
+                'dblclick', coordDataArr[i].deleteEventListener);
 
-        me.dom.removeObject(innerDoc);
+            me.edit.endDraggable(coordDataArr[i].regularPlacemark);
+          
+            if (coordDataArr[i].rightMidPlacemark) {
+              me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
+            }
+          }
+
+          me.dom.removeObject(innerDoc);
+        });
       }
     });
   };

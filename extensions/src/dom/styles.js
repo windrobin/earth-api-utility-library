@@ -22,16 +22,25 @@ limitations under the License.
  * @param {String} [options.icon.href] The icon href.
  * @param {Number} [options.icon.scale] The icon scaling factor.
  * @param {ColorSpec} [options.icon.color] The color of the icon.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the icon,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
  
  * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
  * @param {Number} [options.label.scale] The label scaling factor.
  * @param {ColorSpec} [options.label.color] The color of the label.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the label,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
 
  * @param {ColorSpec|Object} [options.line] The line color or a line
  *     object literal.
  * @param {Number} [options.line.width] The line width.
  * @param {ColorSpec} [options.line.color] The line color.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the line,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
 
  * @param {ColorSpec|Object} [options.poly] The polygon color or a polygon style
  *     object literal.
@@ -40,6 +49,9 @@ limitations under the License.
  * @param {Boolean} [options.poly.outline] Whether or not the polygon will have
  *     an outline.
  * @param {ColorSpec} [options.poly.color] The color of the polygon fill.
+ * @param {ColorSpec} [options.icon.opacity] The opacity of the polygon,
+ *     between 0.0 and 1.0. This is a convenience property, since opacity can
+ *     be defined in the color.
 
  * @type KmlStyle
  */
@@ -54,6 +66,22 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
   },
   constructor: function(styleObj, options) {
     // set icon style
+    var pad2 = function(s) {
+      return ((s.length < 2) ? '0' : '') + s;
+    };
+    
+    var me = this;
+    
+    var mergeColorOpacity = function(color, opacity) {
+      color = color ? me.util.parseColor(color) : 'ffffffff';
+      if (!geo.util.isUndefined(opacity)) {
+        color = pad2(Math.floor(255 * opacity).toString(16)) +
+            color.substring(2);
+      }
+      
+      return color;
+    };
+    
     if (options.icon) {
       var iconStyle = styleObj.getIconStyle();
 
@@ -83,9 +111,18 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('heading' in options.icon) {
         iconStyle.setHeading(options.icon.heading);
       }
-      if ('color' in options.icon) {
-        iconStyle.getColor().set(
-            this.util.parseColor(options.icon.color));
+      if ('color' in options.icon || 'opacity' in options.icon) {
+        options.icon.color = mergeColorOpacity(options.icon.color,
+                                               options.icon.opacity);
+        iconStyle.getColor().set(options.icon.color);
+      }
+      if ('opacity' in options.icon) {
+        if (!('color' in options.icon)) {
+          options.icon.color = 'ffffffff';
+        }
+        
+        options.icon.color = pad2(options.icon.opacity.toString(16)) +
+            options.icon.color.substring(2);
       }
       if ('hotSpot' in options.icon) {
         this.dom.setVec2(iconStyle.getHotSpot(), options.icon.hotSpot);
@@ -105,9 +142,10 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('scale' in options.label) {
         labelStyle.setScale(options.label.scale);
       }
-      if ('color' in options.label) {
-        labelStyle.getColor().set(
-            this.util.parseColor(options.label.color));
+      if ('color' in options.label || 'opacity' in options.label) {
+        options.label.color = mergeColorOpacity(options.label.color,
+                                                options.label.opacity);
+        labelStyle.getColor().set(options.label.color);
       }
       // TODO: add colormode
     }
@@ -124,9 +162,10 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('width' in options.line) {
         lineStyle.setWidth(options.line.width);
       }
-      if ('color' in options.line) {
-        lineStyle.getColor().set(
-            this.util.parseColor(options.line.color));
+      if ('color' in options.line || 'opacity' in options.line) {
+        options.line.color = mergeColorOpacity(options.line.color,
+                                               options.line.opacity);
+        lineStyle.getColor().set(options.line.color);
       }
       // TODO: add colormode
     }
@@ -146,9 +185,10 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
       if ('outline' in options.poly) {
         polyStyle.setOutline(options.poly.outline);
       }
-      if ('color' in options.poly) {
-        polyStyle.getColor().set(
-            this.util.parseColor(options.poly.color));
+      if ('color' in options.poly || 'opacity' in options.poly) {
+        options.poly.color = mergeColorOpacity(options.poly.color,
+                                               options.poly.opacity);
+        polyStyle.getColor().set(options.poly.color);
       }
       // TODO: add colormode
     }

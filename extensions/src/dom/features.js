@@ -19,7 +19,15 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
     name: GEarthExtensions.AUTO,
     visibility: GEarthExtensions.AUTO,
     description: GEarthExtensions.AUTO,
-    snippet: GEarthExtensions.AUTO
+    snippet: GEarthExtensions.AUTO,
+    
+    // allowed properties
+    region: GEarthExtensions.ALLOWED
+  },
+  constructor: function(featureObj, options) {
+    if (options.region) {
+      featureObj.setRegion(this.dom.buildRegion(options.region));
+    }
   }
 });
 
