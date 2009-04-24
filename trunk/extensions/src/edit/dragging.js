@@ -130,7 +130,9 @@ limitations under the License.
     }
   }
 
-  // TODO: docs
+  /**
+   * Allows the user to drag the given placemark by using the mouse.
+   */
   GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
     this.edit.endDraggable(placemark);
 
@@ -212,7 +214,9 @@ limitations under the License.
     google.earth.addEventListener(placemark, 'mousedown', mouseDownListener);
   };
 
-  // TODO: docs
+  /**
+   * Prevents the given placemark from being draggable.
+   */
   GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
     // get placemark's drag data
     var placemarkDragData = this.util.getJsDataValue(
@@ -226,7 +230,10 @@ limitations under the License.
     }
   };
 
-  // TODO: docs
+  /**
+   * Enters a mode in which the user can place the given placemark onto the
+   * globe by clicking on the globe.
+   */
   GEarthExtensions.prototype.edit.place = function(placemark, options) {
     // TODO: assert this is a point placemark
     options = GEarthExtensions.checkParameters(options, false, {
@@ -246,11 +253,14 @@ limitations under the License.
     var mouseDownListener;
     mouseDownListener = function(event) {
       if (currentDragContext_ && event.getButton() == 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        
         // remove listener for mousemove on the globe
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousemove', mouseMoveListener);
 
-        // remove listener for mouseup on the window
+        // remove listener for mousedown on the window
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousedown', mouseDownListener);
 
@@ -268,15 +278,12 @@ limitations under the License.
           google.earth.removeEventListener(me.pluginInstance.getWindow(),
               'mousemove', mouseMoveListener);
 
-          // remove listener for mouseup on the window
+          // remove listener for mousedown on the window
           google.earth.removeEventListener(me.pluginInstance.getWindow(),
               'mousedown', mouseDownListener);
 
           stopDragging_(me, true); // abort
         }
-
-        google.earth.removeEventListener(placemark, 'mousedown',
-            mouseDownListener);
       }
     });
 

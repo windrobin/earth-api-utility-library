@@ -126,6 +126,7 @@ GEarthExtensions.isExtensionsNamespace_ = function(object) {
  */
 GEarthExtensions.isInstanceOfEarthInterface = function(object, type) {
   // TODO: double check that all earth interfaces are typeof 'function'
-  return object !== null && typeof object == 'function' &&
+  return object !== null &&
+      (typeof object == 'object' || typeof object == 'function') &&
       'getType' in object && object.getType() == type;
 };
