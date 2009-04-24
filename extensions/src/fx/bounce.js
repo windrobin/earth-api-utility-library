@@ -112,16 +112,19 @@ function test_fx_bounce(successCallback, errorCallback) {
       dampen: 0.3,
       callback: function() {
         callbackCalled = true;
-        try {
-          if (!confirm('Press OK if you saw the placemark bounce twice, the ' +
-                       'second time not as high as the first.')) {
-            fail('User reported placemark didnt bounce');
+
+        setTimeout(function() {
+          try {
+            if (!confirm('Press OK if you saw the placemark bounce twice, the ' +
+                         'second time not as high as the first.')) {
+              fail('User reported placemark didnt bounce');
+            }
+
+            successCallback();
+          } catch (e) {
+            errorCallback(e);
           }
-          
-          successCallback();
-        } catch (e) {
-          errorCallback(e);
-        }
+        }, 0);
       }
     });
     

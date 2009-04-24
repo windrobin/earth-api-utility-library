@@ -309,7 +309,9 @@ function test_edit_Dragging(successCallback, errorCallback) {
     var pm = testext_.dom.addPointPlacemark([0, 0]);
 
     var callbackCalled = false;
-    alert('Drag and drop the placemark');
+    setTimeout(function() {
+      alert('Drag and drop the placemark');
+    }, 0);
     
     testext_.edit.makeDraggable(pm, {
       dropCallback: function() {
