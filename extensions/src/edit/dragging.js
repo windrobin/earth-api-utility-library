@@ -303,7 +303,8 @@ limitations under the License.
 function test_edit_Dragging(successCallback, errorCallback) {
   testext_.dom.clearFeatures();
   
-  function vce() {
+  var vce;
+  vce = function() {
     google.earth.removeEventListener(testplugin_.getView(),
         'viewchangeend', vce);
     var pm = testext_.dom.addPointPlacemark([0, 0]);

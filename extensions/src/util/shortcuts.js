@@ -164,3 +164,40 @@ function test_util_callMethod() {
   assertEquals('KmlPlacemark', placemark.getType());
 }
 /***IGNORE_END***/
+
+/**
+ * Enables or disables full camera control mode, which sets fly to speed
+ * to teleport, disables user mouse interaction, and hides the navigation
+ * controls.
+ */
+GEarthExtensions.prototype.util.fullCameraControl = function(enable) {
+  if (enable || geo.util.isUndefined(enable)) {
+    if (this.cameraControlOldProps_)
+      return;
+    
+    this.cameraControlOldProps_ = {
+      flyToSpeed: this.pluginInstance.getOptions().getFlyToSpeed(),
+      mouseNavEnabled:
+          this.pluginInstance.getOptions().getMouseNavigationEnabled(),
+      navControlVis: this.pluginInstance.getNavigationControl().getVisibility()
+    };
+    
+    this.pluginInstance.getOptions().setFlyToSpeed(
+        this.pluginInstance.SPEED_TELEPORT);
+    this.pluginInstance.getOptions().setMouseNavigationEnabled(false);
+    this.pluginInstance.getNavigationControl().setVisibility(
+        this.pluginInstance.VISIBILITY_HIDE);
+  } else {
+    if (!this.cameraControlOldProps_)
+      return;
+    
+    this.pluginInstance.getOptions().setFlyToSpeed(
+        this.cameraControlOldProps_.flyToSpeed);
+    this.pluginInstance.getOptions().setMouseNavigationEnabled(
+        this.cameraControlOldProps_.mouseNavEnabled);
+    this.pluginInstance.getNavigationControl().setVisibility(
+        this.cameraControlOldProps_.navControlVis);
+    
+    delete this.cameraControlOldProps_;
+  }
+}

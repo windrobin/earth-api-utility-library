@@ -1214,6 +1214,7 @@ limitations under the License.
  */
 var GEarthExtensions = function(pluginInstance) {
   // create class
+  var me = this;
   this.pluginInstance = pluginInstance;
   
   // bind all functions in namespaces to this GEarthExtensions instance
@@ -1230,9 +1231,16 @@ var GEarthExtensions = function(pluginInstance) {
       var member = nsParent[mstr];
       
       // bind this namespace's functions to the given context
-      if (geo.util.isFunction(member) &&
-          !member.isclass_) {
-        nsParent[mstr] = bindFunction(member, context);
+      if (geo.util.isFunction(member)) {
+        if (member.isclass_) {
+          // if it's a class constructor, give it access to this
+          // GEarthExtensions instance
+          member.extInstance_ = me;
+        } else {
+          // function's not a constructor, just bind it to this
+          // GEarthExtensions instance
+          nsParent[mstr] = bindFunction(member, context);
+        }
       }
       
       // bind functions of all sub-namespaces
@@ -2423,6 +2431,11 @@ GEarthExtensions.prototype.dom.clearFeatures = function() {
  * Walks a KML object, calling a given visit function for each object in
  * the KML DOM. The lone argument must be either a visit function or an
  * options literal.
+ * 
+ * NOTE: walking the DOM can have pretty poor performance on very large
+ * hierarchies, as first time accesses to KML objects from JavaScript
+ * incur some overhead in the API.
+ * 
  * @param {Object} [options] The walk options:
  * @param {Function} [options.visitCallback] The function to call upon visiting
  *     a node in the DOM. The 'this' variable in the callback function will be
@@ -2430,7 +2443,9 @@ GEarthExtensions.prototype.dom.clearFeatures = function() {
  *     function will be an object literal for the call context. To get the
  *     current application-specific call context, use the 'current' property
  *     of the context object. To set the context for all child calls, set the
- *     'child' property of the context object. To stop the walking process,
+ *     'child' property of the context object.To prevent walking the children
+ *     of the current object, set the 'walkChildren' property of the context
+ *     object to false. To stop the walking process altogether,
  *     return false in the function.
  * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
  *     to walk.
@@ -2479,13 +2494,18 @@ GEarthExtensions.prototype.dom.walk = function() {
   var recurse_ = function(object, currentContext) {
     var contextArgument = {
       current: currentContext,
-      child: currentContext
+      child: currentContext,
+      walkChildren: true
     };
     
     // walk object
     var retValue = options.visitCallback.call(object, contextArgument);
     if (!retValue && !geo.util.isUndefined(retValue)) {
-      return;
+      return false;
+    }
+    
+    if (!contextArgument.walkChildren) {
+      return true;
     }
     
     var objectContainer = null; // GESchemaObjectContainer
@@ -2518,9 +2538,13 @@ GEarthExtensions.prototype.dom.walk = function() {
       for (var i = 0; i < numChildNodes; i++) {
         var child = childNodes.item(i);
         
-        recurse_(child, contextArgument.child);
+        if (!recurse_(child, contextArgument.child)) {
+          return false;
+        }
       }
     }
+    
+    return true;
   };
   
   if (options.rootObject) {
@@ -3583,7 +3607,11 @@ function() {
  * @class
  */
 GEarthExtensions.prototype.fx.Animation =
-GEarthExtensions.createClass_(function() { });
+GEarthExtensions.createClass_(function(renderFn, completionFn) {
+  this.extInstance = arguments.callee.extInstance_;
+  this.renderFn = renderFn;
+  this.completionFn = completionFn; // optional
+});
 
 /**
  * Start the animation.
@@ -3595,9 +3623,20 @@ GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
 /**
  * Stop the animation.
  */
-GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
+GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
+  
+  if (this.completionFn && (completed || geo.util.isUndefined(completed))) {
+    this.completionFn.call(this); // clean exit
+  }
+};
+
+/**
+ * Stop and rewind the animation, without calling the 
+ */
+GEarthExtensions.prototype.fx.Animation.prototype.rewind = function() {
   this.renderFrame(0);
+  this.stop(false);
 };
 
 /**
@@ -3605,27 +3644,30 @@ GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
  * @param {Number} t The time in seconds of the frame to render.
  * @abstract
  */
-GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t){ };
+GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
+  this.renderFn.call(this, t);
+};
 
 /**
  * Generic class for fixed-duration animations.
  * @class
  * @extends Animation
  */
-GEarthExtensions.prototype.fx.GenericSimpleAnimation =
+GEarthExtensions.prototype.fx.TimedAnimation =
 GEarthExtensions.createClass_(
   [GEarthExtensions.prototype.fx.Animation],
-function(extInstance, duration, renderFn) {
-  this.extInstance = extInstance;
+function(duration, renderFn, completionFn) {
+  this.extInstance = arguments.callee.extInstance_;
   this.duration = duration;
   this.renderFn = renderFn;
+  this.completionFn = completionFn; // optional
 });
 
-GEarthExtensions.prototype.fx.GenericSimpleAnimation.prototype.renderFrame =
+GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
   if (t > this.duration) {
+    this.renderFn.call(this, this.duration);
     this.stop();
-    this.renderFn.call(this, this.duration); // clean exit
     return;
   }
   
@@ -3810,17 +3852,46 @@ function(obj, property, options) {
     }
   }
   
-  var anim = new this.fx.GenericSimpleAnimation(this, options.duration,
+  var anim = new this.fx.TimedAnimation(options.duration,
     function(t) {
-      setter(options.start + options.easing.call(null, 1.0 *
-                                                       t / options.duration) *
-                             (options.end - options.start));
-      if (t == options.duration && options.callback) {
+      // render callback
+      setter(options.start +
+             options.easing.call(null, 1.0 * t / options.duration) *
+               (options.end - options.start));
+    },
+    function() {
+      // completion callback
+      
+      // remove this animation from the list of animations on the object
+      var animations = me.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+      if (animations) {
+        for (var i = 0; i < animations.length; i++) {
+          if (animations[i] == this) {
+            animations.splice(i, 1);
+            break;
+          }
+        }
+        
+        if (!animations.length) {
+          me.util.clearJsDataValue(obj, '_GEarthExtensions_anim');
+        }
+      }
+
+      if (options.callback) {
         options.callback.call(obj);
       }
     });
   
+  // add this animation to the list of animations on the object
+  var animations = this.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+  if (animations) {
+    animations.push(anim);
+  } else {
+    this.util.setJsDataValue(obj, '_GEarthExtensions_anim', [anim]);
+  }
+  
   anim.start();
+  return anim;
 };
 /**
  * This class/namespace hybrid contains miscellaneous
@@ -4303,3 +4374,40 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
     return eval('object.' + method + '(' + reprArgs.join(',') + ')');
   }
 };
+
+/**
+ * Enables or disables full camera control mode, which sets fly to speed
+ * to teleport, disables user mouse interaction, and hides the navigation
+ * controls.
+ */
+GEarthExtensions.prototype.util.fullCameraControl = function(enable) {
+  if (enable || geo.util.isUndefined(enable)) {
+    if (this.cameraControlOldProps_)
+      return;
+    
+    this.cameraControlOldProps_ = {
+      flyToSpeed: this.pluginInstance.getOptions().getFlyToSpeed(),
+      mouseNavEnabled:
+          this.pluginInstance.getOptions().getMouseNavigationEnabled(),
+      navControlVis: this.pluginInstance.getNavigationControl().getVisibility()
+    };
+    
+    this.pluginInstance.getOptions().setFlyToSpeed(
+        this.pluginInstance.SPEED_TELEPORT);
+    this.pluginInstance.getOptions().setMouseNavigationEnabled(false);
+    this.pluginInstance.getNavigationControl().setVisibility(
+        this.pluginInstance.VISIBILITY_HIDE);
+  } else {
+    if (!this.cameraControlOldProps_)
+      return;
+    
+    this.pluginInstance.getOptions().setFlyToSpeed(
+        this.cameraControlOldProps_.flyToSpeed);
+    this.pluginInstance.getOptions().setMouseNavigationEnabled(
+        this.cameraControlOldProps_.mouseNavEnabled);
+    this.pluginInstance.getNavigationControl().setVisibility(
+        this.cameraControlOldProps_.navControlVis);
+    
+    delete this.cameraControlOldProps_;
+  }
+}

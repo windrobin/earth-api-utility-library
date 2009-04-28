@@ -25,6 +25,7 @@ limitations under the License.
  */
 var GEarthExtensions = function(pluginInstance) {
   // create class
+  var me = this;
   this.pluginInstance = pluginInstance;
   
   // bind all functions in namespaces to this GEarthExtensions instance
@@ -41,9 +42,16 @@ var GEarthExtensions = function(pluginInstance) {
       var member = nsParent[mstr];
       
       // bind this namespace's functions to the given context
-      if (geo.util.isFunction(member) &&
-          !member.isclass_) {
-        nsParent[mstr] = bindFunction(member, context);
+      if (geo.util.isFunction(member)) {
+        if (member.isclass_) {
+          // if it's a class constructor, give it access to this
+          // GEarthExtensions instance
+          member.extInstance_ = me;
+        } else {
+          // function's not a constructor, just bind it to this
+          // GEarthExtensions instance
+          nsParent[mstr] = bindFunction(member, context);
+        }
       }
       
       // bind functions of all sub-namespaces
