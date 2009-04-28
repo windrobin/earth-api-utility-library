@@ -36,6 +36,11 @@ function test_dom_clearFeatures() {
  * Walks a KML object, calling a given visit function for each object in
  * the KML DOM. The lone argument must be either a visit function or an
  * options literal.
+ * 
+ * NOTE: walking the DOM can have pretty poor performance on very large
+ * hierarchies, as first time accesses to KML objects from JavaScript
+ * incur some overhead in the API.
+ * 
  * @param {Object} [options] The walk options:
  * @param {Function} [options.visitCallback] The function to call upon visiting
  *     a node in the DOM. The 'this' variable in the callback function will be
@@ -43,7 +48,9 @@ function test_dom_clearFeatures() {
  *     function will be an object literal for the call context. To get the
  *     current application-specific call context, use the 'current' property
  *     of the context object. To set the context for all child calls, set the
- *     'child' property of the context object. To stop the walking process,
+ *     'child' property of the context object.To prevent walking the children
+ *     of the current object, set the 'walkChildren' property of the context
+ *     object to false. To stop the walking process altogether,
  *     return false in the function.
  * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
  *     to walk.
@@ -92,13 +99,18 @@ GEarthExtensions.prototype.dom.walk = function() {
   var recurse_ = function(object, currentContext) {
     var contextArgument = {
       current: currentContext,
-      child: currentContext
+      child: currentContext,
+      walkChildren: true
     };
     
     // walk object
     var retValue = options.visitCallback.call(object, contextArgument);
     if (!retValue && !geo.util.isUndefined(retValue)) {
-      return;
+      return false;
+    }
+    
+    if (!contextArgument.walkChildren) {
+      return true;
     }
     
     var objectContainer = null; // GESchemaObjectContainer
@@ -131,9 +143,13 @@ GEarthExtensions.prototype.dom.walk = function() {
       for (var i = 0; i < numChildNodes; i++) {
         var child = childNodes.item(i);
         
-        recurse_(child, contextArgument.child);
+        if (!recurse_(child, contextArgument.child)) {
+          return false;
+        }
       }
     }
+    
+    return true;
   };
   
   if (options.rootObject) {
@@ -211,7 +227,7 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
   
   var returnObject = null;
   
-  testext_.dom.walk({
+  this.dom.walk({
     rootObject: options.root,
     features: true,
     geometries: true,
@@ -222,6 +238,8 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
       }
     }
   });
+
+  return returnObject;
 };
 // TODO: unit test
 

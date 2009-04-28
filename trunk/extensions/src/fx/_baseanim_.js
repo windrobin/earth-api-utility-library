@@ -139,7 +139,11 @@ function() {
  * @class
  */
 GEarthExtensions.prototype.fx.Animation =
-GEarthExtensions.createClass_(function() { });
+GEarthExtensions.createClass_(function(renderFn, completionFn) {
+  this.extInstance = arguments.callee.extInstance_;
+  this.renderFn = renderFn;
+  this.completionFn = completionFn; // optional
+});
 
 /**
  * Start the animation.
@@ -151,9 +155,20 @@ GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
 /**
  * Stop the animation.
  */
-GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
+GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
+  
+  if (this.completionFn && (completed || geo.util.isUndefined(completed))) {
+    this.completionFn.call(this); // clean exit
+  }
+};
+
+/**
+ * Stop and rewind the animation, without calling the 
+ */
+GEarthExtensions.prototype.fx.Animation.prototype.rewind = function() {
   this.renderFrame(0);
+  this.stop(false);
 };
 
 /**
@@ -161,27 +176,30 @@ GEarthExtensions.prototype.fx.Animation.prototype.stop = function() {
  * @param {Number} t The time in seconds of the frame to render.
  * @abstract
  */
-GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t){ };
+GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
+  this.renderFn.call(this, t);
+};
 
 /**
  * Generic class for fixed-duration animations.
  * @class
  * @extends Animation
  */
-GEarthExtensions.prototype.fx.GenericSimpleAnimation =
+GEarthExtensions.prototype.fx.TimedAnimation =
 GEarthExtensions.createClass_(
   [GEarthExtensions.prototype.fx.Animation],
-function(extInstance, duration, renderFn) {
-  this.extInstance = extInstance;
+function(duration, renderFn, completionFn) {
+  this.extInstance = arguments.callee.extInstance_;
   this.duration = duration;
   this.renderFn = renderFn;
+  this.completionFn = completionFn; // optional
 });
 
-GEarthExtensions.prototype.fx.GenericSimpleAnimation.prototype.renderFrame =
+GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
   if (t > this.duration) {
+    this.renderFn.call(this, this.duration);
     this.stop();
-    this.renderFn.call(this, this.duration); // clean exit
     return;
   }
   

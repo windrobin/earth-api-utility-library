@@ -110,15 +110,44 @@ function(obj, property, options) {
     }
   }
   
-  var anim = new this.fx.GenericSimpleAnimation(this, options.duration,
+  var anim = new this.fx.TimedAnimation(options.duration,
     function(t) {
-      setter(options.start + options.easing.call(null, 1.0 *
-                                                       t / options.duration) *
-                             (options.end - options.start));
-      if (t == options.duration && options.callback) {
+      // render callback
+      setter(options.start +
+             options.easing.call(null, 1.0 * t / options.duration) *
+               (options.end - options.start));
+    },
+    function() {
+      // completion callback
+      
+      // remove this animation from the list of animations on the object
+      var animations = me.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+      if (animations) {
+        for (var i = 0; i < animations.length; i++) {
+          if (animations[i] == this) {
+            animations.splice(i, 1);
+            break;
+          }
+        }
+        
+        if (!animations.length) {
+          me.util.clearJsDataValue(obj, '_GEarthExtensions_anim');
+        }
+      }
+
+      if (options.callback) {
         options.callback.call(obj);
       }
     });
   
+  // add this animation to the list of animations on the object
+  var animations = this.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+  if (animations) {
+    animations.push(anim);
+  } else {
+    this.util.setJsDataValue(obj, '_GEarthExtensions_anim', [anim]);
+  }
+  
   anim.start();
+  return anim;
 };
