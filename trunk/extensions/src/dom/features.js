@@ -489,7 +489,6 @@ GEarthExtensions.domBuilder_({
   defaultProperty: 'icon',
   propertySpec: {
     // required properties
-    overlayXY: GEarthExtensions.REQUIRED,
     screenXY: GEarthExtensions.REQUIRED,
     size: GEarthExtensions.REQUIRED,
 
@@ -497,11 +496,18 @@ GEarthExtensions.domBuilder_({
     rotation: GEarthExtensions.AUTO,
 
     // optional properties
+    overlayXY: { left: 0, top: 0 },
     rotationXY: GEarthExtensions.ALLOWED
   },
   constructor: function(screenOverlayObj, options) {
-    this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
-    this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
+    if (this.util._areScreenOverlayXYSwapped()) { // Earth API bug
+      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
+      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
+    } else {
+      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
+      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
+    }
+    
     this.dom.setVec2(screenOverlayObj.getSize(), options.size);
 
     if ('rotationXY' in options) {

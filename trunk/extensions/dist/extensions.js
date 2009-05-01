@@ -1858,7 +1858,6 @@ GEarthExtensions.domBuilder_({
   defaultProperty: 'icon',
   propertySpec: {
     // required properties
-    overlayXY: GEarthExtensions.REQUIRED,
     screenXY: GEarthExtensions.REQUIRED,
     size: GEarthExtensions.REQUIRED,
 
@@ -1866,11 +1865,18 @@ GEarthExtensions.domBuilder_({
     rotation: GEarthExtensions.AUTO,
 
     // optional properties
+    overlayXY: { left: 0, top: 0 },
     rotationXY: GEarthExtensions.ALLOWED
   },
   constructor: function(screenOverlayObj, options) {
-    this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
-    this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
+    if (this.util._areScreenOverlayXYSwapped()) { // Earth API bug
+      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
+      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
+    } else {
+      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
+      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
+    }
+    
     this.dom.setVec2(screenOverlayObj.getSize(), options.size);
 
     if ('rotationXY' in options) {
@@ -2570,7 +2576,7 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
   
   var returnObject = null;
   
-  testext_.dom.walk({
+  this.dom.walk({
     rootObject: options.root,
     features: true,
     geometries: true,
@@ -2581,6 +2587,8 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
       }
     }
   });
+
+  return returnObject;
 };
 // TODO: unit test
 
@@ -2615,8 +2623,18 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     left: GEarthExtensions.ALLOWED,
     top: GEarthExtensions.ALLOWED,
     right: GEarthExtensions.ALLOWED,
-    bottom: GEarthExtensions.ALLOWED
+    bottom: GEarthExtensions.ALLOWED,
+    width: GEarthExtensions.ALLOWED, // for screen overlay size
+    height: GEarthExtensions.ALLOWED // for screen overlay size
   });
+  
+  if ('width' in options) {
+    options.left = options.width;
+  }
+  
+  if ('height' in options) {
+    options.bottom = options.height;
+  }
   
   var x = 0.0;
   var xUnits = this.pluginInstance.UNITS_PIXELS;
@@ -2833,7 +2851,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     if (placemarkDragData.draggableOptions.targetScreenOverlay) {
       var overlay = extInstance.dom.buildScreenOverlay(
           placemarkDragData.draggableOptions.targetScreenOverlay);
-      extInstance.dom.setVec2(overlay.getOverlayXY(), { left: x, top: y });
+      extInstance.dom.setVec2(
+          extInstance.util._areScreenOverlayXYSwapped() ?
+          overlay.getOverlayXY() : overlay.getScreenXY(), { left: x, top: y });
       extInstance.pluginInstance.getFeatures().appendChild(overlay);
       currentDragContext_.activeTargetScreenOverlay = overlay;
     }
@@ -3899,6 +3919,10 @@ function(obj, property, options) {
  * @namespace
  */
 GEarthExtensions.prototype.util = {isnamespace_:true};
+
+GEarthExtensions.prototype.util._areScreenOverlayXYSwapped = function() {
+  return this.pluginInstance.getApiVersion() < '1.003';
+}
 GEarthExtensions.NAMED_COLORS = {
   'aqua': 'ffffff00',
   'black': 'ff000000',

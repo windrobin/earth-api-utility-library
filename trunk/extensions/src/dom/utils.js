@@ -274,8 +274,18 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     left: GEarthExtensions.ALLOWED,
     top: GEarthExtensions.ALLOWED,
     right: GEarthExtensions.ALLOWED,
-    bottom: GEarthExtensions.ALLOWED
+    bottom: GEarthExtensions.ALLOWED,
+    width: GEarthExtensions.ALLOWED, // for screen overlay size
+    height: GEarthExtensions.ALLOWED // for screen overlay size
   });
+  
+  if ('width' in options) {
+    options.left = options.width;
+  }
+  
+  if ('height' in options) {
+    options.bottom = options.height;
+  }
   
   var x = 0.0;
   var xUnits = this.pluginInstance.UNITS_PIXELS;
