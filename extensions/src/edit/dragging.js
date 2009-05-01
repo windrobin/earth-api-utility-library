@@ -55,7 +55,9 @@ limitations under the License.
     if (placemarkDragData.draggableOptions.targetScreenOverlay) {
       var overlay = extInstance.dom.buildScreenOverlay(
           placemarkDragData.draggableOptions.targetScreenOverlay);
-      extInstance.dom.setVec2(overlay.getOverlayXY(), { left: x, top: y });
+      extInstance.dom.setVec2(
+          extInstance.util._areScreenOverlayXYSwapped() ?
+          overlay.getOverlayXY() : overlay.getScreenXY(), { left: x, top: y });
       extInstance.pluginInstance.getFeatures().appendChild(overlay);
       currentDragContext_.activeTargetScreenOverlay = overlay;
     }
