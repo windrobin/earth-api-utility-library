@@ -37,13 +37,18 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
   }
   
   var point = placemark.getGeometry();
+  var origAltitudeMode = point.getAltitudeMode();
   
   // changing altitude if the mode is clamp to ground does nothing, so switch
   // to relative to ground
-  // TODO: change it back when the animation is done?
-  if (point.getAltitudeMode() == this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND) {
+  if (origAltitudeMode == this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND) {
     point.setAltitude(0);
     point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_GROUND);
+  }
+  
+  if (origAltitudeMode == this.pluginInstance.ALTITUDE_CLAMP_TO_SEA_FLOOR) {
+    point.setAltitude(0);
+    point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_SEA_FLOOR);
   }
   
   var startAltitude = point.getAltitude();
@@ -72,6 +77,8 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
       end: startAltitude,
       easing: 'in',
       callback: function() {
+        point.setAltitudeMode(origAltitudeMode);
+        
         // done with this bounce, should we bounce again?
         if (options.repeat >= 1) {
           --options.repeat;

@@ -56,7 +56,7 @@ limitations under the License.
       var overlay = extInstance.dom.buildScreenOverlay(
           placemarkDragData.draggableOptions.targetScreenOverlay);
       extInstance.dom.setVec2(
-          extInstance.util._areScreenOverlayXYSwapped() ?
+          extInstance.util.areScreenOverlayXYSwapped_() ?
           overlay.getOverlayXY() : overlay.getScreenXY(), { left: x, top: y });
       extInstance.pluginInstance.getFeatures().appendChild(overlay);
       currentDragContext_.activeTargetScreenOverlay = overlay;
@@ -226,7 +226,7 @@ limitations under the License.
 
     // stop listening for mousedown on the window
     if (placemarkDragData) {
-      placemarkDragData.abortAndEndFn.call();
+      placemarkDragData.abortAndEndFn.call(null);
 
       this.util.clearJsDataValue(placemark, DRAGDATA_JSDATA_KEY);
     }

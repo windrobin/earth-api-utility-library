@@ -1575,6 +1575,9 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
     model: GEarthExtensions.ALLOWED,
     geometries: GEarthExtensions.ALLOWED,
     
+    // convenience (pass through to geometry)
+    altitudeMode: GEarthExtensions.ALLOWED,
+    
     // styling
     stockIcon: GEarthExtensions.ALLOWED,
     icon: GEarthExtensions.ALLOWED,
@@ -1621,6 +1624,11 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
       }
     
       options.style.icon = options.icon;
+    }
+    
+    // convenience
+    if ('altitudeMode' in options) {
+      placemarkObj.getGeometry().setAltitudeMode(options.altitudeMode);
     }
   
     // NOTE: for this library, allow EITHER a style or a styleUrl, not both..
@@ -1869,7 +1877,7 @@ GEarthExtensions.domBuilder_({
     rotationXY: GEarthExtensions.ALLOWED
   },
   constructor: function(screenOverlayObj, options) {
-    if (this.util._areScreenOverlayXYSwapped()) { // Earth API bug
+    if (this.util.areScreenOverlayXYSwapped_()) { // Earth API bug
       this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
       this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
     } else {
@@ -1941,7 +1949,8 @@ GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
         point.lat(),
         point.lng(),
         point.altitude(),
-        point.altitudeMode(),
+        ('altitudeMode' in options) ? options.altitudeMode :
+                                      point.altitudeMode(),
         false,
         false);
   }
@@ -2852,7 +2861,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       var overlay = extInstance.dom.buildScreenOverlay(
           placemarkDragData.draggableOptions.targetScreenOverlay);
       extInstance.dom.setVec2(
-          extInstance.util._areScreenOverlayXYSwapped() ?
+          extInstance.util.areScreenOverlayXYSwapped_() ?
           overlay.getOverlayXY() : overlay.getScreenXY(), { left: x, top: y });
       extInstance.pluginInstance.getFeatures().appendChild(overlay);
       currentDragContext_.activeTargetScreenOverlay = overlay;
@@ -3022,7 +3031,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     // stop listening for mousedown on the window
     if (placemarkDragData) {
-      placemarkDragData.abortAndEndFn.call();
+      placemarkDragData.abortAndEndFn.call(null);
 
       this.util.clearJsDataValue(placemark, DRAGDATA_JSDATA_KEY);
     }
@@ -3101,7 +3110,13 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
   var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
 
-  GEarthExtensions.prototype.edit.drawLineString = function(lineString) {
+  GEarthExtensions.prototype.edit.drawLineString = function(lineString,
+                                                            options) {
+    options = GEarthExtensions.checkParameters(options, false, {
+      bounce: true,
+      finishCallback: GEarthExtensions.ALLOWED
+    });
+    
     var lineStringEditData = this.util.getJsDataValue(
         lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
     if (lineStringEditData) {
@@ -3110,11 +3125,13 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     
     var me = this;
 
-    // TODO: options: icon for placemarks, bounce?, etc.
+    // TODO: options: icon for placemarks
 
     var done = false;
     var placemarks = [];
+    var altitudeMode = lineString.getAltitudeMode();
     var headPlacemark = null;
+    var isRing = (lineString.getType() == 'KmlLinearRing');
     var coords = lineString.getCoordinates();
     var innerDoc = this.pluginInstance.parseKml(
         '<Document>' +
@@ -3135,14 +3152,29 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         '</Pair></StyleMap>' +
         '</Document>');
 
-    var endFunction = function() {
+    var endFunction = function(abort) {
+      // duplicate the first coordinate to the end if necessary
+      var numCoords = coords.getLength();
+      if (numCoords) {
+        var tempFirstCoord_ = coords.get(0);
+        var tempLastCoord_ = coords.get(numCoords - 1);
+        if (isRing && (
+            tempFirstCoord_.getLatitude() != tempLastCoord_.getLatitude() ||
+            tempFirstCoord_.getLongitude() != tempLastCoord_.getLongitude())) {
+          coords.pushLatLngAlt(tempFirstCoord_.getLatitude(),
+                               tempFirstCoord_.getLongitude(),
+                               tempFirstCoord_.getAltitude());
+        }
+      }
+
       me.edit.endDraggable(headPlacemark);
       me.dom.removeObject(innerDoc);
       me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
       placemarks = [];
       done = true;
 
-      // TODO: user-defined completion callback
+      if (options.finishCallback && !abort)
+        options.finishCallback.call(null);
     };
     
     var finishListener = function(event) {
@@ -3152,13 +3184,15 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     
     var drawNext;
     drawNext = function() {
-      headPlacemark = me.dom.buildPointPlacemark([100, 0], {
+      headPlacemark = me.dom.buildPointPlacemark([0, 0], {
+        altitudeMode: altitudeMode,
         style: '#_GEarthExtensions_regularCoordinate'
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
       placemarks.push(headPlacemark);
 
       me.edit.place(headPlacemark, {
+        bounce: options.bounce,
         dropCallback: function() {
           if (!done) {
             coords.pushLatLngAlt(
@@ -3190,7 +3224,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     // set up an abort function for use in endEditLineString
     this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
       abortAndEndFn: function() {
-        endFunction.call(null);
+        endFunction.call(null, true); // abort
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'dblclick', finishListener);
       }
@@ -3199,7 +3233,12 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
   // TODO: interactive test
 
   // TODO: docs
-  GEarthExtensions.prototype.edit.editLineString = function(lineString) {
+  GEarthExtensions.prototype.edit.editLineString = function(lineString,
+                                                            options) {
+    options = GEarthExtensions.checkParameters(options, false, {
+      editCallback: GEarthExtensions.ALLOWED
+    });
+    
     var lineStringEditData = this.util.getJsDataValue(
         lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
     if (lineStringEditData) {
@@ -3209,6 +3248,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     var me = this;
     
     var isRing = (lineString.getType() == 'KmlLinearRing');
+    var altitudeMode = lineString.getAltitudeMode();
     var coords = lineString.getCoordinates();
     var numCoords = coords.getLength();
 
@@ -3230,8 +3270,22 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         '</Pair></StyleMap>' +
         '</Document>');
 
-    // TODO: options: icon for placemarks, bounce?, linear ring?
+    // TODO: options: icon for placemarks
     // TODO: it may be easier to use a linked list for all this
+    
+    // remove the last coordinate temporarily if it's the same as the first
+    // coord, for editing convenience
+    if (numCoords >= 2) {
+      var tempFirstCoord_ = coords.get(0);
+      var tempLastCoord_ = coords.get(numCoords - 1);
+      if (isRing &&
+          tempFirstCoord_.getLatitude() == tempLastCoord_.getLatitude() &&
+          tempFirstCoord_.getLongitude() == tempLastCoord_.getLongitude() &&
+          tempFirstCoord_.getAltitude() == tempLastCoord_.getAltitude()) {
+        coords.pop();
+        numCoords--;
+      }
+    }
 
     var coordDataArr = [];
 
@@ -3290,6 +3344,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           leftCoordData.regularDragCallback.call(
               leftCoordData.regularPlacemark, leftCoordData);
         }
+        
+        if (options.editCallback)
+          options.editCallback(null);
       };
     };
 
@@ -3324,6 +3381,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           coordData.rightMidPlacemark.getGeometry().setLongitude(
               rightMidPt.lng());
         }
+        
+        if (options.editCallback)
+          options.editCallback(null);
       };
     };
 
@@ -3360,6 +3420,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           // placemark (will be to the left of the new coord)
           coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: coords.get(coordData.index),
+            altitudeMode: altitudeMode,
             style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
@@ -3372,6 +3433,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           // create a new right midpoint
           newCoordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: coords.get(coordData.index),
+            altitudeMode: altitudeMode,
             style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(newCoordData.rightMidPlacemark);
@@ -3404,6 +3466,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
         // do regular dragging stuff
         newCoordData.regularDragCallback.call(this, newCoordData);
+        
+        // the regular drag callback calls options.editCallback
       };
     };
 
@@ -3419,6 +3483,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
         // create the regular placemark on the point
         coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
+          altitudeMode: altitudeMode,
           style: '#_GEarthExtensions_regularCoordinate'
         });
         innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
@@ -3441,6 +3506,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
             point: new geo.Point(curCoord).midpoint(
                 new geo.Point(nextCoord)),
+            altitudeMode: altitudeMode,
             style: '#_GEarthExtensions_midCoordinate'
           });
           innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
@@ -3462,9 +3528,22 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       innerDoc: innerDoc,
       abortAndEndFn: function() {
         me.util.batchExecute(function() {
-          var i;
+          // duplicate the first coordinate to the end if necessary
+          var numCoords = coords.getLength();
+          if (numCoords) {
+            var tempFirstCoord_ = coords.get(0);
+            var tempLastCoord_ = coords.get(numCoords - 1);
+            if (isRing && (
+                tempFirstCoord_.getLatitude() != tempLastCoord_.getLatitude() ||
+                tempFirstCoord_.getLongitude() != tempLastCoord_.getLongitude()
+                )) {
+              coords.pushLatLngAlt(tempFirstCoord_.getLatitude(),
+                                   tempFirstCoord_.getLongitude(),
+                                   tempFirstCoord_.getAltitude());
+            }
+          }
           
-          for (i = 0; i < coordDataArr.length; i++) {
+          for (var i = 0; i < coordDataArr.length; i++) {
             // teardown for regular placemark, its delete event listener
             // and its right-mid placemark
             google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
@@ -3717,13 +3796,18 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
   }
   
   var point = placemark.getGeometry();
+  var origAltitudeMode = point.getAltitudeMode();
   
   // changing altitude if the mode is clamp to ground does nothing, so switch
   // to relative to ground
-  // TODO: change it back when the animation is done?
-  if (point.getAltitudeMode() == this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND) {
+  if (origAltitudeMode == this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND) {
     point.setAltitude(0);
     point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_GROUND);
+  }
+  
+  if (origAltitudeMode == this.pluginInstance.ALTITUDE_CLAMP_TO_SEA_FLOOR) {
+    point.setAltitude(0);
+    point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_SEA_FLOOR);
   }
   
   var startAltitude = point.getAltitude();
@@ -3752,6 +3836,8 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
       end: startAltitude,
       easing: 'in',
       callback: function() {
+        point.setAltitudeMode(origAltitudeMode);
+        
         // done with this bounce, should we bounce again?
         if (options.repeat >= 1) {
           --options.repeat;
@@ -3920,7 +4006,7 @@ function(obj, property, options) {
  */
 GEarthExtensions.prototype.util = {isnamespace_:true};
 
-GEarthExtensions.prototype.util._areScreenOverlayXYSwapped = function() {
+GEarthExtensions.prototype.util.areScreenOverlayXYSwapped_ = function() {
   return this.pluginInstance.getApiVersion() < '1.003';
 }
 GEarthExtensions.NAMED_COLORS = {
