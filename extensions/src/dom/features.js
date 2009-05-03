@@ -67,6 +67,9 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
     model: GEarthExtensions.ALLOWED,
     geometries: GEarthExtensions.ALLOWED,
     
+    // convenience (pass through to geometry)
+    altitudeMode: GEarthExtensions.ALLOWED,
+    
     // styling
     stockIcon: GEarthExtensions.ALLOWED,
     icon: GEarthExtensions.ALLOWED,
@@ -113,6 +116,11 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
       }
     
       options.style.icon = options.icon;
+    }
+    
+    // convenience
+    if ('altitudeMode' in options) {
+      placemarkObj.getGeometry().setAltitudeMode(options.altitudeMode);
     }
   
     // NOTE: for this library, allow EITHER a style or a styleUrl, not both..
@@ -500,7 +508,7 @@ GEarthExtensions.domBuilder_({
     rotationXY: GEarthExtensions.ALLOWED
   },
   constructor: function(screenOverlayObj, options) {
-    if (this.util._areScreenOverlayXYSwapped()) { // Earth API bug
+    if (this.util.areScreenOverlayXYSwapped_()) { // Earth API bug
       this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
       this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
     } else {

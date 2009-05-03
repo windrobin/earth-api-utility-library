@@ -49,7 +49,8 @@ GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
         point.lat(),
         point.lng(),
         point.altitude(),
-        point.altitudeMode(),
+        ('altitudeMode' in options) ? options.altitudeMode :
+                                      point.altitudeMode(),
         false,
         false);
   }

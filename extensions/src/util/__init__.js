@@ -20,6 +20,6 @@ limitations under the License.
  */
 GEarthExtensions.prototype.util = {isnamespace_:true};
 
-GEarthExtensions.prototype.util._areScreenOverlayXYSwapped = function() {
+GEarthExtensions.prototype.util.areScreenOverlayXYSwapped_ = function() {
   return this.pluginInstance.getApiVersion() < '1.003';
 }
