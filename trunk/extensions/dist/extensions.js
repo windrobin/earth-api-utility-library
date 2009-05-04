@@ -2835,37 +2835,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     currentDragContext_ = {
       placemark: placemark,
-      dragCallback: placemarkDragData.draggableOptions.dragCallback,
-      dropCallback: placemarkDragData.draggableOptions.dropCallback,
+      draggableOptions: placemarkDragData.draggableOptions,
       dragged: false
     };
-
-    // animate
-    if (placemarkDragData.draggableOptions.bounce) {
-      extInstance.fx.cancel(currentDragContext_.placemark);
-      extInstance.fx.bounce(currentDragContext_.placemark, {
-        phase: 1
-      });
-    }
-
-    // set dragging style
-    if (placemarkDragData.draggableOptions.draggingStyle) {
-      placemarkDragData.oldStyle =
-          currentDragContext_.placemark.getStyleSelector();
-      currentDragContext_.placemark.setStyleSelector(
-          placemarkDragData.draggableOptions.draggingStyle);
-    }
-
-    // show 'target' screen overlay
-    if (placemarkDragData.draggableOptions.targetScreenOverlay) {
-      var overlay = extInstance.dom.buildScreenOverlay(
-          placemarkDragData.draggableOptions.targetScreenOverlay);
-      extInstance.dom.setVec2(
-          extInstance.util.areScreenOverlayXYSwapped_() ?
-          overlay.getOverlayXY() : overlay.getScreenXY(), { left: x, top: y });
-      extInstance.pluginInstance.getFeatures().appendChild(overlay);
-      currentDragContext_.activeTargetScreenOverlay = overlay;
-    }
   }
 
   function makeMouseMoveListener_(extInstance) {
@@ -2876,11 +2848,42 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         if (!event.getDidHitGlobe()) {
           return;
         }
+        
+        if (!currentDragContext_.dragged) {
+          currentDragContext_.dragged = true;
+          
+          // animate
+          if (currentDragContext_.draggableOptions.bounce) {
+            extInstance.fx.cancel(currentDragContext_.placemark);
+            extInstance.fx.bounce(currentDragContext_.placemark, {
+              phase: 1
+            });
+          }
+
+          // set dragging style
+          if (currentDragContext_.draggableOptions.draggingStyle) {
+            currentDragContext_.oldStyle =
+                currentDragContext_.placemark.getStyleSelector();
+            currentDragContext_.placemark.setStyleSelector(
+                currentDragContext_.draggableOptions.draggingStyle);
+          }
+
+          // show 'target' screen overlay (will be correctly positioned
+          // later)
+          if (currentDragContext_.draggableOptions.targetScreenOverlay) {
+            var overlay = extInstance.dom.buildScreenOverlay(
+                currentDragContext_.draggableOptions.targetScreenOverlay);
+            extInstance.pluginInstance.getFeatures().appendChild(overlay);
+            currentDragContext_.activeTargetScreenOverlay = overlay;
+          }
+        }
 
         // move 'target' screen overlay
         if (currentDragContext_.activeTargetScreenOverlay) {
           extInstance.dom.setVec2(
-              currentDragContext_.activeTargetScreenOverlay.getOverlayXY(),
+              extInstance.util.areScreenOverlayXYSwapped_() ?
+                currentDragContext_.activeTargetScreenOverlay.getOverlayXY() :
+                currentDragContext_.activeTargetScreenOverlay.getScreenXY(),
               { left: event.getClientX(), top: event.getClientY() });
         }
 
@@ -2888,10 +2891,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         var point = currentDragContext_.placemark.getGeometry();
         point.setLatitude(event.getLatitude());
         point.setLongitude(event.getLongitude());
-        currentDragContext_.dragged = true;
 
-        if (currentDragContext_.dragCallback) {
-          currentDragContext_.dragCallback.call(currentDragContext_.placemark);
+        if (currentDragContext_.draggableOptions.dragCallback) {
+          currentDragContext_.draggableOptions.dragCallback.call(
+              currentDragContext_.placemark);
         }
       }
     };
@@ -2899,38 +2902,37 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
   function stopDragging_(extInstance, abort) {
     if (currentDragContext_) {
-      // get placemark's draggable data
-      var placemarkDragData = extInstance.util.getJsDataValue(
-          currentDragContext_.placemark, DRAGDATA_JSDATA_KEY) || {};
+      if (currentDragContext_.dragged) {
+        // unset dragging style
+        if (currentDragContext_.oldStyle) {
+          currentDragContext_.placemark.setStyleSelector(
+              currentDragContext_.oldStyle);
+          delete currentDragContext_.oldStyle;
+        }
 
-      // unset dragging style
-      if (placemarkDragData.oldStyle) {
-        currentDragContext_.placemark.setStyleSelector(
-            placemarkDragData.oldStyle);
-        delete placemarkDragData.oldStyle;
-      }
+        // remove 'target' screen overlay
+        if (currentDragContext_.activeTargetScreenOverlay) {
+          extInstance.pluginInstance.getFeatures().removeChild(
+              currentDragContext_.activeTargetScreenOverlay);
+          delete currentDragContext_.activeTargetScreenOverlay;
+        }
 
-      // remove 'target' screen overlay
-      if (currentDragContext_.activeTargetScreenOverlay) {
-        extInstance.pluginInstance.getFeatures().removeChild(
-            currentDragContext_.activeTargetScreenOverlay);
-        delete currentDragContext_.activeTargetScreenOverlay;
-      }
-
-      // animate
-      if (placemarkDragData.draggableOptions.bounce) {
-        extInstance.fx.cancel(currentDragContext_.placemark);
-        extInstance.fx.bounce(currentDragContext_.placemark, {
-          startAltitude: 0,
-          phase: 2,
-          repeat: 1,
-          dampen: 0.3
-        });
+        // animate
+        if (currentDragContext_.draggableOptions.bounce) {
+          extInstance.fx.cancel(currentDragContext_.placemark);
+          extInstance.fx.bounce(currentDragContext_.placemark, {
+            startAltitude: 0,
+            phase: 2,
+            repeat: 1,
+            dampen: 0.3
+          });
+        }
       }
 
       if (currentDragContext_.dragged &&
-          currentDragContext_.dropCallback && !abort) {
-        currentDragContext_.dropCallback.call(currentDragContext_.placemark);
+          currentDragContext_.draggableOptions.dropCallback && !abort) {
+        currentDragContext_.draggableOptions.dropCallback.call(
+            currentDragContext_.placemark);
       }
 
       currentDragContext_ = null;
