@@ -4034,44 +4034,63 @@ GEarthExtensions.NAMED_COLORS = {
  * Converts between various color formats, i.e. '#rrggbb', to the KML color
  * format ('aabbggrr')
  * @param {String|Number[]} arg The source color value.
+ * @param {Number} [opacity] An optional opacity to go along with CSS/HTML style
+ *     colors, from 0.0 to 1.0.
  * @type {String}
- * @return A string in KML color format, i.e. 'aabbggrr'
+ * @return A string in KML color format, i.e. 'aabbggrr', or null if the color
+ *     could not be parsed.
  */
-GEarthExtensions.prototype.util.parseColor = function(arg) {
+GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
   // detect #rrggbb and convert to kml color aabbggrr
   // TODO: also accept 'rgb(0,0,0)' format using regex, maybe even hsl?
+  var pad2_ = function(s) {
+    return ((s.length < 2) ? '0' : '') + s;
+  };
+  
   if (geo.util.isArray(arg)) {
     // expected array as [r,g,b] or [r,g,b,a]
 
-    var pad2 = function(s) {
-      return ((s.length < 2) ? '0' : '') + s;
-    };
-
-    return pad2(((arg.length >= 4) ? arg[3].toString(16) : 'ff')) +
-           pad2(arg[2].toString(16)) +
-           pad2(arg[1].toString(16)) +
-           pad2(arg[0].toString());
+    return pad2_(((arg.length >= 4) ? arg[3].toString(16) : 'ff')) +
+           pad2_(arg[2].toString(16)) +
+           pad2_(arg[1].toString(16)) +
+           pad2_(arg[0].toString());
   } else if (typeof arg == 'string') {
     // parsing a string
     if (arg.toLowerCase() in GEarthExtensions.NAMED_COLORS) {
       return GEarthExtensions.NAMED_COLORS[arg.toLowerCase()];
     } if (arg.length > 7) {
-      // if not stored as HTML color, assume it's stored as a
-      // KML color and return as is
-      // TODO: check for valid KML color using regex?
-      return arg;
-    } else if (arg.length > 4) {
-      // stored as full HTML color
-      return arg.replace(
-          /#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i,
-          'ff$3$2$1').toLowerCase();
+      // large than a possible CSS/HTML-style color, maybe it's already a KML
+      // color
+      return arg.match(/^[0-9a-f]{8}$/i) ? arg : null;
     } else {
-      // stored as shorthand HTML/CSS color (#fff)
-      return arg.replace(
-          /#?([0-9a-f])([0-9a-f])([0-9a-f])/i,
-          'ff$3$3$2$2$1$1').toLowerCase();
+      // assume it's given as an HTML color
+      var kmlColor = null;
+      if (arg.length > 4) {
+        // try full HTML color
+        kmlColor = arg.replace(
+            /#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i,
+            'ff$3$2$1').toLowerCase();
+      } else {
+        // try shorthand HTML/CSS color (#fff)
+        kmlColor = arg.replace(
+            /#?([0-9a-f])([0-9a-f])([0-9a-f])/i,
+            'ff$3$3$2$2$1$1').toLowerCase();
+      }
+      
+      if (kmlColor == arg) {
+        return null; // no replacement done, so can't parse
+      }
+      
+      if (!geo.util.isUndefined(opacity)) {
+        kmlColor = pad2_(Math.floor(255 * opacity).toString(16)) +
+            kmlColor.substring(2);
+      }
+      
+      return kmlColor;
     }
   }
+  
+  return null; // couldn't parse, not a string or array
 };
 
 
@@ -4085,7 +4104,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
   color1 = this.util.parseColor(color1);
   color2 = this.util.parseColor(color2);
 
-  var pad2 = function(s) {
+  var pad2_ = function(s) {
     return ((s.length < 2) ? '0' : '') + s;
   };
 
@@ -4093,7 +4112,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
     c1 = parseInt(c1, 16);
     c2 = parseInt(c2, 16);
 
-    return pad2(Math.floor((c2 - c1) * fraction + c1).toString(16));
+    return pad2_(Math.floor((c2 - c1) * fraction + c1).toString(16));
   };
 
   return blendHexComponent_(color1.substr(0,2), color2.substr(0,2)) +
