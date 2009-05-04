@@ -23,7 +23,9 @@ GEOJS=${LIB}/third-party/geojs
 LICENSE_HEADER_JS=lib/license-header.js
 SRC=src
 TMP=tmp
-COMPRESS=java -jar ${TLIB}/yuicompressor-2.4.2.jar
+#COMPRESS=java -jar ${TLIB}/yuicompressor-2.4.2.jar
+COMPRESS=java -classpath .:${TLIB}/rhino.jar \
+  org.mozilla.javascript.tools.shell.Main ${TLIB}/packer.js
 JSCOVERAGE=${LIB}/jscoverage
 FIND_SRC_CLAUSES=-name \*.js -not -name \*.jscoverage.js
 AWK_TEST_RANGE="/\/\*\*\*IGNORE_BEGIN\*\*\*\//,/\/\*\*\*IGNORE_END\*\*\*\//"
@@ -39,7 +41,8 @@ dist: makegeojs concat
 	echo >> ${DIST}/${DISTNAME}.js
 	cat ${LICENSE_HEADER_JS} ${TMP}/concat.js >> ${DIST}/${DISTNAME}.js
 	
-	${COMPRESS} ${TMP}/concat.js -o ${TMP}/pack.js
+	@#${COMPRESS} ${TMP}/concat.js -o ${TMP}/pack.js
+	${COMPRESS} ${TMP}/concat.js ${TMP}/pack.js
 	cat ${GEOJS}/dist/geo.pack.js > ${DIST}/${DISTNAME}.pack.js
 	echo >> ${DIST}/${DISTNAME}.pack.js
 	cat ${LICENSE_HEADER_JS} ${TMP}/pack.js >> ${DIST}/${DISTNAME}.pack.js
