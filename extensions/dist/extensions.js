@@ -2865,7 +2865,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
             currentDragContext_.oldStyle =
                 currentDragContext_.placemark.getStyleSelector();
             currentDragContext_.placemark.setStyleSelector(
-                currentDragContext_.draggableOptions.draggingStyle);
+                extInstance.dom.buildStyle(
+                currentDragContext_.draggableOptions.draggingStyle));
           }
 
           // show 'target' screen overlay (will be correctly positioned

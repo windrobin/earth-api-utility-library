@@ -33,7 +33,7 @@ google.setOnLoadCallback(function() {
     <div id="map3d" style="height: 100%"></div>
   </div>
 <textarea id="code" style="font-family: monospace; width: 500px; height: 200px;">
-gex.util.fullCameraControl();
+gex.util.takeOverCamera();
 var lookAt = gex.util.getLookAt();
 var startLon = lookAt.getLongitude();
 
@@ -44,7 +44,7 @@ var anim = new gex.fx.Animation(function(t) {
   // if (t >= 5000)
   //  this.stop();
 }, function() {
-  gex.util.fullCameraControl(false);
+  gex.util.takeOverCamera(false);
 });
 
 anim.start();

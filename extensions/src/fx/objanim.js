@@ -82,6 +82,8 @@ function(obj, property, options) {
 
   var me = this;
   
+  // TODO: custom support for KmlColor -- gex.util.blendColors
+  
   var getter = function() {
     return me.util.callMethod(obj, 'get' + propertyTitleCase);
   };
