@@ -41,9 +41,8 @@ google.setOnLoadCallback(function() {
   </div>
 <textarea id="code" style="font-family: monospace; width: 500px; height: 200px;">
 // this is a fake bounce using animateProperty
-// could be abstracted away as 'gex.fx.bounce'
 // one could also build a 'bounce' using
-// gex.fx.GenericSimpleAnimation
+// gex.fx.TimedAnimation
 var iconStyle = placemark.getStyleSelector().getIconStyle();
 gex.fx.animateProperty(iconStyle, 'scale', {
   duration: 500,

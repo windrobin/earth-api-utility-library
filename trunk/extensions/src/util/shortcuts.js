@@ -166,11 +166,11 @@ function test_util_callMethod() {
 /***IGNORE_END***/
 
 /**
- * Enables or disables full camera control mode, which sets fly to speed
+ * Enables or disables full camera ownership mode, which sets fly to speed
  * to teleport, disables user mouse interaction, and hides the navigation
  * controls.
  */
-GEarthExtensions.prototype.util.fullCameraControl = function(enable) {
+GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
   if (enable || geo.util.isUndefined(enable)) {
     if (this.cameraControlOldProps_)
       return;

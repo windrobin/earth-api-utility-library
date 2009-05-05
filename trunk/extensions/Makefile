@@ -71,9 +71,11 @@ coveragetests: consolidatetests instrument concat tests
 docs: concat
 	java -classpath .:${TLIB}/rhino.jar \
 		org.mozilla.javascript.tools.shell.Main \
-		${TLIB}/jsdoc-toolkit/app/run.js -a \
+		${TLIB}/jsdoc-toolkit/app/run.js -s \
 		-t=${TLIB}/jsdoc-toolkit/templates/${DOCS_TEMPLATE}/ \
-		-d=${DOCS} ${TMP}/concat.js -j=${TLIB}/jsdoc-toolkit/app/run.js
+		-D="featuredPages:GEarthExtensions" \
+		-D="srcRoot:earth-api-utility-library/source/browse/trunk/extensions/" \
+		-d=${DOCS} ${SRC} -r -j=${TLIB}/jsdoc-toolkit/app/run.js
 	@echo ------ GEarthExtensions: Docs are ready. Copy to wiki/ folder in SVN repository.
 
 clean: cleangeojs
