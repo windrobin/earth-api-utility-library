@@ -41,6 +41,23 @@ GEarthExtensions.prototype.fx.rewind = function(feature) {
 
 /**
  * Animate a numeric property on a plugin object.
+ * @param {KmlObject} object The plugin object whose property to animate.
+ * @param {String} property The property to animate. This should match 1:1 to
+ *     the getter/setter methods on the plugin object. For example, to animate
+ *     a KmlPoint latitude, pass in `latitude`, since the getter/setters are
+ *     `getLatitude` and `setLatitude`.
+ * @param {Object} options The property animation options.
+ * @param {Number} [options.duration=500] The duration, in milliseconds, of the
+ *     animation.
+ * @param {Number} [options.start] The value of the property to set at the
+ *     start of the animation.
+ * @param {Number} [options.end] The desired end value of the property.
+ * @param {Number} [options.delta] If end is not specified, you may set this
+ *     to the desired change in the property value.
+ * @param {String|Function} [options.easing='none'] The easing function to use
+ *     during the animation. Valid values are 'none', 'in', 'out', or 'both'.
+ *     Alternatively, an easy function mapping `[0.0, 1.0] -> [0.0, 1.0]` can
+ *     be specified. No easing is `f(x) = x`.
  */
 GEarthExtensions.prototype.fx.animateProperty =
 function(obj, property, options) {
