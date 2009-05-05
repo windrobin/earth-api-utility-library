@@ -1,7 +1,8 @@
-#labels Phase-Reference
   * Reference
-    * [GEarthExtensions GEarthExtensions]
-    * [GEarthExtensions_dom GEarthExtensions.dom]
-    * [GEarthExtensions_edit GEarthExtensions.edit]
-    * [GEarthExtensions_fx GEarthExtensions.fx]
-    * [GEarthExtensions_util GEarthExtensions.util]
+    * [GEarthExtensionsReference GEarthExtensions]
+    * [GEarthExtensionsDomReference GEarthExtensions.dom]
+    * [GEarthExtensionsEditReference GEarthExtensions.edit]
+    * [GEarthExtensionsFxReference GEarthExtensions.fx]
+      * [GEarthExtensionsFxAnimationReference GEarthExtensions.fx.Animation]
+      * [GEarthExtensionsFxTimedAnimationReference GEarthExtensions.fx.TimedAnimation]
+    * [GEarthExtensionsUtilReference GEarthExtensions.util]

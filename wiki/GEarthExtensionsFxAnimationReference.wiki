@@ -1,0 +1,61 @@
+#labels Phase-Reference
+#summary GEarthExtensions.fx.Animation Class Reference
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/_baseanim_.js src/fx/_baseanim_.js]
+
+<wiki:toc max_depth="2" />
+
+
+
+
+
+----
+=Class Constructor=
+
+==GEarthExtensions.fx.Animation()==
+
+Abstract base class for GEarthExtensions#fx animations
+
+
+
+
+
+----
+=Methods=
+
+==renderFrame(t)==
+
+Render the frame at time t after the animation was started.
+
+
+===Parameters:===
+
+  * *t* _{{{Number}}}_  The time in seconds of the frame to render.
+
+----
+
+==rewind()==
+
+Stop and rewind the animation, without calling the
+
+
+----
+
+==start()==
+
+Start the animation.
+
+
+----
+
+==stop(completed)==
+
+Stop the animation.
+
+
+===Parameters:===
+
+  * *completed*   
+
+
+
+

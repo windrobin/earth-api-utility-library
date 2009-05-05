@@ -1,11 +1,7 @@
 #labels Phase-Reference
-
-This is the reference for the GEarthExtensions.fx Namespace.
-
+#summary GEarthExtensions.fx Namespace Reference
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/__init__.js src/fx/__init__.js]
 Contains various animation/effects tools for use in the Google Earth API.
-
-
-
 <wiki:toc max_depth="2" />
 
 
@@ -21,6 +17,8 @@ Contains various animation/effects tools for use in the Google Earth API.
 
 ==animateProperty(obj, property, options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/objanim.js src/fx/objanim.js]
+
 Animate a numeric property on a plugin object.
 
 
@@ -34,6 +32,8 @@ Animate a numeric property on a plugin object.
 
 ==bounce(placemark, options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/bounce.js src/fx/bounce.js]
+
 Bounce a placemark once.
 
 
@@ -46,6 +46,8 @@ Bounce a placemark once.
 
 ==cancel(feature)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/objanim.js src/fx/objanim.js]
+
 Cancel all animations on a given feature, potentially leaving them in an intermediate visual state.
 
 
@@ -56,6 +58,8 @@ Cancel all animations on a given feature, potentially leaving them in an interme
 ----
 
 ==rewind(feature)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/objanim.js src/fx/objanim.js]
 
 Cancel all animations on a given feature and revert them to their t = 0 state.
 

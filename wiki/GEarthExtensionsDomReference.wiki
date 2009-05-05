@@ -1,11 +1,7 @@
 #labels Phase-Reference
-
-This is the reference for the GEarthExtensions.dom Namespace.
-
+#summary GEarthExtensions.dom Namespace Reference
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/__init__.js src/dom/__init__.js]
 Contains DOM builder functions (buildXX) and DOM manipulation/traversal functions.
-
-
-
 <wiki:toc max_depth="2" />
 
 
@@ -21,6 +17,8 @@ Contains DOM builder functions (buildXX) and DOM manipulation/traversal function
 
 ==buildCamera(point, options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/views.js src/dom/views.js]
+
 Creates a new camera object with the given parameters.
 
 
@@ -35,52 +33,58 @@ Creates a new camera object with the given parameters.
     * *range* _{{{Number}}}_ (Optional) The camera roll.
 
 ===Returns:===
-KmlCamera
+{{{KmlCamera}}}
 
 
 ----
 
 ==buildDocument(children, options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
 Creates a new document with the given parameters.
 
 
 ===Parameters:===
 
-  * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this document.
+  * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this document.
   * *options* _{{{Object}}}_  The parameters of the document to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
     * *visibility* _{{{Boolean}}}_ (Optional) Whether or not the feature should be visible.
     * *description* _{{{String}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
-    * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this document.
+    * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this document.
 
 ===Returns:===
-KmlDocument
+{{{KmlDocument}}}
 
 
 ----
 
 ==buildFolder(children, options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
 Creates a new folder with the given parameters.
 
 
 ===Parameters:===
 
-  * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this folder.
+  * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this folder.
   * *options* _{{{Object}}}_  The parameters of the folder to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
     * *visibility* _{{{Boolean}}}_ (Optional) Whether or not the feature should be visible.
     * *description* _{{{String}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
-    * *children* _{{{KmlFeature[]}}}_ (Optional) The children of this folder.
+    * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this folder.
 
 ===Returns:===
-KmlFolder
+{{{KmlFolder}}}
 
 
 ----
 
 ==buildGroundOverlay()==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
 
 Creates a new ground overlay with the given parameters.
 
@@ -88,6 +92,8 @@ Creates a new ground overlay with the given parameters.
 ----
 
 ==buildLinearRing(path, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/geometries.js src/dom/geometries.js]
 
 Creates a new linear ring geometry with the given parameters.
 
@@ -102,12 +108,14 @@ Creates a new linear ring geometry with the given parameters.
     * *tessellate* _{{{Boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
 
 ===Returns:===
-KmlLinearRing
+{{{KmlLinearRing}}}
 
 
 ----
 
 ==buildLineString(path, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/geometries.js src/dom/geometries.js]
 
 Creates a new line string geometry with the given parameters.
 
@@ -122,24 +130,28 @@ Creates a new line string geometry with the given parameters.
     * *tessellate* _{{{Boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
 
 ===Returns:===
-KmlLineString
+{{{KmlLineString}}}
 
 
 ----
 
 ==buildLineStringPlacemark()==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
 
 
 
 ===See:===
 
-[GEarthExtensions_dom_buildPlacemark GEarthExtensions.dom.buildPlacemark]
+{{{GEarthExtensions.dom.buildPlacemark}}}
 
 
 ----
 
 ==buildLink(href, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/others.js src/dom/others.js]
 
 Creates a new link object with the given parameters.
 
@@ -154,12 +166,14 @@ Creates a new link object with the given parameters.
     * *viewRefreshMode* _{{{KmlViewRefreshModeEnum}}}_ (Optional) The view-based refresh mode.
 
 ===Returns:===
-KmlLink
+{{{KmlLink}}}
 
 
 ----
 
 ==buildLookAt(point, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/views.js src/dom/views.js]
 
 Creates a new lookat object with the given parameters.
 
@@ -175,12 +189,14 @@ Creates a new lookat object with the given parameters.
     * *range* _{{{Number}}}_ (Optional) The range of the camera (distance from the lookat point).
 
 ===Returns:===
-KmlLookAt
+{{{KmlLookAt}}}
 
 
 ----
 
 ==buildModel(link, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/geometries.js src/dom/geometries.js]
 
 Creates a new model geometry with the given parameters.
 
@@ -192,36 +208,40 @@ Creates a new model geometry with the given parameters.
     * *link* _{{{LinkSpec}}}_ (Optional) The remote link this model should use.
     * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
     * *location* _{{{PointSpec}}}_ (Optional) The location of the model.
-    * *scale* _{{{Number|Number[]}}}_ (Optional) The scale factor of the model.
+    * *scale* _{{{Number}}}|{{{Number}}}[]_ (Optional) The scale factor of the model.
     * *orientation* _{{{Object}}}_ (Optional) The orientation of the model.
     * *orientation.heading* _{{{Number}}}_ (Optional) The model heading.
     * *orientation.tilt* _{{{Number}}}_ (Optional) The model tilt.
     * *orientation.roll* _{{{Number}}}_ (Optional) The model roll.
 
 ===Returns:===
-KmlPolygon
+{{{KmlPolygon}}}
 
 
 ----
 
 ==buildMultiGeometry(geometries, options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/geometries.js src/dom/geometries.js]
+
 Creates a new multi-geometry with the given parameters.
 
 
 ===Parameters:===
 
-  * *geometries* _{{{KmlGeometry[]}}}_ (Optional) The child geometries.
+  * *geometries* _{{{KmlGeometry}}}[]_ (Optional) The child geometries.
   * *options* _{{{Object}}}_  The parameters of the multi-geometry to create.
-    * *geometries* _{{{KmlGeometry[]}}}_ (Optional) The child geometries.
+    * *geometries* _{{{KmlGeometry}}}[]_ (Optional) The child geometries.
 
 ===Returns:===
-KmlMultiGeometry
+{{{KmlMultiGeometry}}}
 
 
 ----
 
 ==buildNetworkLink(link, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
 
 Creates a new network link with the given parameters.
 
@@ -236,12 +256,14 @@ Creates a new network link with the given parameters.
     * *link* _{{{LinkSpec}}}_ (Optional) The link to use.
 
 ===Returns:===
-KmlNetworkLink
+{{{KmlNetworkLink}}}
 
 
 ----
 
 ==buildPlacemark(options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
 
 Creates a new placemark with the given parameters.
 
@@ -260,12 +282,14 @@ Creates a new placemark with the given parameters.
     * *geometries* _{{{MultiGeometrySpec}}}_ (Optional) A multi-geometry to use in the placemark.
 
 ===Returns:===
-KmlPlacemark
+{{{KmlPlacemark}}}
 
 
 ----
 
 ==buildPoint(point, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/geometries.js src/dom/geometries.js]
 
 Creates a new point geometry with the given parameters.
 
@@ -279,24 +303,28 @@ Creates a new point geometry with the given parameters.
     * *extrude* _{{{Boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
 
 ===Returns:===
-KmlPoint
+{{{KmlPoint}}}
 
 
 ----
 
 ==buildPointPlacemark()==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
 
 
 
 ===See:===
 
-[GEarthExtensions_dom_buildPlacemark GEarthExtensions.dom.buildPlacemark]
+{{{GEarthExtensions.dom.buildPlacemark}}}
 
 
 ----
 
 ==buildPolygon(polygon, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/geometries.js src/dom/geometries.js]
 
 Creates a new polygon geometry with the given parameters.
 
@@ -311,24 +339,37 @@ Creates a new polygon geometry with the given parameters.
     * *tessellate* _{{{Boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
 
 ===Returns:===
-KmlPolygon
+{{{KmlPolygon}}}
 
 
 ----
 
 ==buildPolygonPlacemark()==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
 
 
 
 ===See:===
 
-[GEarthExtensions_dom_buildPlacemark GEarthExtensions.dom.buildPlacemark]
+{{{GEarthExtensions.dom.buildPlacemark}}}
+
+
+----
+
+==buildRegion()==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/others.js src/dom/others.js]
+
+Creates a new region with the given parameters.
 
 
 ----
 
 ==buildScreenOverlay()==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
 
 Creates a new screen overlay with the given parameters.
 
@@ -337,34 +378,42 @@ Creates a new screen overlay with the given parameters.
 
 ==buildStyle(options)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/styles.js src/dom/styles.js]
+
 Creates a new style with the given parameters.
 
 
 ===Parameters:===
 
   * *options* _{{{Object}}}_  The style parameters.
-    * *icon* _{{{String|Object}}}_ (Optional) The icon href or an icon object literal.
+    * *icon* _{{{String}}}|{{{Object}}}_ (Optional) The icon href or an icon object literal.
     * *icon.href* _{{{String}}}_ (Optional) The icon href.
     * *icon.scale* _{{{Number}}}_ (Optional) The icon scaling factor.
     * *icon.color* _{{{ColorSpec}}}_ (Optional) The color of the icon.
-    * *label* _{{{ColorSpec|Object}}}_ (Optional) The label color or a label object literal.
+    * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the icon, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
+    * *label* _{{{ColorSpec}}}|{{{Object}}}_ (Optional) The label color or a label object literal.
     * *label.scale* _{{{Number}}}_ (Optional) The label scaling factor.
     * *label.color* _{{{ColorSpec}}}_ (Optional) The color of the label.
-    * *line* _{{{ColorSpec|Object}}}_ (Optional) The line color or a line object literal.
+    * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the label, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
+    * *line* _{{{ColorSpec}}}|{{{Object}}}_ (Optional) The line color or a line object literal.
     * *line.width* _{{{Number}}}_ (Optional) The line width.
     * *line.color* _{{{ColorSpec}}}_ (Optional) The line color.
-    * *poly* _{{{ColorSpec|Object}}}_ (Optional) The polygon color or a polygon style object literal.
+    * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the line, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
+    * *poly* _{{{ColorSpec}}}|{{{Object}}}_ (Optional) The polygon color or a polygon style object literal.
     * *poly.fill* _{{{Boolean}}}_ (Optional) Whether or not the polygon will be filled.
     * *poly.outline* _{{{Boolean}}}_ (Optional) Whether or not the polygon will have an outline.
     * *poly.color* _{{{ColorSpec}}}_ (Optional) The color of the polygon fill.
+    * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the polygon, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
 
 ===Returns:===
-KmlStyle
+{{{KmlStyle}}}
 
 
 ----
 
 ==clearFeatures()==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]
 
 Removes all top-level features from the Earth object's DOM.
 
@@ -372,6 +421,8 @@ Removes all top-level features from the Earth object's DOM.
 ----
 
 ==getObjectById(id, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]
 
 Gets the object in the Earth DOM with the given id.
 
@@ -393,6 +444,8 @@ Returns the object with the given id, or null if it was not found.
 
 ==removeObject(object)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]
+
 Removes the given object from the Earth object's DOM.
 
 
@@ -403,6 +456,8 @@ Removes the given object from the Earth object's DOM.
 ----
 
 ==setVec2(vec2, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]
 
 Parse hotspot TODO: docs
 
@@ -416,13 +471,15 @@ Parse hotspot TODO: docs
 
 ==walk(options)==
 
-Walks a KML object, calling a given visit function for each object in the KML DOM. The lone argument must be either a visit function or an options literal.
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]
+
+Walks a KML object, calling a given visit function for each object in the KML DOM. The lone argument must be either a visit function or an options literal. NOTE: walking the DOM can have pretty poor performance on very large hierarchies, as first time accesses to KML objects from JavaScript incur some overhead in the API.
 
 
 ===Parameters:===
 
   * *options* _{{{Object}}}_ (Optional) The walk options:
-    * *visitCallback* _{{{Function}}}_ (Optional) The function to call upon visiting a node in the DOM. The 'this' variable in the callback function will be bound to the object being visited. The lone argument passed to this function will be an object literal for the call context. To get the current application-specific call context, use the 'current' property of the context object. To set the context for all child calls, set the 'child' property of the context object. To stop the walking process, return false in the function.
+    * *visitCallback* _{{{Function}}}_ (Optional) The function to call upon visiting a node in the DOM. The 'this' variable in the callback function will be bound to the object being visited. The lone argument passed to this function will be an object literal for the call context. To get the current application-specific call context, use the 'current' property of the context object. To set the context for all child calls, set the 'child' property of the context object.To prevent walking the children of the current object, set the 'walkChildren' property of the context object to false. To stop the walking process altogether, return false in the function.
     * *rootObject* _{{{KmlObject}}}_ (Optional) The root of the KML object hierarchy to walk.
     * *features* _{{{Boolean}}}_ (Optional) Descend into feature containers? Default true.
     * *geometries* _{{{Boolean}}}_ (Optional) Descend into geometry containers? Default false.

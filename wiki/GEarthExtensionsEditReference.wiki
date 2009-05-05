@@ -1,0 +1,59 @@
+#labels Phase-Reference
+#summary GEarthExtensions.edit Namespace Reference
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/__init__.js src/edit/__init__.js]
+Contains methods for allowing user-interactive editing of features inside the Google Earth Plugin.
+<wiki:toc max_depth="2" />
+
+
+
+
+
+
+
+
+
+----
+=Static Methods=
+
+==endDraggable(placemark)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/dragging.js src/edit/dragging.js]
+
+Prevents the given placemark from being draggable.
+
+
+===Parameters:===
+
+  * *placemark*   
+
+----
+
+==makeDraggable(placemark, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/dragging.js src/edit/dragging.js]
+
+Allows the user to drag the given placemark by using the mouse.
+
+
+===Parameters:===
+
+  * *placemark*   
+  * *options*   
+
+----
+
+==place(placemark, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/dragging.js src/edit/dragging.js]
+
+Enters a mode in which the user can place the given placemark onto the globe by clicking on the globe.
+
+
+===Parameters:===
+
+  * *placemark*   
+  * *options*   
+
+
+
+

@@ -1,10 +1,7 @@
 #labels Phase-Reference,Featured
-This is the reference for the GEarthExtensions Class.
-
-The root class/namespace hybrid for the Earth API extensions library. This class groups functionality into namespaces such as [GEarthExtensions_dom GEarthExtensions.dom] and [GEarthExtensions_fx GEarthExtensions.fx].
-
-
-
+#summary GEarthExtensions Class Reference
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/__init__.js src/__init__.js]
+The root class/namespace hybrid for the Earth API extensions library. This class groups functionality into namespaces such as [GEarthExtensionsDomReference GEarthExtensions.dom] and [GEarthExtensionsFxReference GEarthExtensions.fx].
 <wiki:toc max_depth="2" />
 
 
@@ -32,8 +29,7 @@ gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
 
 ===Parameters:===
 
-  * *pluginInstance*  
-    
+  * *pluginInstance*   
 
 
 
@@ -41,6 +37,8 @@ gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
 =Static Methods=
 
 ==checkParameters(explicitParams, allowAll, paramSpec)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_globals_.js src/_globals_.js]
 
 Checks a given parameters object against an parameter spec, throwing exceptions as necessary, and returning the resulting options object with defaults filled in.
 
@@ -63,6 +61,8 @@ Returns a shallow copy of the given parameters object, cleaned up according to t
 
 ==isInstanceOfEarthInterface(object, type)==
 
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_globals_.js src/_globals_.js]
+
 Determines whether or not the given object is directly an instance of the specified Earth API type.
 
 
@@ -70,5 +70,7 @@ Determines whether or not the given object is directly an instance of the specif
 
   * *object* _{{{Object}}}_  The object to test.
   * *type* _{{{String}}}_  The Earth API type string, i.e. 'KmlPlacemark'
+
+
 
 

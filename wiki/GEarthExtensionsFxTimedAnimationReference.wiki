@@ -1,0 +1,22 @@
+#labels Phase-Reference
+#summary GEarthExtensions.fx.TimedAnimation Class Reference
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/_baseanim_.js src/fx/_baseanim_.js]
+
+Extends {{{}}}
+<wiki:toc max_depth="2" />
+
+
+
+
+
+----
+=Class Constructor=
+
+==GEarthExtensions.fx.TimedAnimation()==
+
+Generic class for fixed-duration animations.
+
+
+
+
+
