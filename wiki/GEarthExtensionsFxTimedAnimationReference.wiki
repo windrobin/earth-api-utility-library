@@ -29,3 +29,25 @@ Render the frame at the given time after the animation was started.
 ===Parameters:===
   * *time* _{{{Number}}}_  The time of the frame to render, in seconds.
 
+----
+=Inherited Methods=
+
+==rewind()==
+
+Stop and rewind the animation to the frame at time t=0.
+
+----
+
+==stop(completed)==
+
+Stop this animation.
+
+===Parameters:===
+  * *completed* _{{{Boolean}}}_ (Optional, Default: true) Whether or not to call the completion callback.
+
+----
+
+==start()==
+
+Start this animation.
+

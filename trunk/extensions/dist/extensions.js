@@ -45,9 +45,11 @@ if (!('map' in Array.prototype)) {
 //#JSCOVERAGE_ENDIF
 /**
  * Create a new bounds object from the given parameters.
- * @param {geo.Bounds|geo.Point} [sw|bounds] Either an existing bounds object
- *     to copy, or the southwest coordinate of the new bounds object.
- * @param {geo.Point} [ne] The northeast coordinate of the new bounds object.
+ * @param {geo.Bounds|geo.Point} [swOrBounds] Either an existing bounds object
+ *     to copy, or the southwest, bottom coordinate of the new bounds object.
+ * @param {geo.Point} [ne] The northeast, top coordinate of the new bounds
+ *     object.
+ * @constructor
  */
 geo.Bounds = function() {
   // TODO: accept instances of GLatLngBounds
@@ -173,7 +175,7 @@ geo.Bounds.lngSpan_ = function(west, east) {
  * Extends the bounds object by the given point, if the bounds don't already
  * contain the point. Longitudinally, the bounds will be extended either east
  * or west, whichever results in a smaller longitudinal span.
- * @param point
+ * @param {geo.Point} point The point to extend the bounds by.
  */
 geo.Bounds.prototype.extend = function(point) {
   if (this.containsPoint(point)) {
@@ -220,8 +222,8 @@ geo.Bounds.prototype.extend = function(point) {
 /**
  * Returns the bounds' latitude, longitude, and altitude span as an object
  * literal.
- * @return {Object} Returns an object literal containing 'lat', 'lng', and
- *     'altitude' properties. Altitude will be null in the case that the bounds
+ * @return {Object} Returns an object literal containing `lat`, `lng`, and
+ *     `altitude` properties. Altitude will be null in the case that the bounds
  *     aren't 3D.
  */
 geo.Bounds.prototype.span = function() {
@@ -356,26 +358,26 @@ geo.math.reverseAngle = function(angleRad) {
 };
 /**
  * The radius of the Earth, in meters, assuming the Earth is a perfect sphere.
- * See http://en.wikipedia.org/wiki/Earth_radius.
+ * @see http://en.wikipedia.org/wiki/Earth_radius
  * @type Number
  */
 geo.math.EARTH_RADIUS = 6378135;
 
 /**
  * The average radius-of-curvature of the Earth, in meters.
- * See http://en.wikipedia.org/wiki/Radius_of_curvature_(applications).
+ * @see http://en.wikipedia.org/wiki/Radius_of_curvature_(applications)
  * @type Number
+ * @ignore
  */
 geo.math.EARTH_RADIUS_CURVATURE_AVG = 6372795;
 /**
  * Returns the approximate sea level great circle (Earth) distance between
  * two points using the Haversine formula and assuming an Earth radius of
  * geo.math.EARTH_RADIUS.
- * (see http://www.movable-type.co.uk/scripts/latlong.html)
  * @param {geo.Point} point1 The first point.
  * @param {geo.Point} point2 The second point.
- * @type Number
- * @return The Earth distance between the two points, in meters.
+ * @return {Number} The Earth distance between the two points, in meters.
+ * @see http://www.movable-type.co.uk/scripts/latlong.html
  */
 geo.math.distance = function(point1, point2) {
   return geo.math.EARTH_RADIUS * geo.math.angularDistance(point1, point2);
@@ -412,6 +414,12 @@ geo.math.angularDistance = function(point1, point2) {
       ), sin_phi1 * sin_phi2 + cos_phi1 * cos_phi2 * cos_d_lmd);
 }
 */
+/**
+ * Returns the angular distance between two points using the Haversine
+ * formula.
+ * @see geo.math.distance
+ * @ignore
+ */
 geo.math.angularDistance = function(point1, point2) {
   var phi1 = point1.lat().toRadians();
   var phi2 = point2.lat().toRadians();
@@ -437,12 +445,11 @@ geo.math.angularDistance = function(point1, point2) {
 /**
  * Calculates the initial heading/bearing at which an object at the start
  * point will need to travel to get to the destination point.
- * (see http://mathforum.org/library/drmath/view/55417.html)
  * @param {geo.Point} start The start point.
  * @param {geo.Point} dest The destination point.
- * @type Number
- * @return The initial heading required to get to the destination point,
- *     in the [0,360) degree range.
+ * @return {Number} The initial heading required to get to the destination
+ *     point, in the [0,360) degree range.
+ * @see http://mathforum.org/library/drmath/view/55417.html
  */
 geo.math.heading = function(start, dest) {
   var phi1 = start.lat().toRadians();
@@ -457,17 +464,23 @@ geo.math.heading = function(start, dest) {
         Math.cos(d_lmd))).toDegrees();
 };
 
+/**
+ * @param {geo.Point} start
+ * @param {geo.Point} dest
+ * @return {Number}
+ * @see geo.math.heading
+ */
 geo.math.bearing = geo.math.heading;
 
 /**
  * Calculates an intermediate point on the geodesic between the two given
  * points.
- * @note http://williams.best.vwh.net/avform.htm#Intermediate
  * @param {geo.Point} point1 The first point.
  * @param {geo.Point} point2 The second point.
  * @param {Number} [fraction] The fraction of distance between the first
  *     and second points.
- * @type geo.Point
+ * @return {geo.Point}
+ * @see http://williams.best.vwh.net/avform.htm#Intermediate
  */
 geo.math.midpoint = function(point1, point2, fraction) {
   // TODO: check for antipodality and fail w/ exception in that case
@@ -507,12 +520,12 @@ geo.math.midpoint = function(point1, point2, fraction) {
 /**
  * Calculates the destination point along a geodesic, given an initial heading
  * and distance, from the given start point.
- * (see http://www.movable-type.co.uk/scripts/latlong.html)
+ * @see http://www.movable-type.co.uk/scripts/latlong.html
  * @param {geo.Point} start The start point.
  * @param {Object} options The heading and distance object literal.
  * @param {Number} options.heading The initial heading, in degrees.
  * @param {Number} options.distance The distance along the geodesic, in meters.
- * @type geo.Point
+ * @return {geo.Point}
  */
 geo.math.destination = function(start, options) {
   if (!('heading' in options && 'distance' in options)) {
@@ -545,7 +558,7 @@ geo.math.destination = function(start, options) {
 };
 /**
  * Creates a new path from the given parameters.
- * @param {geo.Path|geo.Point[]|KmlLineString} path The path data.
+ * @param {geo.Path|geo.Point[]|PointSrc[]|KmlLineString} path The path data.
  * @constructor
  */
 geo.Path = function() {
@@ -566,7 +579,7 @@ geo.Path = function() {
     
     // array constructor
     } else if (geo.util.isArray(path)) {
-      // check if its an array of numbers (not array of arrays)
+      // check if it's an array of numbers (not array of arrays)
       if (!path.length || geo.util.isArray(path[0])) {
         // an array of arrays (i.e. an array of points)
         coordArraySrc = path;
@@ -598,14 +611,14 @@ geo.Path = function() {
       throw new TypeError('Could not create a path from the given arguments');
     }
   
-  // Assume each argument is a PointSpec, i.e.
+  // Assume each argument is a PointSrc, i.e.
   // new Path(p1, p2, p3) ==>
   //    new Path([new Point(p1), new Point(p2), new Point(p3)])
   } else {
     coordArraySrc = arguments;
   }
   
-  // construct from an array (presumably of PoinySpecs)
+  // construct from an array (presumably of PointSrcs)
   if (coordArraySrc) {
     for (i = 0; i < coordArraySrc.length; i++) {
       this.coords_.push(new geo.Point(coordArraySrc[i]));
@@ -626,6 +639,10 @@ geo.Path.prototype.coords_ = null; // don't use mutable objects here
 
 /**#@-*/
 
+/**
+ * Returns the string representation of the path.
+ * @type String
+ */
 geo.Path.prototype.toString = function() {
   return '[' + this.coords_.map(function(p) {
                                   return p.toString();
@@ -634,7 +651,7 @@ geo.Path.prototype.toString = function() {
 
 /**
  * Determines whether or not the given path is the same as this one.
- * @param {geo.Path} p2 The other path.
+ * @param {geo.Path} otherPath The other path.
  * @type Boolean
  */
 geo.Path.prototype.equals = function(p2) {
@@ -656,6 +673,8 @@ geo.Path.prototype.numCoords = function() {
 
 /**
  * Returns the coordinate at the given index in the path.
+ * @param {Number} index The index of the coordinate.
+ * @type geo.Point
  */
 geo.Path.prototype.coord = function(i) {
   // TODO: bounds check
@@ -664,6 +683,7 @@ geo.Path.prototype.coord = function(i) {
 
 /**
  * Prepends the given coordinate to the path.
+ * @param {geo.Point|PointSrc} coord The coordinate to prepend.
  */
 geo.Path.prototype.prepend = function(coord) {
   this.coords_.unshift(new geo.Point(coord));
@@ -671,6 +691,7 @@ geo.Path.prototype.prepend = function(coord) {
 
 /**
  * Appends the given coordinate to the path.
+ * @param {geo.Point|PointSrc} coord The coordinate to append.
  */
 geo.Path.prototype.append = function(coord) {
   this.coords_.push(new geo.Point(coord));
@@ -678,6 +699,8 @@ geo.Path.prototype.append = function(coord) {
 
 /**
  * Inserts the given coordinate at the i'th index in the path.
+ * @param {Number} index The index to insert into.
+ * @param {geo.Point|PointSrc} coord The coordinate to insert.
  */
 geo.Path.prototype.insert = function(i, coord) {
   // TODO: bounds check
@@ -686,6 +709,7 @@ geo.Path.prototype.insert = function(i, coord) {
 
 /**
  * Removes the coordinate at the i'th index from the path.
+ * @param {Number} index The index of the coordinate to remove.
  */
 geo.Path.prototype.remove = function(i) {
   // TODO: bounds check
@@ -696,6 +720,7 @@ geo.Path.prototype.remove = function(i) {
  * Returns a sub path, containing coordinates starting from the
  * startIndex position, and up to but not including the endIndex
  * position.
+ * @type geo.Path
  */
 geo.Path.prototype.subPath = function(startIndex, endIndex) {
   return this.coords_.slice(startIndex, endIndex);
@@ -708,6 +733,7 @@ geo.Path.prototype.subPath = function(startIndex, endIndex) {
 /**
  * Calculates the total length of the path using great circle distance
  * calculations.
+ * @return {Number} The total length of the path, in meters.
  */
 geo.Path.prototype.distance = function() {
   var dist = 0;
@@ -722,6 +748,7 @@ geo.Path.prototype.distance = function() {
  * Returns whether or not the path, when closed, contains the given point.
  * Thanks to Mike Williams of http://econym.googlepages.com/epoly.htm and
  * http://alienryderflex.com/polygon/ for this code.
+ * @param {geo.Point} point The point to test.
  */
 geo.Path.prototype.containsPoint = function(point) {
   var oddNodes = false;
@@ -743,7 +770,7 @@ geo.Path.prototype.containsPoint = function(point) {
 };
 
 /**
- * Returns the latitude/longitude bounds for this path.
+ * Returns the latitude/longitude bounds wholly containing this path.
  * @type geo.Bounds
  */
 geo.Path.prototype.bounds = function() {
@@ -753,6 +780,7 @@ geo.Path.prototype.bounds = function() {
 
   var bounds = new geo.Bounds(this.coord(0));
 
+  // TODO: optimize
   var numCoords = this.numCoords();
   for (var i = 1; i < numCoords; i++) {
     bounds.extend(this.coord(i));
@@ -765,8 +793,9 @@ geo.Path.prototype.bounds = function() {
 /**
  * Returns the approximate area of the polygon formed by the path when the path
  * is closed.
- * Taken from http://econym.googlepages.com/epoly.htm and
- * NOTE: this method only works with non-intersecting polygons.
+ * @return {Number} The approximate area, in square meters.
+ * @see http://econym.googlepages.com/epoly.htm
+ * @note This method only works with non-intersecting polygons.
  */
 geo.Path.prototype.area = function() {
   var a = 0;
@@ -789,7 +818,7 @@ geo.Path.prototype.area = function() {
 // TODO: unit test
 /**
  * Creates a new point from the given parameters.
- * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation} point
+ * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation} src
  *     The point data.
  * @constructor
  */
@@ -902,7 +931,10 @@ geo.Point.prototype.altitudeMode = function() {
 };
 geo.Point.prototype.altitudeMode_ = geo.ALTITUDE_RELATIVE_TO_GROUND;
 
-
+/**
+ * Returns the string representation of the point.
+ * @type String
+ */
 geo.Point.prototype.toString = function() {
   return '(' + this.lat().toString() + ', ' + this.lng().toString() + ', ' +
       this.altitude().toString() + ')';
@@ -910,6 +942,7 @@ geo.Point.prototype.toString = function() {
 
 /**
  * Returns the 2D (no altitude) version of this point.
+ * @type geo.Point
  */
 geo.Point.prototype.flatten = function() {
   return new geo.Point(this.lat(), this.lng());
@@ -925,7 +958,7 @@ geo.Point.prototype.is3D = function() {
 
 /**
  * Determines whether or not the given point is the same as this one.
- * @param {geo.Point} p2 The other point.
+ * @param {geo.Point} otherPoint The other point.
  * @type Boolean
  */
 geo.Point.prototype.equals = function(p2) {
@@ -936,13 +969,21 @@ geo.Point.prototype.equals = function(p2) {
 };
 
 /**
+ * Returns the angular distance between this point and the destination point.
+ * @param {geo.Point} dest The destination point.
  * @see geo.math.angularDistance
+ * @ignore
  */
 geo.Point.prototype.angularDistance = function(dest) {
   return geo.math.angularDistance(this, dest);
 };
 
 /**
+ * Returns the approximate sea level great circle (Earth) distance between
+ * this point and the destination point using the Haversine formula and
+ * assuming an Earth radius of geo.math.EARTH_RADIUS.
+ * @param {geo.Point} dest The destination point.
+ * @return {Number} The distance, in meters, to the destination point.
  * @see geo.math.distance
  */
 geo.Point.prototype.distance = function(dest) {
@@ -950,6 +991,11 @@ geo.Point.prototype.distance = function(dest) {
 };
 
 /**
+ * Calculates the initial heading/bearing at which an object at the start
+ * point will need to travel to get to the destination point.
+ * @param {geo.Point} dest The destination point.
+ * @return {Number} The initial heading required to get to the destination
+ *     point, in the [0,360) degree range.
  * @see geo.math.heading
  */
 geo.Point.prototype.heading = function(dest) {
@@ -957,6 +1003,12 @@ geo.Point.prototype.heading = function(dest) {
 };
 
 /**
+ * Calculates an intermediate point on the geodesic between this point and the
+ * given destination point.
+ * @param {geo.Point} dest The destination point.
+ * @param {Number} [fraction] The fraction of distance between the first
+ *     and second points.
+ * @return {geo.Point}
  * @see geo.math.midpoint
  */
 geo.Point.prototype.midpoint = function(dest, fraction) {
@@ -964,6 +1016,12 @@ geo.Point.prototype.midpoint = function(dest, fraction) {
 };
 
 /**
+ * Calculates the destination point along a geodesic, given an initial heading
+ * and distance, starting at this point.
+ * @param {Object} options The heading and distance object literal.
+ * @param {Number} options.heading The initial heading, in degrees.
+ * @param {Number} options.distance The distance along the geodesic, in meters.
+ * @return {geo.Point}
  * @see geo.math.destination
  */
 geo.Point.prototype.destination = function(options) {
@@ -1071,6 +1129,11 @@ geo.Polygon.prototype.innerBoundaries_ = null; // don't use mutable objects
 
 /**#@-*/
 
+/**
+ * Returns the string representation of the polygon, useful primarily for
+ * debugging purposes.
+ * @type String
+ */
 geo.Polygon.prototype.toString = function() {
   return 'Polygon: ' + this.outerBoundary().toString() +
       (this.innerBoundaries().length ?
@@ -1080,6 +1143,7 @@ geo.Polygon.prototype.toString = function() {
 
 /**
  * Returns the polygon's outer boundary path.
+ * @type geo.Path
  */
 geo.Polygon.prototype.outerBoundary = function() {
   return this.outerBoundary_;
@@ -1087,16 +1151,19 @@ geo.Polygon.prototype.outerBoundary = function() {
 
 /**
  * Returns an array containing the polygon's inner boundaries.
+ * You may freely add or remove geo.Path objects to this array.
+ * @type geo.Path[]
  */
 geo.Polygon.prototype.innerBoundaries = function() {
   return this.innerBoundaries_;
 };
-
-
-// http://econym.googlepages.com/epoly.htm
+// TODO: deprecate writability to this in favor of addInnerBoundary and
+// removeInnerBoundary
 
 /**
  * Returns whether or not the polygon contains the given point.
+ * @see geo.Path.containsPoint
+ * @see http://econym.googlepages.com/epoly.htm
  */
 geo.Polygon.prototype.containsPoint = function(point) {
   // outer boundary should contain the point
@@ -1116,13 +1183,15 @@ geo.Polygon.prototype.containsPoint = function(point) {
 
 /**
  * Returns the approximate area of the polygon.
+ * @return {Number} The approximate area, in square meters.
+ * @see geo.Path.area
  */
 geo.Polygon.prototype.area = function() {
   // start with outer boundary area
   var area = this.outerBoundary_.area();
   
   // subtract inner boundary areas
-  // TODO: watch for double counting of intersections
+  // TODO: handle double counting of intersections
   for (var i = 0; i < this.innerBoundaries_.length; i++) {
     area -= this.innerBoundaries_[i].area();
   }
@@ -1138,9 +1207,9 @@ geo.Polygon.prototype.area = function() {
 geo.util = {isnamespace_:true};
 
 /**
- * Determines whether or not the object is undefined in JavaScript terms.
+ * Determines whether or not the object is `undefined`.
  * @param {Object} object The object to test.
- * Taken from prototype.js
+ * @note Taken from Prototype JS library
  */
 geo.util.isUndefined = function(object) {
   return typeof object == 'undefined';
@@ -1149,7 +1218,7 @@ geo.util.isUndefined = function(object) {
 /**
  * Determines whether or not the object is a JavaScript array.
  * @param {Object} object The object to test.
- * Taken from prototype.js
+ * @note Taken from Prototype JS library
  */
 geo.util.isArray = function(object) {
   return object !== null && typeof object == 'object' &&
@@ -1159,7 +1228,7 @@ geo.util.isArray = function(object) {
 /**
  * Determines whether or not the object is a JavaScript function.
  * @param {Object} object The object to test.
- * Taken from prototype.js
+ * @note Taken from Prototype JS library
  */
 geo.util.isFunction = function(object) {
   return object !== null && typeof object == 'function' &&
@@ -1167,7 +1236,7 @@ geo.util.isFunction = function(object) {
 };
 
 /**
- * Determines whether or not the object is an object literal/anonymous object.
+ * Determines whether or not the object is an object literal (a.k.a. hash).
  * @param {Object} object The object to test.
  */
 geo.util.isObjectLiteral = function(object) {
@@ -1206,6 +1275,8 @@ limitations under the License.
  * @class The root class/namespace hybrid for the Earth API extensions library.
  * This class groups functionality into namespaces such as
  * {@link GEarthExtensions#dom } and {@link GEarthExtensions#fx }.
+ * @param {GEPlugin} pluginInstance The Google Earth Plugin instance to
+ *     associate this GEarthExtensions instance with.
  * @example
  * var gex = new GEarthExtensions(ge); // ge is an instance of GEPlugin
  * gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
@@ -1678,6 +1749,7 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
  * @param {PointOptions|KmlPoint} point The point geometry.
  * @param {Object} options The parameters of the placemark to create.
  * @see GEarthExtensions#dom.buildPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.buildPointPlacemark =
 GEarthExtensions.domBuilder_({
@@ -1690,6 +1762,7 @@ GEarthExtensions.domBuilder_({
  * @param {LineStringOptions|KmlLineString} lineString The line string geometry.
  * @param {Object} options The parameters of the placemark to create.
  * @see GEarthExtensions#dom.buildPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.buildLineStringPlacemark =
 GEarthExtensions.domBuilder_({
@@ -1702,6 +1775,7 @@ GEarthExtensions.domBuilder_({
  * @param {PolygonOptions|KmlPolygon} polygon The polygon geometry.
  * @param {Object} options The parameters of the placemark to create.
  * @see GEarthExtensions#dom.buildPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.buildPolygonPlacemark =
 GEarthExtensions.domBuilder_({
@@ -1960,7 +2034,6 @@ GEarthExtensions.domBuilder_({
  * the created placemark to the Google Earth Plugin DOM.
  * @function
  */
-
 (function(){
   var autoShortcut = ['Placemark',
                       'PointPlacemark', 'LineStringPlacemark',
@@ -3889,6 +3962,8 @@ GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
 
 /**
  * Stop this animation.
+ * @param {Boolean} [completed=true] Whether or not to call the completion
+ *     callback.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
