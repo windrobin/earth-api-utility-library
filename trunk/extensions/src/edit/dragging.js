@@ -136,7 +136,20 @@ limitations under the License.
   }
 
   /**
-   * Allows the user to drag the given placemark by using the mouse.
+   * Turns on draggability for the given point placemark.
+   * @param {KmlPlacemark} placemark The point placemark to enable dragging on.
+   * @param {Object} [options] The draggable options.
+   * @param {Boolean} [options.bounce] Whether or not to bounce up upon dragging
+   *     and bounce back down upon dropping.
+   * @param {Function} [options.dragCallback] A callback function to fire
+   *     continuously while dragging occurs.
+   * @param {Function} [options.dropCallback] A callback function to fire
+   *     once the placemark is successfully dropped.
+   * @param {StyleOptions|KmlStyle} [options.draggingStyle] The style options
+   *     to apply to the placemark while dragging.
+   * @param {ScreenOverlayOptions|KmlScreenOverlay} [options.targetScreenOverlay]
+   *     A screen overlay to use as a drop target indicator (i.e. a bullseye)
+   *     while dragging.
    */
   GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
     this.edit.endDraggable(placemark);
@@ -220,7 +233,9 @@ limitations under the License.
   };
 
   /**
-   * Prevents the given placemark from being draggable.
+   * Ceases the draggability of the given placemark. If the placemark is in the
+   * process of being placed via GEarthExtensions#edit.place, the placement
+   * is cancelled.
    */
   GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
     // get placemark's drag data
@@ -236,8 +251,13 @@ limitations under the License.
   };
 
   /**
-   * Enters a mode in which the user can place the given placemark onto the
-   * globe by clicking on the globe.
+   * Enters a mode in which the user can place the given point placemark onto
+   * the globe by clicking on the globe. To cancel the placement, use
+   * GEarthExtensions#edit.endDraggable.
+   * @param {KmlPlacemark} placemark The point placemark for the user to place
+   *     onto the globe.
+   * @param {Object} [options] The draggable options. See
+   *     GEarthExtensions#edit.makeDraggable.
    */
   GEarthExtensions.prototype.edit.place = function(placemark, options) {
     // TODO: assert this is a point placemark

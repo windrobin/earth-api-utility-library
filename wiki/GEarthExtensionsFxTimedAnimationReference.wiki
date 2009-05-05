@@ -1,7 +1,7 @@
 #labels Phase-Reference
 #summary GEarthExtensions.fx.TimedAnimation Class Reference
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/_baseanim_.js src/fx/_baseanim_.js]
-
+Generic class for animations of a fixed duration.
 Extends {{{}}}
 <wiki:toc max_depth="2" />
 
@@ -12,10 +12,31 @@ Extends {{{}}}
 ----
 =Class Constructor=
 
-==GEarthExtensions.fx.TimedAnimation()==
+==GEarthExtensions.fx.TimedAnimation(duration, renderCallback, completionCallback)==
 
-Generic class for fixed-duration animations.
 
+
+
+
+===Parameters:===
+
+  * *duration* _{{{Number}}}_  The length of time for which this animation should run, in seconds.
+  * *renderCallback* _{{{Function}}}_  A method that will be called to render a frame of the animation. Its sole parameter will be the time, in seconds, of the frame to render.
+  * *completionCallback* _{{{Function}}}_ (Optional) A callback method to fire when the animation is completed/stopped.
+
+
+
+----
+=Methods=
+
+==renderFrame(time)==
+
+Render the frame at the given time after the animation was started.
+
+
+===Parameters:===
+
+  * *time* _{{{Number}}}_  The time of the frame to render, in seconds.
 
 
 

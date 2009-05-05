@@ -33,14 +33,13 @@ GEarthExtensions.NAMED_COLORS = {
 };
 
 /**
- * Converts between various color formats, i.e. '#rrggbb', to the KML color
- * format ('aabbggrr')
- * @param {String|Number[]} arg The source color value.
+ * Converts between various color formats, i.e. `#rrggbb`, to the KML color
+ * format (`aabbggrr`)
+ * @param {String|Number[]} color The source color value.
  * @param {Number} [opacity] An optional opacity to go along with CSS/HTML style
  *     colors, from 0.0 to 1.0.
- * @type {String}
- * @return A string in KML color format, i.e. 'aabbggrr', or null if the color
- *     could not be parsed.
+ * @return {String} A string in KML color format (`aabbggrr`), or null if
+ *     the color could not be parsed.
  */
 GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
   // detect #rrggbb and convert to kml color aabbggrr
@@ -117,7 +116,16 @@ function test_util_parseColor() {
 /***IGNORE_END***/
 
 
-// TODO: docs
+/**
+ * Calculates a simple composite of the two given colors.
+ * @param {String|Number[]} color1 The first ('source') color. Anthing that can
+ *     be parsed with GEarthExtensions#util.parseColor.
+ * @param {String|Number[]} color2 The second ('destination') color. Anything
+ *     that can be parsed with GEarthExtensions#util.parseColor.
+ * @param {Number} [fraction=0.5] The amount of color2 to composite onto/blend
+ *     with color1, as a fraction from 0.0 to 1.0.
+ * @type {String}
+ */
 GEarthExtensions.prototype.util.blendColors = function(color1, color2,
                                                        fraction) {
   if (geo.util.isUndefined(fraction) || fraction === null) {

@@ -19,20 +19,20 @@ limitations under the License.
  */
 GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
   if (!this.animationManager_) {
-    this.animationManager_ = new this.fx.AnimationManager_(this);
+    this.animationManager_ = new this.fx.AnimationManager_();
   }
   
   return this.animationManager_;
 };
 
 /**
- * Private singleton class for managing GEarthExtensions#fx animations in a
- * plugin instance.
+ * @class Private singleton class for managing GEarthExtensions#fx animations
+ * in a plugin instance.
  * @private
  */
 GEarthExtensions.prototype.fx.AnimationManager_ = GEarthExtensions.createClass_(
-function(extInstance) {
-  this.extInstance = extInstance;
+function() {
+  this.extInstance = arguments.callee.extInstance_;
   this.animations_ = [];
 
   this.running_ = false;
@@ -41,6 +41,7 @@ function(extInstance) {
 
 /**
  * Start an animation (deriving from GEarthExtensions#fx.Animation).
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.startAnimation =
 function(anim) {
@@ -54,6 +55,7 @@ function(anim) {
 
 /**
  * Stop an animation (deriving from GEarthExtensions#fx.Animation).
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.stopAnimation =
 function(anim) {
@@ -68,6 +70,7 @@ function(anim) {
 
 /**
  * Private, internal function to start animating
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.start_ = function() {
   if (this.running_) {
@@ -91,6 +94,7 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.start_ = function() {
 
 /**
  * Private, internal function to stop animating
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.stop_ = function() {
   if (!this.running_) {
@@ -108,6 +112,7 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.stop_ = function() {
 
 /**
  * Internal tick handler (frameend)
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.tick_ = function() {
   if (!this.running_) {
@@ -121,6 +126,7 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.tick_ = function() {
 /**
  * Private function to render current animation frame state (by calling
  * registered Animations' individual frame renderers.
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.renderCurrentFrame_ =
 function() {
@@ -135,8 +141,14 @@ function() {
 };
 
 /**
- * Abstract base class for GEarthExtensions#fx animations
- * @class
+ * @class Base class for all GEarthExtensions#fx animations. Animations of this
+ * base class are not bounded by a given time duration and must manually be
+ * stopped when they are 'complete'.
+ * @param {Function} renderCallback A method that will be called to render
+ *     a frame of the animation. Its sole parameter will be the time, in
+ *     seconds, of the frame to render.
+ * @param {Function} [completionCallback] A callback method to fire when the
+ *     animation is completed/stopped.
  */
 GEarthExtensions.prototype.fx.Animation =
 GEarthExtensions.createClass_(function(renderFn, completionFn) {
@@ -146,14 +158,14 @@ GEarthExtensions.createClass_(function(renderFn, completionFn) {
 });
 
 /**
- * Start the animation.
+ * Start this animation.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
   this.extInstance.fx.getAnimationManager_().startAnimation(this);
 };
 
 /**
- * Stop the animation.
+ * Stop this animation.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
@@ -164,7 +176,7 @@ GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
 };
 
 /**
- * Stop and rewind the animation, without calling the 
+ * Stop and rewind the animation to the frame at time t=0.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.rewind = function() {
   this.renderFrame(0);
@@ -172,18 +184,23 @@ GEarthExtensions.prototype.fx.Animation.prototype.rewind = function() {
 };
 
 /**
- * Render the frame at time t after the animation was started.
- * @param {Number} t The time in seconds of the frame to render.
- * @abstract
+ * Render the frame at the given time after the animation was started.
+ * @param {Number} time The time in seconds of the frame to render.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
   this.renderFn.call(this, t);
 };
 
 /**
- * Generic class for fixed-duration animations.
- * @class
- * @extends Animation
+ * @class Generic class for animations of a fixed duration.
+ * @param {Number} duration The length of time for which this animation should
+ *     run, in seconds.
+ * @param {Function} renderCallback A method that will be called to render
+ *     a frame of the animation. Its sole parameter will be the time, in
+ *     seconds, of the frame to render.
+ * @param {Function} [completionCallback] A callback method to fire when the
+ *     animation is completed/stopped.
+ * @extends GEarthExtensions#fx.Animation
  */
 GEarthExtensions.prototype.fx.TimedAnimation =
 GEarthExtensions.createClass_(
@@ -195,6 +212,10 @@ function(duration, renderFn, completionFn) {
   this.completionFn = completionFn; // optional
 });
 
+/**
+ * Render the frame at the given time after the animation was started.
+ * @param {Number} time The time of the frame to render, in seconds.
+ */
 GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
   if (t > this.duration) {

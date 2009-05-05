@@ -14,7 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 (function() {
-  // TODO: docs
+  /**
+   * Serializes the current plugin viewport into a modified base64 alphabet
+   * string. This method is platform and browser agnostic, and is safe to
+   * store and distribute to others.
+   * @return {String} A string representing the current viewport.
+   * @see http://code.google.com/apis/maps/documentation/include/polyline.js
+   *     for inspiration.
+   */
   GEarthExtensions.prototype.util.serializeView = function() {
     var camera = this.pluginInstance.getView().copyAsCamera(
         this.pluginInstance.ALTITUDE_ABSOLUTE);
@@ -27,7 +34,13 @@ limitations under the License.
       roll: camera.getRoll() });
   };
 
-  // TODO: docs
+  /**
+   * Sets the current plugin viewport to the view represented by the given
+   * string.
+   * @param {String} viewString The modified base64 alphabet string representing
+   *     the view to fly to. This string should've previously been calculated
+   *     using GEarthExtensions#util.serializeView.
+   */
   GEarthExtensions.prototype.util.deserializeView = function(s) {
     var cameraProps = this.util.decodeCamera_(s);
     var camera = this.pluginInstance.createCamera('');
@@ -39,11 +52,9 @@ limitations under the License.
     this.pluginInstance.getView().setAbstractView(camera);
   };
   
-  /***********
-  helper functions, most of which are from
-  http://code.google.com/apis/maps/documentation/include/polyline.js
-  ************/
-  
+  // helper functions, most of which are from
+  // http://code.google.com/apis/maps/documentation/include/polyline.js
+
   GEarthExtensions.prototype.util.encodeCamera_ = function(cam) {
     var encOverflow = 1073741824;
     var alt = Math.floor(cam.altitude * 1e5);
@@ -141,7 +152,8 @@ limitations under the License.
 
 }());
 /***IGNORE_BEGIN***/
-window.test_encode_decode_camera = function() {
+/** @ignore */
+function test_encode_decode_camera() {
   var cam = {
     lat: 37.123,
     lng: -122.123,

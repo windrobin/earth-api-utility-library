@@ -61,9 +61,7 @@ limitations under the License.
     return s.join('');
   }
 
-  /**
-   * @private
-   */
+  /** @private */
   function getJsTag_(object) {
     // TODO: use unique id from Earth API
     for (var tag in jsData_) {
@@ -98,7 +96,7 @@ limitations under the License.
    * Gets the JS-side data for the given KmlObject associated with the given
    * key.
    * @param {KmlObject} object The plugin object to get data for.
-   * @param {String} key The JSData key to request.
+   * @param {String} key The JS data key to request.
    * @public
    */
   GEarthExtensions.prototype.util.getJsDataValue = function(object, key) {
@@ -115,6 +113,8 @@ limitations under the License.
    * Sets the JS-side data for the given KmlObject associated with the given
    * key to the passed in value.
    * @param {KmlObject} object The object to get data for.
+   * @param {String} key The JS data key to set.
+   * @param {*} value The value to store for this key.
    * @public
    */
   GEarthExtensions.prototype.util.setJsDataValue =
@@ -139,7 +139,7 @@ limitations under the License.
    * Clears the JS-side data for the given KmlObject associated with the given
    * key.
    * @param {KmlObject} object The plugin object to clear data on.
-   * @param {String} key The data key whose value should be cleared.
+   * @param {String} key The JS data key whose value should be cleared.
    */
   GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
     var jsTag = getJsTag_(object);

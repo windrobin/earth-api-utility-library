@@ -17,6 +17,7 @@ limitations under the License.
  * Creates a new style with the given parameters.
  * @function
  * @param {Object} options The style parameters.
+
  * @param {String|Object} [options.icon] The icon href or an icon
  *     object literal.
  * @param {String} [options.icon.href] The icon href.
@@ -25,7 +26,7 @@ limitations under the License.
  * @param {ColorSpec} [options.icon.opacity] The opacity of the icon,
  *     between 0.0 and 1.0. This is a convenience property, since opacity can
  *     be defined in the color.
- 
+
  * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
  * @param {Number} [options.label.scale] The label scaling factor.

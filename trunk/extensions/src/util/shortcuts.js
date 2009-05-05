@@ -15,7 +15,7 @@ limitations under the License.
 */
 /**
  * Creates a KmlLookAt and sets it as the Earth plugin's view. This function
- * takes the same parameters as GEarthExtensions#dom.LookAt.
+ * takes the same parameters as GEarthExtensions#dom.buildLookAt.
  */
 GEarthExtensions.prototype.util.lookAt = function() {
   //this.pluginInstance.getView().setAbstractView(this.dom.LookAt(...));
@@ -56,6 +56,9 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
 /**
  * Simply loads and shows the given KML URL in the Google Earth Plugin instance.
  * @param {String} url The URL of the KML content to show.
+ * @param {Object} [options] KML display options.
+ * @param {Boolean} [options.cacheBuster] Enforce freshly downloading the KML
+ *     by introducing a cache-busting query parameter.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
   options = options || {};
@@ -77,6 +80,8 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * Simply loads and shows the given KML string in the Google Earth Plugin
  * instance.
  * @param {String} str The KML blob string to show.
+ * @param {Object} [options] KML display options. There are currently no
+ *     options.
  */
 GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
   var kmlObject = this.pluginInstance.parseKml(str);
@@ -169,6 +174,7 @@ function test_util_callMethod() {
  * Enables or disables full camera ownership mode, which sets fly to speed
  * to teleport, disables user mouse interaction, and hides the navigation
  * controls.
+ * @param {Boolean} enable Whether to enable or disable full camera ownership.
  */
 GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
   if (enable || geo.util.isUndefined(enable)) {

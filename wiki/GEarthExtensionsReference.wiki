@@ -36,29 +36,6 @@ gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
 ----
 =Static Methods=
 
-==checkParameters(explicitParams, allowAll, paramSpec)==
-
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_globals_.js src/_globals_.js]
-
-Checks a given parameters object against an parameter spec, throwing exceptions as necessary, and returning the resulting options object with defaults filled in.
-
-
-===Parameters:===
-
-  * *explicitParams* _{{{Object}}}_  The parameters object to check.
-  * *allowAll* _{{{Boolean}}}_  Whether or not to allow all parameters, or limit allowed parameters to those listed in the parameter spec.
-  * *paramSpec* _{{{Object}}}_  The parameter spec, which should be an object whose properties are the properties expected in the given parameters object and whose property values are GEarthExtensions.REQUIRED if the property is required or some other value to set a default value.
-
-===Returns:===
-
-
-
-Returns a shallow copy of the given parameters object, cleaned up according to the parameters spec and with default values filled in.
-
-
-
-----
-
 ==isInstanceOfEarthInterface(object, type)==
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_globals_.js src/_globals_.js]

@@ -1,7 +1,7 @@
 #labels Phase-Reference
 #summary GEarthExtensions.fx.Animation Class Reference
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/_baseanim_.js src/fx/_baseanim_.js]
-
+Base class for all GEarthExtensions#fx animations. Animations of this base class are not bounded by a given time duration and must manually be stopped when they are 'complete'.
 <wiki:toc max_depth="2" />
 
 
@@ -11,45 +11,50 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 ----
 =Class Constructor=
 
-==GEarthExtensions.fx.Animation()==
-
-Abstract base class for GEarthExtensions#fx animations
+==GEarthExtensions.fx.Animation(renderCallback, completionCallback)==
 
 
+
+
+
+===Parameters:===
+
+  * *renderCallback* _{{{Function}}}_  A method that will be called to render a frame of the animation. Its sole parameter will be the time, in seconds, of the frame to render.
+  * *completionCallback* _{{{Function}}}_ (Optional) A callback method to fire when the animation is completed/stopped.
 
 
 
 ----
 =Methods=
 
-==renderFrame(t)==
+==renderFrame(time)==
 
-Render the frame at time t after the animation was started.
+Render the frame at the given time after the animation was started.
 
 
 ===Parameters:===
 
-  * *t* _{{{Number}}}_  The time in seconds of the frame to render.
+  * *time* _{{{Number}}}_  The time in seconds of the frame to render.
 
 ----
 
 ==rewind()==
 
-Stop and rewind the animation, without calling the
+Stop and rewind the animation to the frame at time t=0.
 
 
 ----
 
 ==start()==
 
-Start the animation.
+Start this animation.
 
 
 ----
 
 ==stop(completed)==
 
-Stop the animation.
+Stop this animation.
 
 
 ===Parameters:===

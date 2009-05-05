@@ -17,6 +17,20 @@ limitations under the License.
 
   var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
 
+  /**
+   * Enters a mode in which the user can draw the given line string geometry
+   * on the globe by clicking on the globe to create coordinates.
+   * To cancel the placement, use GEarthExtensions#edit.endEditLineString.
+   * This is similar in intended usage to GEarthExtensions#edit.place.
+   * @param {KmlLineString|KmlLinearRing} lineString The line string geometry
+   *     to allow the user to draw (or append points to).
+   * @param {Object} [options] The edit options.
+   * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
+   *     while drawing coordinates.
+   * @param {Function} finishCallback A callback to fire when drawing is
+   *     successfully completed (via double click or by clicking on the first
+   *     coordinate again).
+   */
   GEarthExtensions.prototype.edit.drawLineString = function(lineString,
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
@@ -139,7 +153,17 @@ limitations under the License.
   };
   // TODO: interactive test
 
-  // TODO: docs
+  /**
+   * Allows the user to edit the coordinates of the given line string by
+   * dragging existing points, splitting path segments/creating new points or
+   * deleting existing points.
+   * @param {KmlLineString|KmlLinearRing} lineString The line string or lienar
+   *     ring geometry to edit. For KmlPolygon geometries, pass in an outer
+   *     or inner boundary.
+   * @param {Object} [options] The line string edit options.
+   * @param {Function} [options.editCallback] A callback function to fire
+   *     when the line string coordinates have changed due to user interaction.
+   */
   GEarthExtensions.prototype.edit.editLineString = function(lineString,
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
@@ -469,6 +493,9 @@ limitations under the License.
     });
   };
 
+  /**
+   * Ceases the ability for the user to edit or draw the given line string.
+   */
   GEarthExtensions.prototype.edit.endEditLineString = function(lineString) {
     // get placemark's drag data
     var lineStringEditData = this.util.getJsDataValue(

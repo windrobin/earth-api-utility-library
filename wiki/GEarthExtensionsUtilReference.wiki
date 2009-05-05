@@ -33,14 +33,14 @@ Executes the given function quickly using a Google Earth API callback hack. Futu
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/color.js src/util/color.js]
 
-IGNORE_END**
+Calculates a simple composite of the two given colors.
 
 
 ===Parameters:===
 
-  * *color1*   
-  * *color2*   
-  * *fraction*   
+  * *color1* _{{{String}}}|{{{Number}}}[]_  The first ('source') color. Anthing that can be parsed with GEarthExtensions#util.parseColor.
+  * *color2* _{{{String}}}|{{{Number}}}[]_  The second ('destination') color. Anything that can be parsed with GEarthExtensions#util.parseColor.
+  * *fraction* _{{{Number}}}_ (Optional, Default: 0.5) The amount of color2 to composite onto/blend with color1, as a fraction from 0.0 to 1.0.
 
 ----
 
@@ -81,7 +81,20 @@ Clears the JS-side data for the given KmlObject associated with the given key.
 ===Parameters:===
 
   * *object* _{{{KmlObject}}}_  The plugin object to clear data on.
-  * *key* _{{{String}}}_  The data key whose value should be cleared.
+  * *key* _{{{String}}}_  The JS data key whose value should be cleared.
+
+----
+
+==deserializeView(viewString)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/serialization.js src/util/serialization.js]
+
+Sets the current plugin viewport to the view represented by the given string.
+
+
+===Parameters:===
+
+  * *viewString* _{{{String}}}_  The modified base64 alphabet string representing the view to fly to. This string should've previously been calculated using GEarthExtensions#util.serializeView.
 
 ----
 
@@ -95,7 +108,8 @@ Simply loads and shows the given KML URL in the Google Earth Plugin instance.
 ===Parameters:===
 
   * *url* _{{{String}}}_  The URL of the KML content to show.
-  * *options*   
+  * *options* _{{{Object}}}_ (Optional) KML display options.
+    * *cacheBuster* _{{{Boolean}}}_ (Optional) Enforce freshly downloading the KML by introducing a cache-busting query parameter.
 
 ----
 
@@ -109,20 +123,7 @@ Simply loads and shows the given KML string in the Google Earth Plugin instance.
 ===Parameters:===
 
   * *str* _{{{String}}}_  The KML blob string to show.
-  * *options*   
-
-----
-
-==encodeCamera_(cam)==
-
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/serialization.js src/util/serialization.js]
-
-******** helper functions, most of which are from http://code.google.com/apis/maps/documentation/include/polyline.js **********
-
-
-===Parameters:===
-
-  * *cam*   
+  * *options* _{{{Object}}}_ (Optional) KML display options. There are currently no options.
 
 ----
 
@@ -157,7 +158,7 @@ Gets the JS-side data for the given KmlObject associated with the given key.
 ===Parameters:===
 
   * *object* _{{{KmlObject}}}_  The plugin object to get data for.
-  * *key* _{{{String}}}_  The JSData key to request.
+  * *key* _{{{String}}}_  The JS data key to request.
 
 ----
 
@@ -199,28 +200,28 @@ Returns whether or not the KmlObject has any JS-side data.
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/shortcuts.js src/util/shortcuts.js]
 
-Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes the same parameters as GEarthExtensions#dom.LookAt.
+Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes the same parameters as GEarthExtensions#dom.buildLookAt.
 
 
 ----
 
-==parseColor(arg, opacity)==
+==parseColor(color, opacity)==
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/color.js src/util/color.js]
 
-Converts between various color formats, i.e. '#rrggbb', to the KML color format ('aabbggrr')
+Converts between various color formats, i.e. `#rrggbb`, to the KML color format (`aabbggrr`)
 
 
 ===Parameters:===
 
-  * *arg* _{{{String}}}|{{{Number}}}[]_  The source color value.
+  * *color* _{{{String}}}|{{{Number}}}[]_  The source color value.
   * *opacity* _{{{Number}}}_ (Optional) An optional opacity to go along with CSS/HTML style colors, from 0.0 to 1.0.
 
 ===Returns:===
+{{{String}}}
 
 
-
-A string in KML color format, i.e. 'aabbggrr', or null if the color could not be parsed.
+_{{{String}}}_ A string in KML color format (`aabbggrr`), or null if the color could not be parsed.
 
 
 
@@ -230,7 +231,21 @@ A string in KML color format, i.e. 'aabbggrr', or null if the color could not be
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/serialization.js src/util/serialization.js]
 
-IGNORE_END**
+Serializes the current plugin viewport into a modified base64 alphabet string. This method is platform and browser agnostic, and is safe to store and distribute to others.
+
+
+===Returns:===
+{{{String}}}
+
+
+_{{{String}}}_ A string representing the current viewport.
+
+
+
+===See:===
+
+{{{http://code.google.com/apis/maps/documentation/include/polyline.js
+    for inspiration.}}}
 
 
 ----
@@ -245,8 +260,8 @@ Sets the JS-side data for the given KmlObject associated with the given key to t
 ===Parameters:===
 
   * *object* _{{{KmlObject}}}_  The object to get data for.
-  * *key*   
-  * *value*   
+  * *key* _{{{String}}}_  The JS data key to set.
+  * *value* _*_  The value to store for this key.
 
 ----
 
@@ -259,7 +274,7 @@ Enables or disables full camera ownership mode, which sets fly to speed to telep
 
 ===Parameters:===
 
-  * *enable*   
+  * *enable* _{{{Boolean}}}_  Whether to enable or disable full camera ownership.
 
 
 

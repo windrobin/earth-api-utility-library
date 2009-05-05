@@ -43,8 +43,24 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
 /**
  * Creates a new region with the given parameters.
  * @function
+ * @param {Object} options The parameters of the region to create.
+ * @param {String} [options.box] The bounding box of the region, defined by
+ *     either N/E/S/W, or center+span, and optional altitudes.
+ * @param {Number} [options.box.north] The north latitude for the region.
+ * @param {Number} [options.box.east] The east longitude for the region.
+ * @param {Number} [options.box.south] The south latitude for the region.
+ * @param {Number} [options.box.west] The west longitude for the region.
+ * @param {PointOptions|geo.Point} [options.box.center] The center point
+ *     for the region's bounding box.
+ * @param {Number|Number[]} [options.box.span] If using center+span region box
+ *     definition, this is either a number indicating both latitude and
+ *     longitude span, or a 2-item array defining [latSpan, lngSpan].
+ * @param {Number} [options.box.minAltitude] The low altitude for the region.
+ * @param {Number} [options.box.maxAltitude] The high altitude for the region.
+ * @param {KmlAltitudeModeEnum} [options.box.altitudeMode] The altitude mode
+ *     of the region, pertaining to min and max altitude.
+ * @type KmlRegion
  */
-// TODO: documentation
 GEarthExtensions.prototype.dom.buildRegion =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlRegion',
