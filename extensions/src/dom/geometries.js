@@ -26,9 +26,11 @@ GEarthExtensions.domBuilder_({
 /**
  * Creates a new point geometry with the given parameters.
  * @function
- * @param {PointSpec} [point] The point data.
+ * @param {PointOptions|geo.Point|KmlPoint} [point] The point data. Anything
+ *     that can be passed to the geo.Point constructor.
  * @param {Object} options The parameters of the point object to create.
- * @param {PointSpec} [options.point] The point data.
+ * @param {PointOptions|geo.Point|KmlPoint} [options.point] The point data.
+ *     Anything that can be passed to the geo.Point constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {Boolean} [options.extrude] Whether or not the geometry should
@@ -60,9 +62,11 @@ GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
 /**
  * Creates a new line string geometry with the given parameters.
  * @function
- * @param {PathSpec} [path] The path data.
+ * @param {PathOptions|geo.Path|KmlLineString} [path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  * @param {Object} options The parameters of the line string to create.
- * @param {PathSpec} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLineString} [options.path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {Boolean} [options.extrude] Whether or not the geometry should
@@ -97,10 +101,12 @@ GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
 /**
  * Creates a new linear ring geometry with the given parameters.
  * @function
- * @param {PathSpec} [path] The path data.
+ * @param {PathOptions|geo.Path|KmlLinearRing} [path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {Object} options The parameters of the linear ring to create.
- * @param {PathSpec} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLinearRing} [options.path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -128,9 +134,11 @@ GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
 /**
  * Creates a new polygon geometry with the given parameters.
  * @function
- * @param {PolygonSpec} [polygon] The polygon data.
+ * @param {PolygonOptions|geo.Polygon|KmlPolygon} [polygon] The polygon data.
+ *     Anything that can be passed to the geo.Polygon constructor.
  * @param {Object} options The parameters of the polygon to create.
- * @param {PolygonSpec} [options.polygon] The polygon data.
+ * @param {PolygonOptions|geo.Polygon|KmlPolygon} [options.polygon] The polygon
+ *     data. Anything that can be passed to the geo.Polygon constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {Boolean} [options.extrude] Whether or not the geometry should
@@ -166,18 +174,20 @@ GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
 /**
  * Creates a new model geometry with the given parameters.
  * @function
- * @param {LinkSpec} [link] The remote link this model should use.
+ * @param {LinkOptions|KmlLink} [link] The remote link this model should use.
  * @param {Object} options The parameters of the model to create.
- * @param {LinkSpec} [options.link] The remote link this model should use.
+ * @param {LinkOptions|KmlLink} [options.link] The remote link this model
+ *     should use.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {PointSpec} [options.location] The location of the model.
- * @param {Number|Number[]} [options.scale] The scale factor of the model.
+ * @param {PointOptions|geo.Point} [options.location] The location of the model.
+ * @param {Number|Number[]} [options.scale] The scale factor of the model,
+ *     either as a constant scale, or a 3-item array for x, y, and z scale.
  * @param {Object} [options.orientation] The orientation of the model.
  * @param {Number} [options.orientation.heading] The model heading.
  * @param {Number} [options.orientation.tilt] The model tilt.
  * @param {Number} [options.orientation.roll] The model roll.
- * @type KmlPolygon
+ * @type KmlModel
  */
 GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlModel',

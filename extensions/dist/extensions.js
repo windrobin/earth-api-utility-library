@@ -1274,6 +1274,7 @@ GEarthExtensions.REQUIRED = undefined;
  *     required or some other value to set a default value.
  * @return Returns a shallow copy of the given parameters object, cleaned up
  *     according to the parameters spec and with default values filled in.
+ * @ignore
  */
 GEarthExtensions.checkParameters = function(explicitParams,
                                             allowAll, paramSpec) {
@@ -1548,20 +1549,22 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
  *     be visible.
  * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
- * @param {PointSpec} [options.point] A point geometry to use in the placemark.
- * @param {LineStringSpec} [options.lineString] A line string geometry to use
+ * @param {PointOptions|KmlPoint} [options.point] A point geometry to use in the
+ *     placemark.
+ * @param {LineStringOptions|KmlLineString} [options.lineString] A line string
+ *     geometry to usein the placemark.
+ * @param {LinearRingOptions|KmlLinearRing} [options.linearRing] A linear ring
+ *     geometry to use in the placemark.
+ * @param {PolygonOptions|KmlPolygon} [options.polygon] A polygon geometry to
+ *     use in the placemark.
+ * @param {ModelOptions|KmlModel} [options.model] A model geometry to use
  *     in the placemark.
- * @param {LinearRingSpec} [options.linearRing] A linear ring geometry to use
- *     in the placemark.
- * @param {PolygonSpec} [options.polygon] A polygon geometry to use
- *     in the placemark.
- * @param {ModelSpec} [options.model] A model geometry to use
- *     in the placemark.
- * @param {MultiGeometrySpec} [options.geometries] A multi-geometry to use
- *     in the placemark.
+ * @param {MultiGeometryOptions|KmlMultiGeometry} [options.multiGeometry] A
+ *     multi-geometry to use in the placemark.
+ * @param {KmlGeometry[]} [options.geometries] An array of geometries to add
+ *     to the placemark.
  * @type KmlPlacemark
  */
-// TODO: document styling
 GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPlacemark',
   base: GEarthExtensions.prototype.dom.buildFeature_,
@@ -1601,6 +1604,9 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
     }
     if (options.model) {
       geometries.push(this.dom.buildModel(options.model));
+    }
+    if (options.multiGeometry) {
+      geometries.push(this.dom.buildMultiGeometry(options.multiGeometry));
     }
     if (options.geometries) {
       geometries = geometries.concat(options.geometries);
@@ -1668,8 +1674,10 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
 });
 
 /**
- * @see GEarthExtensions.dom.buildPlacemark
- * @function
+ * Convenience method to build a point placemark.
+ * @param {PointOptions|KmlPoint} point The point geometry.
+ * @param {Object} options The parameters of the placemark to create.
+ * @see GEarthExtensions#dom.buildPlacemark
  */
 GEarthExtensions.prototype.dom.buildPointPlacemark =
 GEarthExtensions.domBuilder_({
@@ -1678,8 +1686,10 @@ GEarthExtensions.domBuilder_({
 });
 
 /**
- * @see GEarthExtensions.dom.buildPlacemark
- * @function
+ * Convenience method to build a linestring placemark.
+ * @param {LineStringOptions|KmlLineString} lineString The line string geometry.
+ * @param {Object} options The parameters of the placemark to create.
+ * @see GEarthExtensions#dom.buildPlacemark
  */
 GEarthExtensions.prototype.dom.buildLineStringPlacemark =
 GEarthExtensions.domBuilder_({
@@ -1688,8 +1698,10 @@ GEarthExtensions.domBuilder_({
 });
 
 /**
- * @see GEarthExtensions.dom.buildPlacemark
- * @function
+ * Convenience method to build a polygon placemark.
+ * @param {PolygonOptions|KmlPolygon} polygon The polygon geometry.
+ * @param {Object} options The parameters of the placemark to create.
+ * @see GEarthExtensions#dom.buildPlacemark
  */
 GEarthExtensions.prototype.dom.buildPolygonPlacemark =
 GEarthExtensions.domBuilder_({
@@ -1701,7 +1713,7 @@ GEarthExtensions.domBuilder_({
 /**
  * Creates a new network link with the given parameters.
  * @function
- * @param {LinkSpec} [link] An object describing the link to use for this
+ * @param {LinkOptions} [link] An object describing the link to use for this
  *     network link.
  * @param {Object} options The parameters of the network link to create.
  * @param {String} [options.name] The name of the feature.
@@ -1709,7 +1721,7 @@ GEarthExtensions.domBuilder_({
  *     be visible.
  * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
- * @param {LinkSpec} [options.link] The link to use.
+ * @param {LinkOptions} [options.link] The link to use.
  * @type KmlNetworkLink
  */
 GEarthExtensions.prototype.dom.buildNetworkLink =
@@ -1823,8 +1835,30 @@ GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
 /**
  * Creates a new ground overlay with the given parameters.
  * @function
+ * @param {String} [icon] The URL of the overlay image.
+ * @param {Object} options The parameters of the ground overlay to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
+ *     be visible.
+ * @param {String} [options.description] An HTML description for the feature.
+ * @param {String} [options.color] A color to apply on the overlay.
+ * @param {String} [options.icon] The URL of the overlay image.
+ * @param {Number} [options.drawOrder] The drawing order of the overlay;
+ *     overlays with higher draw orders appear on top of those with lower
+ *     draw orders.
+ * @param {Number} [options.altitude] The altitude of the ground overlay, in
+ *     meters.
+ * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
+ *     ground overlay.
+ * @param {Object} [options.box] The bounding box for the overlay.
+ * @param {Number} [options.box.north] The north latitude for the overlay.
+ * @param {Number} [options.box.east] The east longitude for the overlay.
+ * @param {Number} [options.box.south] The south latitude for the overlay.
+ * @param {Number} [options.box.west] The west longitude for the overlay.
+ * @param {Number} [options.box.rotation] The rotation, in degrees, of the
+ *     overlay.
+ * @type KmlGroundOverlay
  */
-// TODO: documentation
 GEarthExtensions.prototype.dom.buildGroundOverlay =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlGroundOverlay',
@@ -1856,8 +1890,31 @@ GEarthExtensions.domBuilder_({
 /**
  * Creates a new screen overlay with the given parameters.
  * @function
+ * @param {String} [icon] The URL of the overlay image.
+ * @param {Object} options The parameters of the screen overlay to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
+ *     be visible.
+ * @param {String} [options.description] An HTML description for the feature.
+ * @param {String} [options.color] A color to apply on the overlay.
+ * @param {String} [options.icon] The URL of the overlay image.
+ * @param {Number} [options.drawOrder] The drawing order of the overlay;
+ *     overlays with higher draw orders appear on top of those with lower
+ *     draw orders.
+ * @param {Vec2Src} [options.overlayXY] The registration point in the overlay
+ *     that will be placed at the given screenXY point and potentially
+ *     rotated about. This object will be passed to
+ *     GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
+ * @param {Vec2Src} [options.screenXY] The position in the plugin window
+ *     that the screen overlay should appear at. This object will
+ *     be passed to GEarthExtensions#dom.setVec2
+ * @param {Vec2Src} [options.size] The size of the overlay. This object will
+ *     be passed to GEarthExtensions#dom.setVec2
+ * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
+ *     ground overlay.
+ * @param {Number} [options.rotation] The rotation of the overlay, in degrees.
+ * @type KmlScreenOverlay
  */
-// TODO: documentation
 GEarthExtensions.prototype.dom.buildScreenOverlay =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlScreenOverlay',
@@ -1897,6 +1954,13 @@ GEarthExtensions.domBuilder_({
 //////////////////////////////
 // GEarthExtensions#dom shortcut functions
 
+/**
+ * @name GEarthExtensions#dom.addPlacemark
+ * Convenience method that calls GEarthExtensions#dom.buildPlacemark and adds
+ * the created placemark to the Google Earth Plugin DOM.
+ * @function
+ */
+
 (function(){
   var autoShortcut = ['Placemark',
                       'PointPlacemark', 'LineStringPlacemark',
@@ -1926,9 +1990,11 @@ GEarthExtensions.domBuilder_({
 /**
  * Creates a new point geometry with the given parameters.
  * @function
- * @param {PointSpec} [point] The point data.
+ * @param {PointOptions|geo.Point|KmlPoint} [point] The point data. Anything
+ *     that can be passed to the geo.Point constructor.
  * @param {Object} options The parameters of the point object to create.
- * @param {PointSpec} [options.point] The point data.
+ * @param {PointOptions|geo.Point|KmlPoint} [options.point] The point data.
+ *     Anything that can be passed to the geo.Point constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {Boolean} [options.extrude] Whether or not the geometry should
@@ -1960,9 +2026,11 @@ GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
 /**
  * Creates a new line string geometry with the given parameters.
  * @function
- * @param {PathSpec} [path] The path data.
+ * @param {PathOptions|geo.Path|KmlLineString} [path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  * @param {Object} options The parameters of the line string to create.
- * @param {PathSpec} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLineString} [options.path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {Boolean} [options.extrude] Whether or not the geometry should
@@ -1997,10 +2065,12 @@ GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
 /**
  * Creates a new linear ring geometry with the given parameters.
  * @function
- * @param {PathSpec} [path] The path data.
+ * @param {PathOptions|geo.Path|KmlLinearRing} [path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {Object} options The parameters of the linear ring to create.
- * @param {PathSpec} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLinearRing} [options.path] The path data.
+ *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -2028,9 +2098,11 @@ GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
 /**
  * Creates a new polygon geometry with the given parameters.
  * @function
- * @param {PolygonSpec} [polygon] The polygon data.
+ * @param {PolygonOptions|geo.Polygon|KmlPolygon} [polygon] The polygon data.
+ *     Anything that can be passed to the geo.Polygon constructor.
  * @param {Object} options The parameters of the polygon to create.
- * @param {PolygonSpec} [options.polygon] The polygon data.
+ * @param {PolygonOptions|geo.Polygon|KmlPolygon} [options.polygon] The polygon
+ *     data. Anything that can be passed to the geo.Polygon constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
  * @param {Boolean} [options.extrude] Whether or not the geometry should
@@ -2066,18 +2138,20 @@ GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
 /**
  * Creates a new model geometry with the given parameters.
  * @function
- * @param {LinkSpec} [link] The remote link this model should use.
+ * @param {LinkOptions|KmlLink} [link] The remote link this model should use.
  * @param {Object} options The parameters of the model to create.
- * @param {LinkSpec} [options.link] The remote link this model should use.
+ * @param {LinkOptions|KmlLink} [options.link] The remote link this model
+ *     should use.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
- * @param {PointSpec} [options.location] The location of the model.
- * @param {Number|Number[]} [options.scale] The scale factor of the model.
+ * @param {PointOptions|geo.Point} [options.location] The location of the model.
+ * @param {Number|Number[]} [options.scale] The scale factor of the model,
+ *     either as a constant scale, or a 3-item array for x, y, and z scale.
  * @param {Object} [options.orientation] The orientation of the model.
  * @param {Number} [options.orientation.heading] The model heading.
  * @param {Number} [options.orientation.tilt] The model tilt.
  * @param {Number} [options.orientation.roll] The model roll.
- * @type KmlPolygon
+ * @type KmlModel
  */
 GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlModel',
@@ -2186,8 +2260,24 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
 /**
  * Creates a new region with the given parameters.
  * @function
+ * @param {Object} options The parameters of the region to create.
+ * @param {String} [options.box] The bounding box of the region, defined by
+ *     either N/E/S/W, or center+span, and optional altitudes.
+ * @param {Number} [options.box.north] The north latitude for the region.
+ * @param {Number} [options.box.east] The east longitude for the region.
+ * @param {Number} [options.box.south] The south latitude for the region.
+ * @param {Number} [options.box.west] The west longitude for the region.
+ * @param {PointOptions|geo.Point} [options.box.center] The center point
+ *     for the region's bounding box.
+ * @param {Number|Number[]} [options.box.span] If using center+span region box
+ *     definition, this is either a number indicating both latitude and
+ *     longitude span, or a 2-item array defining [latSpan, lngSpan].
+ * @param {Number} [options.box.minAltitude] The low altitude for the region.
+ * @param {Number} [options.box.maxAltitude] The high altitude for the region.
+ * @param {KmlAltitudeModeEnum} [options.box.altitudeMode] The altitude mode
+ *     of the region, pertaining to min and max altitude.
+ * @type KmlRegion
  */
-// TODO: documentation
 GEarthExtensions.prototype.dom.buildRegion =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlRegion',
@@ -2253,6 +2343,7 @@ GEarthExtensions.domBuilder_({
  * Creates a new style with the given parameters.
  * @function
  * @param {Object} options The style parameters.
+
  * @param {String|Object} [options.icon] The icon href or an icon
  *     object literal.
  * @param {String} [options.icon.href] The icon href.
@@ -2261,7 +2352,7 @@ GEarthExtensions.domBuilder_({
  * @param {ColorSpec} [options.icon.opacity] The opacity of the icon,
  *     between 0.0 and 1.0. This is a convenience property, since opacity can
  *     be defined in the color.
- 
+
  * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
  * @param {Number} [options.label.scale] The label scaling factor.
@@ -2624,8 +2715,23 @@ GEarthExtensions.prototype.dom.removeObject = function(object) {
 // TODO: unit test (heavily)
 
 /**
- * Parse hotspot
- * TODO: docs
+ * Sets the given KmlVec2 object to the point defined in the options.
+ * @param {KmlVec2} vec2 The object to set, for example a screen overlay's
+ *     screenXY.
+ * @param {Object} options The options literal defining the point.
+ * @param {Number|String} [options.left] The left offset, in pixels (i.e. 5),
+ *     or as a percentage (i.e. '25%').
+ * @param {Number|String} [options.top] The top offset, in pixels or a string
+ *     percentage.
+ * @param {Number|String} [options.right] The right offset, in pixels or a
+ *     string percentage.
+ * @param {Number|String} [options.bottom] The bottom offset, in pixels or a
+ *     string percentage.
+ * @param {Number|String} [options.width] A convenience parameter specifying
+ *     width, only useful for screen overlays, in pixels or a string percentage.
+ * @param {Number|String} [options.height] A convenience parameter specifying
+ *     height, only useful for screen overlays, in pixels or a string
+ *     percentage.
  */
 GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
   options = GEarthExtensions.checkParameters(options, false, {
@@ -2941,7 +3047,20 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
   }
 
   /**
-   * Allows the user to drag the given placemark by using the mouse.
+   * Turns on draggability for the given point placemark.
+   * @param {KmlPlacemark} placemark The point placemark to enable dragging on.
+   * @param {Object} [options] The draggable options.
+   * @param {Boolean} [options.bounce] Whether or not to bounce up upon dragging
+   *     and bounce back down upon dropping.
+   * @param {Function} [options.dragCallback] A callback function to fire
+   *     continuously while dragging occurs.
+   * @param {Function} [options.dropCallback] A callback function to fire
+   *     once the placemark is successfully dropped.
+   * @param {StyleOptions|KmlStyle} [options.draggingStyle] The style options
+   *     to apply to the placemark while dragging.
+   * @param {ScreenOverlayOptions|KmlScreenOverlay} [options.targetScreenOverlay]
+   *     A screen overlay to use as a drop target indicator (i.e. a bullseye)
+   *     while dragging.
    */
   GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
     this.edit.endDraggable(placemark);
@@ -3025,7 +3144,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
   };
 
   /**
-   * Prevents the given placemark from being draggable.
+   * Ceases the draggability of the given placemark. If the placemark is in the
+   * process of being placed via GEarthExtensions#edit.place, the placement
+   * is cancelled.
    */
   GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
     // get placemark's drag data
@@ -3041,8 +3162,13 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
   };
 
   /**
-   * Enters a mode in which the user can place the given placemark onto the
-   * globe by clicking on the globe.
+   * Enters a mode in which the user can place the given point placemark onto
+   * the globe by clicking on the globe. To cancel the placement, use
+   * GEarthExtensions#edit.endDraggable.
+   * @param {KmlPlacemark} placemark The point placemark for the user to place
+   *     onto the globe.
+   * @param {Object} [options] The draggable options. See
+   *     GEarthExtensions#edit.makeDraggable.
    */
   GEarthExtensions.prototype.edit.place = function(placemark, options) {
     // TODO: assert this is a point placemark
@@ -3113,6 +3239,20 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
   var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
 
+  /**
+   * Enters a mode in which the user can draw the given line string geometry
+   * on the globe by clicking on the globe to create coordinates.
+   * To cancel the placement, use GEarthExtensions#edit.endEditLineString.
+   * This is similar in intended usage to GEarthExtensions#edit.place.
+   * @param {KmlLineString|KmlLinearRing} lineString The line string geometry
+   *     to allow the user to draw (or append points to).
+   * @param {Object} [options] The edit options.
+   * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
+   *     while drawing coordinates.
+   * @param {Function} finishCallback A callback to fire when drawing is
+   *     successfully completed (via double click or by clicking on the first
+   *     coordinate again).
+   */
   GEarthExtensions.prototype.edit.drawLineString = function(lineString,
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
@@ -3235,7 +3375,17 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
   };
   // TODO: interactive test
 
-  // TODO: docs
+  /**
+   * Allows the user to edit the coordinates of the given line string by
+   * dragging existing points, splitting path segments/creating new points or
+   * deleting existing points.
+   * @param {KmlLineString|KmlLinearRing} lineString The line string or lienar
+   *     ring geometry to edit. For KmlPolygon geometries, pass in an outer
+   *     or inner boundary.
+   * @param {Object} [options] The line string edit options.
+   * @param {Function} [options.editCallback] A callback function to fire
+   *     when the line string coordinates have changed due to user interaction.
+   */
   GEarthExtensions.prototype.edit.editLineString = function(lineString,
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
@@ -3565,6 +3715,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     });
   };
 
+  /**
+   * Ceases the ability for the user to edit or draw the given line string.
+   */
   GEarthExtensions.prototype.edit.endEditLineString = function(lineString) {
     // get placemark's drag data
     var lineStringEditData = this.util.getJsDataValue(
@@ -3589,20 +3742,20 @@ GEarthExtensions.prototype.fx = {isnamespace_:true};
  */
 GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
   if (!this.animationManager_) {
-    this.animationManager_ = new this.fx.AnimationManager_(this);
+    this.animationManager_ = new this.fx.AnimationManager_();
   }
   
   return this.animationManager_;
 };
 
 /**
- * Private singleton class for managing GEarthExtensions#fx animations in a
- * plugin instance.
+ * @class Private singleton class for managing GEarthExtensions#fx animations
+ * in a plugin instance.
  * @private
  */
 GEarthExtensions.prototype.fx.AnimationManager_ = GEarthExtensions.createClass_(
-function(extInstance) {
-  this.extInstance = extInstance;
+function() {
+  this.extInstance = arguments.callee.extInstance_;
   this.animations_ = [];
 
   this.running_ = false;
@@ -3611,6 +3764,7 @@ function(extInstance) {
 
 /**
  * Start an animation (deriving from GEarthExtensions#fx.Animation).
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.startAnimation =
 function(anim) {
@@ -3624,6 +3778,7 @@ function(anim) {
 
 /**
  * Stop an animation (deriving from GEarthExtensions#fx.Animation).
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.stopAnimation =
 function(anim) {
@@ -3638,6 +3793,7 @@ function(anim) {
 
 /**
  * Private, internal function to start animating
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.start_ = function() {
   if (this.running_) {
@@ -3661,6 +3817,7 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.start_ = function() {
 
 /**
  * Private, internal function to stop animating
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.stop_ = function() {
   if (!this.running_) {
@@ -3678,6 +3835,7 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.stop_ = function() {
 
 /**
  * Internal tick handler (frameend)
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.tick_ = function() {
   if (!this.running_) {
@@ -3691,6 +3849,7 @@ GEarthExtensions.prototype.fx.AnimationManager_.prototype.tick_ = function() {
 /**
  * Private function to render current animation frame state (by calling
  * registered Animations' individual frame renderers.
+ * @ignore
  */
 GEarthExtensions.prototype.fx.AnimationManager_.prototype.renderCurrentFrame_ =
 function() {
@@ -3705,8 +3864,14 @@ function() {
 };
 
 /**
- * Abstract base class for GEarthExtensions#fx animations
- * @class
+ * @class Base class for all GEarthExtensions#fx animations. Animations of this
+ * base class are not bounded by a given time duration and must manually be
+ * stopped when they are 'complete'.
+ * @param {Function} renderCallback A method that will be called to render
+ *     a frame of the animation. Its sole parameter will be the time, in
+ *     seconds, of the frame to render.
+ * @param {Function} [completionCallback] A callback method to fire when the
+ *     animation is completed/stopped.
  */
 GEarthExtensions.prototype.fx.Animation =
 GEarthExtensions.createClass_(function(renderFn, completionFn) {
@@ -3716,14 +3881,14 @@ GEarthExtensions.createClass_(function(renderFn, completionFn) {
 });
 
 /**
- * Start the animation.
+ * Start this animation.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
   this.extInstance.fx.getAnimationManager_().startAnimation(this);
 };
 
 /**
- * Stop the animation.
+ * Stop this animation.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
@@ -3734,7 +3899,7 @@ GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
 };
 
 /**
- * Stop and rewind the animation, without calling the 
+ * Stop and rewind the animation to the frame at time t=0.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.rewind = function() {
   this.renderFrame(0);
@@ -3742,18 +3907,23 @@ GEarthExtensions.prototype.fx.Animation.prototype.rewind = function() {
 };
 
 /**
- * Render the frame at time t after the animation was started.
- * @param {Number} t The time in seconds of the frame to render.
- * @abstract
+ * Render the frame at the given time after the animation was started.
+ * @param {Number} time The time in seconds of the frame to render.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
   this.renderFn.call(this, t);
 };
 
 /**
- * Generic class for fixed-duration animations.
- * @class
- * @extends Animation
+ * @class Generic class for animations of a fixed duration.
+ * @param {Number} duration The length of time for which this animation should
+ *     run, in seconds.
+ * @param {Function} renderCallback A method that will be called to render
+ *     a frame of the animation. Its sole parameter will be the time, in
+ *     seconds, of the frame to render.
+ * @param {Function} [completionCallback] A callback method to fire when the
+ *     animation is completed/stopped.
+ * @extends GEarthExtensions#fx.Animation
  */
 GEarthExtensions.prototype.fx.TimedAnimation =
 GEarthExtensions.createClass_(
@@ -3765,6 +3935,10 @@ function(duration, renderFn, completionFn) {
   this.completionFn = completionFn; // optional
 });
 
+/**
+ * Render the frame at the given time after the animation was started.
+ * @param {Number} time The time of the frame to render, in seconds.
+ */
 GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
   if (t > this.duration) {
@@ -3933,6 +4107,8 @@ function(obj, property, options) {
 
   var me = this;
   
+  // TODO: custom support for KmlColor -- gex.util.blendColors
+  
   var getter = function() {
     return me.util.callMethod(obj, 'get' + propertyTitleCase);
   };
@@ -4032,14 +4208,13 @@ GEarthExtensions.NAMED_COLORS = {
 };
 
 /**
- * Converts between various color formats, i.e. '#rrggbb', to the KML color
- * format ('aabbggrr')
- * @param {String|Number[]} arg The source color value.
+ * Converts between various color formats, i.e. `#rrggbb`, to the KML color
+ * format (`aabbggrr`)
+ * @param {String|Number[]} color The source color value.
  * @param {Number} [opacity] An optional opacity to go along with CSS/HTML style
  *     colors, from 0.0 to 1.0.
- * @type {String}
- * @return A string in KML color format, i.e. 'aabbggrr', or null if the color
- *     could not be parsed.
+ * @return {String} A string in KML color format (`aabbggrr`), or null if
+ *     the color could not be parsed.
  */
 GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
   // detect #rrggbb and convert to kml color aabbggrr
@@ -4095,7 +4270,16 @@ GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
 };
 
 
-// TODO: docs
+/**
+ * Calculates a simple composite of the two given colors.
+ * @param {String|Number[]} color1 The first ('source') color. Anthing that can
+ *     be parsed with GEarthExtensions#util.parseColor.
+ * @param {String|Number[]} color2 The second ('destination') color. Anything
+ *     that can be parsed with GEarthExtensions#util.parseColor.
+ * @param {Number} [fraction=0.5] The amount of color2 to composite onto/blend
+ *     with color1, as a fraction from 0.0 to 1.0.
+ * @type {String}
+ */
 GEarthExtensions.prototype.util.blendColors = function(color1, color2,
                                                        fraction) {
   if (geo.util.isUndefined(fraction) || fraction === null) {
@@ -4170,9 +4354,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
     return s.join('');
   }
 
-  /**
-   * @private
-   */
+  /** @private */
   function getJsTag_(object) {
     // TODO: use unique id from Earth API
     for (var tag in jsData_) {
@@ -4207,7 +4389,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
    * Gets the JS-side data for the given KmlObject associated with the given
    * key.
    * @param {KmlObject} object The plugin object to get data for.
-   * @param {String} key The JSData key to request.
+   * @param {String} key The JS data key to request.
    * @public
    */
   GEarthExtensions.prototype.util.getJsDataValue = function(object, key) {
@@ -4224,6 +4406,8 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
    * Sets the JS-side data for the given KmlObject associated with the given
    * key to the passed in value.
    * @param {KmlObject} object The object to get data for.
+   * @param {String} key The JS data key to set.
+   * @param {*} value The value to store for this key.
    * @public
    */
   GEarthExtensions.prototype.util.setJsDataValue =
@@ -4248,7 +4432,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
    * Clears the JS-side data for the given KmlObject associated with the given
    * key.
    * @param {KmlObject} object The plugin object to clear data on.
-   * @param {String} key The data key whose value should be cleared.
+   * @param {String} key The JS data key whose value should be cleared.
    */
   GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
     var jsTag = getJsTag_(object);
@@ -4268,7 +4452,14 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
 
 }());
 (function() {
-  // TODO: docs
+  /**
+   * Serializes the current plugin viewport into a modified base64 alphabet
+   * string. This method is platform and browser agnostic, and is safe to
+   * store and distribute to others.
+   * @return {String} A string representing the current viewport.
+   * @see http://code.google.com/apis/maps/documentation/include/polyline.js
+   *     for inspiration.
+   */
   GEarthExtensions.prototype.util.serializeView = function() {
     var camera = this.pluginInstance.getView().copyAsCamera(
         this.pluginInstance.ALTITUDE_ABSOLUTE);
@@ -4281,7 +4472,13 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
       roll: camera.getRoll() });
   };
 
-  // TODO: docs
+  /**
+   * Sets the current plugin viewport to the view represented by the given
+   * string.
+   * @param {String} viewString The modified base64 alphabet string representing
+   *     the view to fly to. This string should've previously been calculated
+   *     using GEarthExtensions#util.serializeView.
+   */
   GEarthExtensions.prototype.util.deserializeView = function(s) {
     var cameraProps = this.util.decodeCamera_(s);
     var camera = this.pluginInstance.createCamera('');
@@ -4293,11 +4490,9 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
     this.pluginInstance.getView().setAbstractView(camera);
   };
   
-  /***********
-  helper functions, most of which are from
-  http://code.google.com/apis/maps/documentation/include/polyline.js
-  ************/
-  
+  // helper functions, most of which are from
+  // http://code.google.com/apis/maps/documentation/include/polyline.js
+
   GEarthExtensions.prototype.util.encodeCamera_ = function(cam) {
     var encOverflow = 1073741824;
     var alt = Math.floor(cam.altitude * 1e5);
@@ -4396,7 +4591,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
 }());
 /**
  * Creates a KmlLookAt and sets it as the Earth plugin's view. This function
- * takes the same parameters as GEarthExtensions#dom.LookAt.
+ * takes the same parameters as GEarthExtensions#dom.buildLookAt.
  */
 GEarthExtensions.prototype.util.lookAt = function() {
   //this.pluginInstance.getView().setAbstractView(this.dom.LookAt(...));
@@ -4437,6 +4632,9 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
 /**
  * Simply loads and shows the given KML URL in the Google Earth Plugin instance.
  * @param {String} url The URL of the KML content to show.
+ * @param {Object} [options] KML display options.
+ * @param {Boolean} [options.cacheBuster] Enforce freshly downloading the KML
+ *     by introducing a cache-busting query parameter.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
   options = options || {};
@@ -4458,6 +4656,8 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * Simply loads and shows the given KML string in the Google Earth Plugin
  * instance.
  * @param {String} str The KML blob string to show.
+ * @param {Object} [options] KML display options. There are currently no
+ *     options.
  */
 GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
   var kmlObject = this.pluginInstance.parseKml(str);
@@ -4508,11 +4708,12 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
 };
 
 /**
- * Enables or disables full camera control mode, which sets fly to speed
+ * Enables or disables full camera ownership mode, which sets fly to speed
  * to teleport, disables user mouse interaction, and hides the navigation
  * controls.
+ * @param {Boolean} enable Whether to enable or disable full camera ownership.
  */
-GEarthExtensions.prototype.util.fullCameraControl = function(enable) {
+GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
   if (enable || geo.util.isUndefined(enable)) {
     if (this.cameraControlOldProps_)
       return;

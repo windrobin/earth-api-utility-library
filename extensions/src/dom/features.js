@@ -40,20 +40,22 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
  *     be visible.
  * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
- * @param {PointSpec} [options.point] A point geometry to use in the placemark.
- * @param {LineStringSpec} [options.lineString] A line string geometry to use
+ * @param {PointOptions|KmlPoint} [options.point] A point geometry to use in the
+ *     placemark.
+ * @param {LineStringOptions|KmlLineString} [options.lineString] A line string
+ *     geometry to usein the placemark.
+ * @param {LinearRingOptions|KmlLinearRing} [options.linearRing] A linear ring
+ *     geometry to use in the placemark.
+ * @param {PolygonOptions|KmlPolygon} [options.polygon] A polygon geometry to
+ *     use in the placemark.
+ * @param {ModelOptions|KmlModel} [options.model] A model geometry to use
  *     in the placemark.
- * @param {LinearRingSpec} [options.linearRing] A linear ring geometry to use
- *     in the placemark.
- * @param {PolygonSpec} [options.polygon] A polygon geometry to use
- *     in the placemark.
- * @param {ModelSpec} [options.model] A model geometry to use
- *     in the placemark.
- * @param {MultiGeometrySpec} [options.geometries] A multi-geometry to use
- *     in the placemark.
+ * @param {MultiGeometryOptions|KmlMultiGeometry} [options.multiGeometry] A
+ *     multi-geometry to use in the placemark.
+ * @param {KmlGeometry[]} [options.geometries] An array of geometries to add
+ *     to the placemark.
  * @type KmlPlacemark
  */
-// TODO: document styling
 GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
   apiInterface: 'KmlPlacemark',
   base: GEarthExtensions.prototype.dom.buildFeature_,
@@ -93,6 +95,9 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
     }
     if (options.model) {
       geometries.push(this.dom.buildModel(options.model));
+    }
+    if (options.multiGeometry) {
+      geometries.push(this.dom.buildMultiGeometry(options.multiGeometry));
     }
     if (options.geometries) {
       geometries = geometries.concat(options.geometries);
@@ -262,8 +267,10 @@ function test_dom_buildPlacemark_styles() {
 /***IGNORE_END***/
 
 /**
- * @see GEarthExtensions.dom.buildPlacemark
- * @function
+ * Convenience method to build a point placemark.
+ * @param {PointOptions|KmlPoint} point The point geometry.
+ * @param {Object} options The parameters of the placemark to create.
+ * @see GEarthExtensions#dom.buildPlacemark
  */
 GEarthExtensions.prototype.dom.buildPointPlacemark =
 GEarthExtensions.domBuilder_({
@@ -272,8 +279,10 @@ GEarthExtensions.domBuilder_({
 });
 
 /**
- * @see GEarthExtensions.dom.buildPlacemark
- * @function
+ * Convenience method to build a linestring placemark.
+ * @param {LineStringOptions|KmlLineString} lineString The line string geometry.
+ * @param {Object} options The parameters of the placemark to create.
+ * @see GEarthExtensions#dom.buildPlacemark
  */
 GEarthExtensions.prototype.dom.buildLineStringPlacemark =
 GEarthExtensions.domBuilder_({
@@ -282,8 +291,10 @@ GEarthExtensions.domBuilder_({
 });
 
 /**
- * @see GEarthExtensions.dom.buildPlacemark
- * @function
+ * Convenience method to build a polygon placemark.
+ * @param {PolygonOptions|KmlPolygon} polygon The polygon geometry.
+ * @param {Object} options The parameters of the placemark to create.
+ * @see GEarthExtensions#dom.buildPlacemark
  */
 GEarthExtensions.prototype.dom.buildPolygonPlacemark =
 GEarthExtensions.domBuilder_({
@@ -295,7 +306,7 @@ GEarthExtensions.domBuilder_({
 /**
  * Creates a new network link with the given parameters.
  * @function
- * @param {LinkSpec} [link] An object describing the link to use for this
+ * @param {LinkOptions} [link] An object describing the link to use for this
  *     network link.
  * @param {Object} options The parameters of the network link to create.
  * @param {String} [options.name] The name of the feature.
@@ -303,7 +314,7 @@ GEarthExtensions.domBuilder_({
  *     be visible.
  * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
- * @param {LinkSpec} [options.link] The link to use.
+ * @param {LinkOptions} [options.link] The link to use.
  * @type KmlNetworkLink
  */
 GEarthExtensions.prototype.dom.buildNetworkLink =
@@ -417,8 +428,30 @@ GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
 /**
  * Creates a new ground overlay with the given parameters.
  * @function
+ * @param {String} [icon] The URL of the overlay image.
+ * @param {Object} options The parameters of the ground overlay to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
+ *     be visible.
+ * @param {String} [options.description] An HTML description for the feature.
+ * @param {String} [options.color] A color to apply on the overlay.
+ * @param {String} [options.icon] The URL of the overlay image.
+ * @param {Number} [options.drawOrder] The drawing order of the overlay;
+ *     overlays with higher draw orders appear on top of those with lower
+ *     draw orders.
+ * @param {Number} [options.altitude] The altitude of the ground overlay, in
+ *     meters.
+ * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
+ *     ground overlay.
+ * @param {Object} [options.box] The bounding box for the overlay.
+ * @param {Number} [options.box.north] The north latitude for the overlay.
+ * @param {Number} [options.box.east] The east longitude for the overlay.
+ * @param {Number} [options.box.south] The south latitude for the overlay.
+ * @param {Number} [options.box.west] The west longitude for the overlay.
+ * @param {Number} [options.box.rotation] The rotation, in degrees, of the
+ *     overlay.
+ * @type KmlGroundOverlay
  */
-// TODO: documentation
 GEarthExtensions.prototype.dom.buildGroundOverlay =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlGroundOverlay',
@@ -487,8 +520,31 @@ function test_dom_buildGroundOverlay() {
 /**
  * Creates a new screen overlay with the given parameters.
  * @function
+ * @param {String} [icon] The URL of the overlay image.
+ * @param {Object} options The parameters of the screen overlay to create.
+ * @param {String} [options.name] The name of the feature.
+ * @param {Boolean} [options.visibility] Whether or not the feature should
+ *     be visible.
+ * @param {String} [options.description] An HTML description for the feature.
+ * @param {String} [options.color] A color to apply on the overlay.
+ * @param {String} [options.icon] The URL of the overlay image.
+ * @param {Number} [options.drawOrder] The drawing order of the overlay;
+ *     overlays with higher draw orders appear on top of those with lower
+ *     draw orders.
+ * @param {Vec2Src} [options.overlayXY] The registration point in the overlay
+ *     that will be placed at the given screenXY point and potentially
+ *     rotated about. This object will be passed to
+ *     GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
+ * @param {Vec2Src} [options.screenXY] The position in the plugin window
+ *     that the screen overlay should appear at. This object will
+ *     be passed to GEarthExtensions#dom.setVec2
+ * @param {Vec2Src} [options.size] The size of the overlay. This object will
+ *     be passed to GEarthExtensions#dom.setVec2
+ * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
+ *     ground overlay.
+ * @param {Number} [options.rotation] The rotation of the overlay, in degrees.
+ * @type KmlScreenOverlay
  */
-// TODO: documentation
 GEarthExtensions.prototype.dom.buildScreenOverlay =
 GEarthExtensions.domBuilder_({
   apiInterface: 'KmlScreenOverlay',
@@ -527,6 +583,13 @@ GEarthExtensions.domBuilder_({
 
 //////////////////////////////
 // GEarthExtensions#dom shortcut functions
+
+/**
+ * @name GEarthExtensions#dom.addPlacemark
+ * Convenience method that calls GEarthExtensions#dom.buildPlacemark and adds
+ * the created placemark to the Google Earth Plugin DOM.
+ * @function
+ */
 
 (function(){
   var autoShortcut = ['Placemark',

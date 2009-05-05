@@ -266,8 +266,23 @@ GEarthExtensions.prototype.dom.removeObject = function(object) {
 // TODO: unit test (heavily)
 
 /**
- * Parse hotspot
- * TODO: docs
+ * Sets the given KmlVec2 object to the point defined in the options.
+ * @param {KmlVec2} vec2 The object to set, for example a screen overlay's
+ *     screenXY.
+ * @param {Object} options The options literal defining the point.
+ * @param {Number|String} [options.left] The left offset, in pixels (i.e. 5),
+ *     or as a percentage (i.e. '25%').
+ * @param {Number|String} [options.top] The top offset, in pixels or a string
+ *     percentage.
+ * @param {Number|String} [options.right] The right offset, in pixels or a
+ *     string percentage.
+ * @param {Number|String} [options.bottom] The bottom offset, in pixels or a
+ *     string percentage.
+ * @param {Number|String} [options.width] A convenience parameter specifying
+ *     width, only useful for screen overlays, in pixels or a string percentage.
+ * @param {Number|String} [options.height] A convenience parameter specifying
+ *     height, only useful for screen overlays, in pixels or a string
+ *     percentage.
  */
 GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
   options = GEarthExtensions.checkParameters(options, false, {

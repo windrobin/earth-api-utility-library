@@ -35,6 +35,7 @@ GEarthExtensions.REQUIRED = undefined;
  *     required or some other value to set a default value.
  * @return Returns a shallow copy of the given parameters object, cleaned up
  *     according to the parameters spec and with default values filled in.
+ * @ignore
  */
 GEarthExtensions.checkParameters = function(explicitParams,
                                             allowAll, paramSpec) {
