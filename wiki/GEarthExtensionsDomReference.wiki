@@ -1,62 +1,11 @@
 #labels Phase-Reference
 #summary GEarthExtensions.dom Namespace Reference
+
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/__init__.js src/dom/__init__.js]
+
 Contains DOM builder functions (buildXX) and DOM manipulation/traversal functions.
+
 <wiki:toc max_depth="2" />
-
-
-
-
-
-
-
-
-
-----
-=Fields=
-
-==buildLineStringPlacemark==
-
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
-
-Convenience method to build a linestring placemark.
-
-
-===See:===
-
-[GEarthExtensionsDomReference#buildPlacemark(options) GEarthExtensions#dom.buildPlacemark]
-
-
-----
-
-==buildPointPlacemark==
-
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
-
-Convenience method to build a point placemark.
-
-
-===See:===
-
-[GEarthExtensionsDomReference#buildPlacemark(options) GEarthExtensions#dom.buildPlacemark]
-
-
-----
-
-==buildPolygonPlacemark==
-
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
-
-Convenience method to build a polygon placemark.
-
-
-===See:===
-
-[GEarthExtensionsDomReference#buildPlacemark(options) GEarthExtensions#dom.buildPlacemark]
-
-
-
-
 
 ----
 =Static Methods=
@@ -67,9 +16,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new camera object with the given parameters.
 
-
 ===Parameters:===
-
   * *point* _{{{PointSpec}}}_ (Optional) The point at which to place the camera.
   * *options* _{{{Object}}}_  The parameters of the camera object to create.
     * *point* _{{{PointSpec}}}_ (Optional) The point at which to place the camera.
@@ -78,9 +25,8 @@ Creates a new camera object with the given parameters.
     * *tilt* _{{{Number}}}_ (Optional) The camera tilt.
     * *range* _{{{Number}}}_ (Optional) The camera roll.
 
-===Returns:===
+===Type:===
 {{{KmlCamera}}}
-
 
 ----
 
@@ -90,19 +36,16 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new document with the given parameters.
 
-
 ===Parameters:===
-
-  * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this document.
+  * *children* _{{{KmlFeature}}}`[``]`_ (Optional) The children of this document.
   * *options* _{{{Object}}}_  The parameters of the document to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
     * *visibility* _{{{Boolean}}}_ (Optional) Whether or not the feature should be visible.
     * *description* _{{{String}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
-    * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this document.
+    * *children* _{{{KmlFeature}}}`[``]`_ (Optional) The children of this document.
 
-===Returns:===
+===Type:===
 {{{KmlDocument}}}
-
 
 ----
 
@@ -112,19 +55,16 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new folder with the given parameters.
 
-
 ===Parameters:===
-
-  * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this folder.
+  * *children* _{{{KmlFeature}}}`[``]`_ (Optional) The children of this folder.
   * *options* _{{{Object}}}_  The parameters of the folder to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
     * *visibility* _{{{Boolean}}}_ (Optional) Whether or not the feature should be visible.
     * *description* _{{{String}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
-    * *children* _{{{KmlFeature}}}[]_ (Optional) The children of this folder.
+    * *children* _{{{KmlFeature}}}`[``]`_ (Optional) The children of this folder.
 
-===Returns:===
+===Type:===
 {{{KmlFolder}}}
-
 
 ----
 
@@ -134,9 +74,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new ground overlay with the given parameters.
 
-
 ===Parameters:===
-
   * *icon* _{{{String}}}_ (Optional) The URL of the overlay image.
   * *options* _{{{Object}}}_  The parameters of the ground overlay to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
@@ -154,9 +92,8 @@ Creates a new ground overlay with the given parameters.
     * *box.west* _{{{Number}}}_ (Optional) The west longitude for the overlay.
     * *box.rotation* _{{{Number}}}_ (Optional) The rotation, in degrees, of the overlay.
 
-===Returns:===
+===Type:===
 {{{KmlGroundOverlay}}}
-
 
 ----
 
@@ -166,9 +103,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new linear ring geometry with the given parameters.
 
-
 ===Parameters:===
-
   * *path* _{{{PathOptions}}}|{{{geo.Path}}}|{{{KmlLinearRing}}}_ (Optional) The path data. Anything that can be passed to the geo.Path constructor. The first coordinate doesn't need to be repeated at the end.
   * *options* _{{{Object}}}_  The parameters of the linear ring to create.
     * *path* _{{{PathOptions}}}|{{{geo.Path}}}|{{{KmlLinearRing}}}_ (Optional) The path data. Anything that can be passed to the geo.Path constructor. The first coordinate doesn't need to be repeated at the end.
@@ -176,9 +111,8 @@ Creates a new linear ring geometry with the given parameters.
     * *extrude* _{{{Boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
     * *tessellate* _{{{Boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
 
-===Returns:===
+===Type:===
 {{{KmlLinearRing}}}
-
 
 ----
 
@@ -188,9 +122,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new line string geometry with the given parameters.
 
-
 ===Parameters:===
-
   * *path* _{{{PathOptions}}}|{{{geo.Path}}}|{{{KmlLineString}}}_ (Optional) The path data. Anything that can be passed to the geo.Path constructor.
   * *options* _{{{Object}}}_  The parameters of the line string to create.
     * *path* _{{{PathOptions}}}|{{{geo.Path}}}|{{{KmlLineString}}}_ (Optional) The path data. Anything that can be passed to the geo.Path constructor.
@@ -198,9 +130,24 @@ Creates a new line string geometry with the given parameters.
     * *extrude* _{{{Boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
     * *tessellate* _{{{Boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
 
-===Returns:===
+===Type:===
 {{{KmlLineString}}}
 
+----
+
+==buildLineStringPlacemark(lineString, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
+Convenience method to build a linestring placemark.
+
+===Parameters:===
+  * *lineString* _{{{LineStringOptions}}}|{{{KmlLineString}}}_  The line string geometry.
+  * *options* _{{{Object}}}_  The parameters of the placemark to create.
+
+===See:===
+
+[GEarthExtensionsDomReference#buildPlacemark(options) GEarthExtensions#dom.buildPlacemark]
 
 ----
 
@@ -210,9 +157,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new link object with the given parameters.
 
-
 ===Parameters:===
-
   * *href* _{{{String}}}_ (Optional) The link href.
   * *options* _{{{Object}}}_  The link parameters.
     * *href* _{{{String}}}_ (Optional) The link href.
@@ -220,9 +165,8 @@ Creates a new link object with the given parameters.
     * *refreshInterval* _{{{Number}}}_ (Optional) The link refresh interval, in seconds.
     * *viewRefreshMode* _{{{KmlViewRefreshModeEnum}}}_ (Optional) The view-based refresh mode.
 
-===Returns:===
+===Type:===
 {{{KmlLink}}}
-
 
 ----
 
@@ -232,9 +176,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new lookat object with the given parameters.
 
-
 ===Parameters:===
-
   * *point* _{{{PointSpec}}}_ (Optional) The point to look at.
   * *options* _{{{Object}}}_  The parameters of the lookat object to create.
     * *point* _{{{PointSpec}}}_ (Optional) The point to look at.
@@ -243,9 +185,8 @@ Creates a new lookat object with the given parameters.
     * *tilt* _{{{Number}}}_ (Optional) The lookat tilt.
     * *range* _{{{Number}}}_ (Optional) The range of the camera (distance from the lookat point).
 
-===Returns:===
+===Type:===
 {{{KmlLookAt}}}
-
 
 ----
 
@@ -255,23 +196,20 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new model geometry with the given parameters.
 
-
 ===Parameters:===
-
   * *link* _{{{LinkOptions}}}|{{{KmlLink}}}_ (Optional) The remote link this model should use.
   * *options* _{{{Object}}}_  The parameters of the model to create.
     * *link* _{{{LinkOptions}}}|{{{KmlLink}}}_ (Optional) The remote link this model should use.
     * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
     * *location* _{{{PointOptions}}}|{{{geo.Point}}}_ (Optional) The location of the model.
-    * *scale* _{{{Number}}}|{{{Number}}}[]_ (Optional) The scale factor of the model, either as a constant scale, or a 3-item array for x, y, and z scale.
+    * *scale* _{{{Number}}}|{{{Number}}}`[``]`_ (Optional) The scale factor of the model, either as a constant scale, or a 3-item array for x, y, and z scale.
     * *orientation* _{{{Object}}}_ (Optional) The orientation of the model.
     * *orientation.heading* _{{{Number}}}_ (Optional) The model heading.
     * *orientation.tilt* _{{{Number}}}_ (Optional) The model tilt.
     * *orientation.roll* _{{{Number}}}_ (Optional) The model roll.
 
-===Returns:===
+===Type:===
 {{{KmlModel}}}
-
 
 ----
 
@@ -281,16 +219,13 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new multi-geometry with the given parameters.
 
-
 ===Parameters:===
-
-  * *geometries* _{{{KmlGeometry}}}[]_ (Optional) The child geometries.
+  * *geometries* _{{{KmlGeometry}}}`[``]`_ (Optional) The child geometries.
   * *options* _{{{Object}}}_  The parameters of the multi-geometry to create.
-    * *geometries* _{{{KmlGeometry}}}[]_ (Optional) The child geometries.
+    * *geometries* _{{{KmlGeometry}}}`[``]`_ (Optional) The child geometries.
 
-===Returns:===
+===Type:===
 {{{KmlMultiGeometry}}}
-
 
 ----
 
@@ -300,9 +235,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new network link with the given parameters.
 
-
 ===Parameters:===
-
   * *link* _{{{LinkOptions}}}_ (Optional) An object describing the link to use for this network link.
   * *options* _{{{Object}}}_  The parameters of the network link to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
@@ -310,9 +243,8 @@ Creates a new network link with the given parameters.
     * *description* _{{{String}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
     * *link* _{{{LinkOptions}}}_ (Optional) The link to use.
 
-===Returns:===
+===Type:===
 {{{KmlNetworkLink}}}
-
 
 ----
 
@@ -322,9 +254,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new placemark with the given parameters.
 
-
 ===Parameters:===
-
   * *options* _{{{Object}}}_  The parameters of the placemark to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
     * *visibility* _{{{Boolean}}}_ (Optional) Whether or not the feature should be visible.
@@ -335,11 +265,10 @@ Creates a new placemark with the given parameters.
     * *polygon* _{{{PolygonOptions}}}|{{{KmlPolygon}}}_ (Optional) A polygon geometry to use in the placemark.
     * *model* _{{{ModelOptions}}}|{{{KmlModel}}}_ (Optional) A model geometry to use in the placemark.
     * *multiGeometry* _{{{MultiGeometryOptions}}}|{{{KmlMultiGeometry}}}_ (Optional) A multi-geometry to use in the placemark.
-    * *geometries* _{{{KmlGeometry}}}[]_ (Optional) An array of geometries to add to the placemark.
+    * *geometries* _{{{KmlGeometry}}}`[``]`_ (Optional) An array of geometries to add to the placemark.
 
-===Returns:===
+===Type:===
 {{{KmlPlacemark}}}
-
 
 ----
 
@@ -349,18 +278,31 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new point geometry with the given parameters.
 
-
 ===Parameters:===
-
   * *point* _{{{PointOptions}}}|{{{geo.Point}}}|{{{KmlPoint}}}_ (Optional) The point data. Anything that can be passed to the geo.Point constructor.
   * *options* _{{{Object}}}_  The parameters of the point object to create.
     * *point* _{{{PointOptions}}}|{{{geo.Point}}}|{{{KmlPoint}}}_ (Optional) The point data. Anything that can be passed to the geo.Point constructor.
     * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the geometry.
     * *extrude* _{{{Boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
 
-===Returns:===
+===Type:===
 {{{KmlPoint}}}
 
+----
+
+==buildPointPlacemark(point, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
+Convenience method to build a point placemark.
+
+===Parameters:===
+  * *point* _{{{PointOptions}}}|{{{KmlPoint}}}_  The point geometry.
+  * *options* _{{{Object}}}_  The parameters of the placemark to create.
+
+===See:===
+
+[GEarthExtensionsDomReference#buildPlacemark(options) GEarthExtensions#dom.buildPlacemark]
 
 ----
 
@@ -370,9 +312,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new polygon geometry with the given parameters.
 
-
 ===Parameters:===
-
   * *polygon* _{{{PolygonOptions}}}|{{{geo.Polygon}}}|{{{KmlPolygon}}}_ (Optional) The polygon data. Anything that can be passed to the geo.Polygon constructor.
   * *options* _{{{Object}}}_  The parameters of the polygon to create.
     * *polygon* _{{{PolygonOptions}}}|{{{geo.Polygon}}}|{{{KmlPolygon}}}_ (Optional) The polygon data. Anything that can be passed to the geo.Polygon constructor.
@@ -380,9 +320,24 @@ Creates a new polygon geometry with the given parameters.
     * *extrude* _{{{Boolean}}}_ (Optional) Whether or not the geometry should extrude down to the Earth's surface.
     * *tessellate* _{{{Boolean}}}_ (Optional) Whether or not the geometry should be tessellated (i.e. contour to the terrain).
 
-===Returns:===
+===Type:===
 {{{KmlPolygon}}}
 
+----
+
+==buildPolygonPlacemark(polygon, options)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/features.js src/dom/features.js]
+
+Convenience method to build a polygon placemark.
+
+===Parameters:===
+  * *polygon* _{{{PolygonOptions}}}|{{{KmlPolygon}}}_  The polygon geometry.
+  * *options* _{{{Object}}}_  The parameters of the placemark to create.
+
+===See:===
+
+[GEarthExtensionsDomReference#buildPlacemark(options) GEarthExtensions#dom.buildPlacemark]
 
 ----
 
@@ -392,9 +347,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new region with the given parameters.
 
-
 ===Parameters:===
-
   * *options* _{{{Object}}}_  The parameters of the region to create.
     * *box* _{{{String}}}_ (Optional) The bounding box of the region, defined by either N/E/S/W, or center+span, and optional altitudes.
     * *box.north* _{{{Number}}}_ (Optional) The north latitude for the region.
@@ -402,14 +355,13 @@ Creates a new region with the given parameters.
     * *box.south* _{{{Number}}}_ (Optional) The south latitude for the region.
     * *box.west* _{{{Number}}}_ (Optional) The west longitude for the region.
     * *box.center* _{{{PointOptions}}}|{{{geo.Point}}}_ (Optional) The center point for the region's bounding box.
-    * *box.span* _{{{Number}}}|{{{Number}}}[]_ (Optional) If using center+span region box definition, this is either a number indicating both latitude and longitude span, or a 2-item array defining [latSpan, lngSpan].
+    * *box.span* _{{{Number}}}|{{{Number}}}`[``]`_ (Optional) If using center+span region box definition, this is either a number indicating both latitude and longitude span, or a 2-item array defining [latSpan, lngSpan].
     * *box.minAltitude* _{{{Number}}}_ (Optional) The low altitude for the region.
     * *box.maxAltitude* _{{{Number}}}_ (Optional) The high altitude for the region.
     * *box.altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the region, pertaining to min and max altitude.
 
-===Returns:===
+===Type:===
 {{{KmlRegion}}}
-
 
 ----
 
@@ -419,9 +371,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new screen overlay with the given parameters.
 
-
 ===Parameters:===
-
   * *icon* _{{{String}}}_ (Optional) The URL of the overlay image.
   * *options* _{{{Object}}}_  The parameters of the screen overlay to create.
     * *name* _{{{String}}}_ (Optional) The name of the feature.
@@ -430,15 +380,14 @@ Creates a new screen overlay with the given parameters.
     * *color* _{{{String}}}_ (Optional) A color to apply on the overlay.
     * *icon* _{{{String}}}_ (Optional) The URL of the overlay image.
     * *drawOrder* _{{{Number}}}_ (Optional) The drawing order of the overlay; overlays with higher draw orders appear on top of those with lower draw orders.
-    * *overlayXY* _{{{Vec2Src}}}_ (Optional) The registration point in the overlay that will be placed at the given screenXY point and potentially rotated about. This object will be passed to GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
-    * *screenXY* _{{{Vec2Src}}}_ (Optional) The position in the plugin window that the screen overlay should appear at. This object will be passed to GEarthExtensions#dom.setVec2
-    * *size* _{{{Vec2Src}}}_ (Optional) The size of the overlay. This object will be passed to GEarthExtensions#dom.setVec2
+    * *overlayXY* _{{{Vec2Src}}}_ (Optional) The registration point in the overlay that will be placed at the given screenXY point and potentially rotated about. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. The default is the top left of the overlay.
+    * *screenXY* _{{{Vec2Src}}}_ (Optional) The position in the plugin window that the screen overlay should appear at. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]
+    * *size* _{{{Vec2Src}}}_ (Optional) The size of the overlay. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]
     * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the ground overlay.
     * *rotation* _{{{Number}}}_ (Optional) The rotation of the overlay, in degrees.
 
-===Returns:===
+===Type:===
 {{{KmlScreenOverlay}}}
-
 
 ----
 
@@ -448,9 +397,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Creates a new style with the given parameters.
 
-
 ===Parameters:===
-
   * *options* _{{{Object}}}_  The style parameters.
     * *icon* _{{{String}}}|{{{Object}}}_ (Optional) The icon href or an icon object literal.
     * *icon.href* _{{{String}}}_ (Optional) The icon href.
@@ -471,9 +418,8 @@ Creates a new style with the given parameters.
     * *poly.color* _{{{ColorSpec}}}_ (Optional) The color of the polygon fill.
     * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the polygon, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
 
-===Returns:===
+===Type:===
 {{{KmlStyle}}}
-
 
 ----
 
@@ -483,7 +429,6 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Removes all top-level features from the Earth object's DOM.
 
-
 ----
 
 ==getObjectById(id, options)==
@@ -492,19 +437,13 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Gets the object in the Earth DOM with the given id.
 
-
 ===Parameters:===
-
   * *id* _{{{String}}}_  The id of the object to retrieve.
   * *options*   
 
 ===Returns:===
 
-
-
 Returns the object with the given id, or null if it was not found.
-
-
 
 ----
 
@@ -514,9 +453,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Removes the given object from the Earth object's DOM.
 
-
 ===Parameters:===
-
   * *object* _{{{KmlObject}}}_  The object to remove.
 
 ----
@@ -527,9 +464,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Sets the given KmlVec2 object to the point defined in the options.
 
-
 ===Parameters:===
-
   * *vec2* _{{{KmlVec2}}}_  The object to set, for example a screen overlay's screenXY.
   * *options* _{{{Object}}}_  The options literal defining the point.
     * *left* _{{{Number}}}|{{{String}}}_ (Optional) The left offset, in pixels (i.e. 5), or as a percentage (i.e. '25%').
@@ -547,16 +482,11 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Walks a KML object, calling a given visit function for each object in the KML DOM. The lone argument must be either a visit function or an options literal. NOTE: walking the DOM can have pretty poor performance on very large hierarchies, as first time accesses to KML objects from JavaScript incur some overhead in the API.
 
-
 ===Parameters:===
-
   * *options* _{{{Object}}}_ (Optional) The walk options:
     * *visitCallback* _{{{Function}}}_ (Optional) The function to call upon visiting a node in the DOM. The 'this' variable in the callback function will be bound to the object being visited. The lone argument passed to this function will be an object literal for the call context. To get the current application-specific call context, use the 'current' property of the context object. To set the context for all child calls, set the 'child' property of the context object.To prevent walking the children of the current object, set the 'walkChildren' property of the context object to false. To stop the walking process altogether, return false in the function.
     * *rootObject* _{{{KmlObject}}}_ (Optional) The root of the KML object hierarchy to walk.
     * *features* _{{{Boolean}}}_ (Optional) Descend into feature containers? Default true.
     * *geometries* _{{{Boolean}}}_ (Optional) Descend into geometry containers? Default false.
     * *rootContext* _{{{Object}}}_ (Optional) The application-specific context to pass to the root item.
-
-
-
 

@@ -17,6 +17,8 @@ limitations under the License.
  * @class The root class/namespace hybrid for the Earth API extensions library.
  * This class groups functionality into namespaces such as
  * {@link GEarthExtensions#dom } and {@link GEarthExtensions#fx }.
+ * @param {GEPlugin} pluginInstance The Google Earth Plugin instance to
+ *     associate this GEarthExtensions instance with.
  * @example
  * var gex = new GEarthExtensions(ge); // ge is an instance of GEPlugin
  * gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom

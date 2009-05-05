@@ -271,6 +271,7 @@ function test_dom_buildPlacemark_styles() {
  * @param {PointOptions|KmlPoint} point The point geometry.
  * @param {Object} options The parameters of the placemark to create.
  * @see GEarthExtensions#dom.buildPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.buildPointPlacemark =
 GEarthExtensions.domBuilder_({
@@ -283,6 +284,7 @@ GEarthExtensions.domBuilder_({
  * @param {LineStringOptions|KmlLineString} lineString The line string geometry.
  * @param {Object} options The parameters of the placemark to create.
  * @see GEarthExtensions#dom.buildPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.buildLineStringPlacemark =
 GEarthExtensions.domBuilder_({
@@ -295,6 +297,7 @@ GEarthExtensions.domBuilder_({
  * @param {PolygonOptions|KmlPolygon} polygon The polygon geometry.
  * @param {Object} options The parameters of the placemark to create.
  * @see GEarthExtensions#dom.buildPlacemark
+ * @function
  */
 GEarthExtensions.prototype.dom.buildPolygonPlacemark =
 GEarthExtensions.domBuilder_({
@@ -590,7 +593,6 @@ GEarthExtensions.domBuilder_({
  * the created placemark to the Google Earth Plugin DOM.
  * @function
  */
-
 (function(){
   var autoShortcut = ['Placemark',
                       'PointPlacemark', 'LineStringPlacemark',

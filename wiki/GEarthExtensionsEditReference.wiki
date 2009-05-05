@@ -1,16 +1,11 @@
 #labels Phase-Reference
 #summary GEarthExtensions.edit Namespace Reference
+
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/__init__.js src/edit/__init__.js]
+
 Contains methods for allowing user-interactive editing of features inside the Google Earth Plugin.
+
 <wiki:toc max_depth="2" />
-
-
-
-
-
-
-
-
 
 ----
 =Static Methods=
@@ -19,11 +14,9 @@ Contains methods for allowing user-interactive editing of features inside the Go
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/linepoly.js src/edit/linepoly.js]
 
-Enters a mode in which the user can draw the given line string geometry on the globe by clicking on the globe to create coordinates. To cancel the placement, use GEarthExtensions#edit.endEditLineString. This is similar in intended usage to GEarthExtensions#edit.place.
-
+Enters a mode in which the user can draw the given line string geometry on the globe by clicking on the globe to create coordinates. To cancel the placement, use [GEarthExtensionsEditReference#endEditLineString(lineString) GEarthExtensions#edit.endEditLineString]. This is similar in intended usage to [GEarthExtensionsEditReference#place(placemark,_options) GEarthExtensions#edit.place].
 
 ===Parameters:===
-
   * *lineString* _{{{KmlLineString}}}|{{{KmlLinearRing}}}_  The line string geometry to allow the user to draw (or append points to).
   * *options* _{{{Object}}}_ (Optional) The edit options.
     * *bounce* _{{{Boolean}}}_ (Optional) Whether or not to enable bounce effects while drawing coordinates.
@@ -37,9 +30,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Allows the user to edit the coordinates of the given line string by dragging existing points, splitting path segments/creating new points or deleting existing points.
 
-
 ===Parameters:===
-
   * *lineString* _{{{KmlLineString}}}|{{{KmlLinearRing}}}_  The line string or lienar ring geometry to edit. For KmlPolygon geometries, pass in an outer or inner boundary.
   * *options* _{{{Object}}}_ (Optional) The line string edit options.
     * *editCallback* _{{{Function}}}_ (Optional) A callback function to fire when the line string coordinates have changed due to user interaction.
@@ -50,11 +41,9 @@ Allows the user to edit the coordinates of the given line string by dragging exi
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/dragging.js src/edit/dragging.js]
 
-Ceases the draggability of the given placemark. If the placemark is in the process of being placed via GEarthExtensions#edit.place, the placement is cancelled.
-
+Ceases the draggability of the given placemark. If the placemark is in the process of being placed via [GEarthExtensionsEditReference#place(placemark,_options) GEarthExtensions#edit.place], the placement is cancelled.
 
 ===Parameters:===
-
   * *placemark*   
 
 ----
@@ -65,9 +54,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Ceases the ability for the user to edit or draw the given line string.
 
-
 ===Parameters:===
-
   * *lineString*   
 
 ----
@@ -78,9 +65,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Turns on draggability for the given point placemark.
 
-
 ===Parameters:===
-
   * *placemark* _{{{KmlPlacemark}}}_  The point placemark to enable dragging on.
   * *options* _{{{Object}}}_ (Optional) The draggable options.
     * *bounce* _{{{Boolean}}}_ (Optional) Whether or not to bounce up upon dragging and bounce back down upon dropping.
@@ -95,14 +80,9 @@ Turns on draggability for the given point placemark.
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/dragging.js src/edit/dragging.js]
 
-Enters a mode in which the user can place the given point placemark onto the globe by clicking on the globe. To cancel the placement, use GEarthExtensions#edit.endDraggable.
-
+Enters a mode in which the user can place the given point placemark onto the globe by clicking on the globe. To cancel the placement, use [GEarthExtensionsEditReference#endDraggable(placemark) GEarthExtensions#edit.endDraggable].
 
 ===Parameters:===
-
   * *placemark* _{{{KmlPlacemark}}}_  The point placemark for the user to place onto the globe.
-  * *options* _{{{Object}}}_ (Optional) The draggable options. See GEarthExtensions#edit.makeDraggable.
-
-
-
+  * *options* _{{{Object}}}_ (Optional) The draggable options. See [GEarthExtensionsEditReference#makeDraggable(placemark,_options) GEarthExtensions#edit.makeDraggable].
 

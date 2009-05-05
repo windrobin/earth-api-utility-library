@@ -1,16 +1,11 @@
 #labels Phase-Reference
 #summary GEarthExtensions.fx Namespace Reference
+
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/fx/__init__.js src/fx/__init__.js]
+
 Contains various animation/effects tools for use in the Google Earth API.
+
 <wiki:toc max_depth="2" />
-
-
-
-
-
-
-
-
 
 ----
 =Static Methods=
@@ -21,9 +16,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Animate a numeric property on a plugin object.
 
-
 ===Parameters:===
-
   * *obj*   
   * *property*   
   * *options*   
@@ -36,9 +29,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Bounce a placemark once.
 
-
 ===Parameters:===
-
   * *placemark*   
   * *options*   
 
@@ -50,9 +41,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Cancel all animations on a given feature, potentially leaving them in an intermediate visual state.
 
-
 ===Parameters:===
-
   * *feature*   
 
 ----
@@ -63,11 +52,6 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Cancel all animations on a given feature and revert them to their t = 0 state.
 
-
 ===Parameters:===
-
   * *feature*   
-
-
-
 

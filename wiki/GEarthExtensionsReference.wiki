@@ -1,21 +1,16 @@
 #labels Phase-Reference,Featured
 #summary GEarthExtensions Class Reference
+
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/__init__.js src/__init__.js]
+
 The root class/namespace hybrid for the Earth API extensions library. This class groups functionality into namespaces such as [GEarthExtensionsDomReference GEarthExtensions.dom] and [GEarthExtensionsFxReference GEarthExtensions.fx].
+
 <wiki:toc max_depth="2" />
-
-
-
-
 
 ----
 =Class Constructor=
 
 ==GEarthExtensions(pluginInstance)==
-
-
-
-
 
 ===Example:===
 
@@ -26,12 +21,8 @@ gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
                          // functionality
 }}}
 
-
 ===Parameters:===
-
-  * *pluginInstance*   
-
-
+  * *pluginInstance* _{{{GEPlugin}}}_  The Google Earth Plugin instance to associate this [GEarthExtensionsReference GEarthExtensions] instance with.
 
 ----
 =Static Methods=
@@ -42,12 +33,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Determines whether or not the given object is directly an instance of the specified Earth API type.
 
-
 ===Parameters:===
-
   * *object* _{{{Object}}}_  The object to test.
   * *type* _{{{String}}}_  The Earth API type string, i.e. 'KmlPlacemark'
-
-
-
 

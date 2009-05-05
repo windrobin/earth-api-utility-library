@@ -1,16 +1,11 @@
 #labels Phase-Reference
 #summary GEarthExtensions.util Namespace Reference
+
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/__init__.js src/util/__init__.js]
+
 This class/namespace hybrid contains miscellaneous utility functions and shortcuts for the Earth API.
+
 <wiki:toc max_depth="2" />
-
-
-
-
-
-
-
-
 
 ----
 =Static Methods=
@@ -21,9 +16,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Executes the given function quickly using a Google Earth API callback hack. Future versions of this method may use other methods for batch execution.
 
-
 ===Parameters:===
-
   * *batchFn* _{{{Function}}}_  The function containing batch code to execute.
   * *context* _{{{Object}}}_ (Optional) Optional context parameter to pass to the function.
 
@@ -35,11 +28,9 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Calculates a simple composite of the two given colors.
 
-
 ===Parameters:===
-
-  * *color1* _{{{String}}}|{{{Number}}}[]_  The first ('source') color. Anthing that can be parsed with GEarthExtensions#util.parseColor.
-  * *color2* _{{{String}}}|{{{Number}}}[]_  The second ('destination') color. Anything that can be parsed with GEarthExtensions#util.parseColor.
+  * *color1* _{{{String}}}|{{{Number}}}`[``]`_  The first ('source') color. Anthing that can be parsed with [GEarthExtensionsUtilReference#parseColor(color,_opacity) GEarthExtensions#util.parseColor].
+  * *color2* _{{{String}}}|{{{Number}}}`[``]`_  The second ('destination') color. Anything that can be parsed with [GEarthExtensionsUtilReference#parseColor(color,_opacity) GEarthExtensions#util.parseColor].
   * *fraction* _{{{Number}}}_ (Optional, Default: 0.5) The amount of color2 to composite onto/blend with color1, as a fraction from 0.0 to 1.0.
 
 ----
@@ -50,9 +41,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Calls method on object with optional arguments. Arguments to pass to the method should be given in order after the 'method' argument.
 
-
 ===Parameters:===
-
   * *object* _{{{Object}}}_  The object to call the method on.
   * *method* _{{{String}}}_  The method to call.
 
@@ -64,9 +53,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Clears all JS-side data for the given KmlObject.
 
-
 ===Parameters:===
-
   * *object* _{{{KmlObject}}}_  The plugin object to clear data on.
 
 ----
@@ -77,9 +64,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Clears the JS-side data for the given KmlObject associated with the given key.
 
-
 ===Parameters:===
-
   * *object* _{{{KmlObject}}}_  The plugin object to clear data on.
   * *key* _{{{String}}}_  The JS data key whose value should be cleared.
 
@@ -91,10 +76,8 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Sets the current plugin viewport to the view represented by the given string.
 
-
 ===Parameters:===
-
-  * *viewString* _{{{String}}}_  The modified base64 alphabet string representing the view to fly to. This string should've previously been calculated using GEarthExtensions#util.serializeView.
+  * *viewString* _{{{String}}}_  The modified base64 alphabet string representing the view to fly to. This string should've previously been calculated using [GEarthExtensionsUtilReference#serializeView() GEarthExtensions#util.serializeView].
 
 ----
 
@@ -104,9 +87,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Simply loads and shows the given KML URL in the Google Earth Plugin instance.
 
-
 ===Parameters:===
-
   * *url* _{{{String}}}_  The URL of the KML content to show.
   * *options* _{{{Object}}}_ (Optional) KML display options.
     * *cacheBuster* _{{{Boolean}}}_ (Optional) Enforce freshly downloading the KML by introducing a cache-busting query parameter.
@@ -119,9 +100,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Simply loads and shows the given KML string in the Google Earth Plugin instance.
 
-
 ===Parameters:===
-
   * *str* _{{{String}}}_  The KML blob string to show.
   * *options* _{{{Object}}}_ (Optional) KML display options. There are currently no options.
 
@@ -133,18 +112,15 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Gets the current view as a KmlCamera.
 
-
 ===Parameters:===
-
   * *altitudeMode* _{{{Number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting camera should be in.
 
-===Returns:===
+===Type:===
 {{{KmlCamera}}}
 
+===Returns:===
 
 Returns the current view as a KmlCamera.
-
-
 
 ----
 
@@ -154,9 +130,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Gets the JS-side data for the given KmlObject associated with the given key.
 
-
 ===Parameters:===
-
   * *object* _{{{KmlObject}}}_  The plugin object to get data for.
   * *key* _{{{String}}}_  The JS data key to request.
 
@@ -168,18 +142,15 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Gets the current view as a KmlLookAt.
 
-
 ===Parameters:===
-
   * *altitudeMode* _{{{Number}}}_ (Optional, Default: ALTITUDE_ABSOLUTE) The altitude mode that the resulting LookAt should be in.
 
-===Returns:===
+===Type:===
 {{{KmlLookAt}}}
 
+===Returns:===
 
 Returns the current view as a KmlLookAt.
-
-
 
 ----
 
@@ -189,9 +160,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Returns whether or not the KmlObject has any JS-side data.
 
-
 ===Parameters:===
-
   * *object* _{{{KmlObject}}}_  The plugin object to inquire about.
 
 ----
@@ -200,8 +169,7 @@ Returns whether or not the KmlObject has any JS-side data.
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/shortcuts.js src/util/shortcuts.js]
 
-Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes the same parameters as GEarthExtensions#dom.buildLookAt.
-
+Creates a KmlLookAt and sets it as the Earth plugin's view. This function takes the same parameters as [GEarthExtensionsDomReference#buildLookAt(point,_options) GEarthExtensions#dom.buildLookAt].
 
 ----
 
@@ -211,19 +179,16 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Converts between various color formats, i.e. `#rrggbb`, to the KML color format (`aabbggrr`)
 
-
 ===Parameters:===
-
-  * *color* _{{{String}}}|{{{Number}}}[]_  The source color value.
+  * *color* _{{{String}}}|{{{Number}}}`[``]`_  The source color value.
   * *opacity* _{{{Number}}}_ (Optional) An optional opacity to go along with CSS/HTML style colors, from 0.0 to 1.0.
 
-===Returns:===
+===Type:===
 {{{String}}}
 
+===Returns:===
 
 _{{{String}}}_ A string in KML color format (`aabbggrr`), or null if the color could not be parsed.
-
-
 
 ----
 
@@ -233,20 +198,17 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Serializes the current plugin viewport into a modified base64 alphabet string. This method is platform and browser agnostic, and is safe to store and distribute to others.
 
-
-===Returns:===
+===Type:===
 {{{String}}}
 
+===Returns:===
 
 _{{{String}}}_ A string representing the current viewport.
 
-
-
 ===See:===
 
-{{{http://code.google.com/apis/maps/documentation/include/polyline.js
-    for inspiration.}}}
-
+http://code.google.com/apis/maps/documentation/include/polyline.js
+    for inspiration.
 
 ----
 
@@ -256,9 +218,7 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Sets the JS-side data for the given KmlObject associated with the given key to the passed in value.
 
-
 ===Parameters:===
-
   * *object* _{{{KmlObject}}}_  The object to get data for.
   * *key* _{{{String}}}_  The JS data key to set.
   * *value* _*_  The value to store for this key.
@@ -271,11 +231,6 @@ Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/tru
 
 Enables or disables full camera ownership mode, which sets fly to speed to teleport, disables user mouse interaction, and hides the navigation controls.
 
-
 ===Parameters:===
-
   * *enable* _{{{Boolean}}}_  Whether to enable or disable full camera ownership.
-
-
-
 

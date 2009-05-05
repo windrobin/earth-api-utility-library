@@ -166,6 +166,8 @@ GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
 
 /**
  * Stop this animation.
+ * @param {Boolean} [completed=true] Whether or not to call the completion
+ *     callback.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
