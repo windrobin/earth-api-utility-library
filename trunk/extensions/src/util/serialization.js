@@ -175,5 +175,5 @@ function test_encode_decode_camera() {
   assertWithinThresholdPercent(0.01, cam.roll, cam2.roll);
   
   // TODO: test extremes of camera parameters
-};
+}
 /***IGNORE_END***/

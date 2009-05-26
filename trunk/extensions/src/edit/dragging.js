@@ -171,7 +171,7 @@ limitations under the License.
     // create a mouse up listener for use once dragging has begun
     var mouseUpListener;
     mouseUpListener = function(event) {
-      if (currentDragContext_ && event.getButton() == 0) {
+      if (currentDragContext_ && event.getButton() === 0) {
         // remove listener for mousemove on the globe
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousemove', mouseMoveListener);
@@ -191,7 +191,7 @@ limitations under the License.
 
     // create a mouse down listener
     var mouseDownListener = function(event) {
-      if (event.getButton() == 0) {
+      if (event.getButton() === 0) {
         // TODO: check if getTarget() is draggable and is a placemark
         beginDragging_(me, event.getTarget(),
             event.getClientX(), event.getClientY());
@@ -277,7 +277,7 @@ limitations under the License.
     // create a mouse down listener
     var mouseDownListener;
     mouseDownListener = function(event) {
-      if (currentDragContext_ && event.getButton() == 0) {
+      if (currentDragContext_ && event.getButton() === 0) {
         event.preventDefault();
         event.stopPropagation();
         
@@ -357,7 +357,7 @@ function test_edit_Dragging(successCallback, errorCallback) {
     });
     
     // TODO: make sure drop callback was called
-  }
+  };
   
   google.earth.addEventListener(testplugin_.getView(), 'viewchangeend', vce);
   testext_.util.lookAt([0, 0], { tilt: 45, range: 100000 });

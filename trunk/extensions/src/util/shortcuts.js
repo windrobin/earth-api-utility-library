@@ -134,8 +134,9 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
 
   // strip out 'object' and 'method' arguments
   var args = [];
-  for (i = 2; i < arguments.length; i++)
+  for (i = 2; i < arguments.length; i++) {
     args.push(arguments[i]);
+  }
 
   if (typeof object[method] == 'function') {
     // most browsers, most object/method pairs
@@ -143,8 +144,9 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
   } else {
     // In the Earth API in Internet Explorer, typeof returns 'unknown'
     var reprArgs = [];
-    for (i = 0; i < args.length; i++)
+    for (i = 0; i < args.length; i++) {
       reprArgs.push('args[' + i + ']');
+    }
 
     return eval('object.' + method + '(' + reprArgs.join(',') + ')');
   }
@@ -178,8 +180,9 @@ function test_util_callMethod() {
  */
 GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
   if (enable || geo.util.isUndefined(enable)) {
-    if (this.cameraControlOldProps_)
+    if (this.cameraControlOldProps_) {
       return;
+    }
     
     this.cameraControlOldProps_ = {
       flyToSpeed: this.pluginInstance.getOptions().getFlyToSpeed(),
@@ -194,8 +197,9 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     this.pluginInstance.getNavigationControl().setVisibility(
         this.pluginInstance.VISIBILITY_HIDE);
   } else {
-    if (!this.cameraControlOldProps_)
+    if (!this.cameraControlOldProps_) {
       return;
+    }
     
     this.pluginInstance.getOptions().setFlyToSpeed(
         this.cameraControlOldProps_.flyToSpeed);
@@ -206,4 +210,4 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     
     delete this.cameraControlOldProps_;
   }
-}
+};
