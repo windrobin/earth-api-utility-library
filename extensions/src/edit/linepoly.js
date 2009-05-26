@@ -94,8 +94,9 @@ limitations under the License.
       placemarks = [];
       done = true;
 
-      if (options.finishCallback && !abort)
+      if (options.finishCallback && !abort) {
         options.finishCallback.call(null);
+      }
     };
     
     var finishListener = function(event) {
@@ -226,15 +227,18 @@ limitations under the License.
 
         // shift coordinates in the KmlCoordArray up
         // TODO: speed this up
-        for (i = coordData.index; i < numCoords - 1; i++)
+        for (i = coordData.index; i < numCoords - 1; i++) {
           coords.set(i, coords.get(i + 1));
+        }
+
         coords.pop();
 
         var leftCoordData = null;
         if (coordData.index > 0 || isRing) {
           var leftIndex = coordData.index - 1;
-          if (leftIndex < 0)
+          if (leftIndex < 0) {
             leftIndex += numCoords; // wrap
+          }
 
           leftCoordData = coordDataArr[leftIndex];
         }
@@ -243,7 +247,7 @@ limitations under the License.
 
         // at the end of the line and there's no right-mid placemark.
         // the previous-to-last point's mid point should be removed too.
-        if (coordData.rightMidPlacemark == null && leftCoordData) {
+        if (coordData.rightMidPlacemark === null && leftCoordData) {
           me.edit.endDraggable(leftCoordData.rightMidPlacemark);
           me.dom.removeObject(leftCoordData.rightMidPlacemark);
           leftCoordData.rightMidPlacemark = null;
@@ -276,8 +280,9 @@ limitations under the License.
               leftCoordData.regularPlacemark, leftCoordData);
         }
         
-        if (options.editCallback)
+        if (options.editCallback) {
           options.editCallback(null);
+        }
       };
     };
 
@@ -293,8 +298,9 @@ limitations under the License.
 
         if (coordData.index > 0 || isRing) {
           var leftIndex = coordData.index - 1;
-          if (leftIndex < 0)
+          if (leftIndex < 0) {
             leftIndex += numCoords; // wrap
+          }
           
           var leftMidPt = new geo.Point(coords.get(leftIndex)).midpoint(
               new geo.Point(curCoord));
@@ -313,8 +319,9 @@ limitations under the License.
               rightMidPt.lng());
         }
         
-        if (options.editCallback)
+        if (options.editCallback) {
           options.editCallback(null);
+        }
       };
     };
 
@@ -336,8 +343,9 @@ limitations under the License.
           // shift coordinates in the KmlCoordArray down
           // TODO: speed this up
           coords.push(coords.get(numCoords - 1));
-          for (i = numCoords - 1; i > coordData.index + 1; i--)
+          for (i = numCoords - 1; i > coordData.index + 1; i--) {
             coords.set(i, coords.get(i - 1));
+          }
 
           numCoords++;
 

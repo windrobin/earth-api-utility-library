@@ -65,8 +65,9 @@ limitations under the License.
   function getJsTag_(object) {
     // TODO: use unique id from Earth API
     for (var tag in jsData_) {
-      if (jsData_[tag].object.equals(object))
+      if (jsData_[tag].object.equals(object)) {
         return tag;
+      }
     }
 
     return null;

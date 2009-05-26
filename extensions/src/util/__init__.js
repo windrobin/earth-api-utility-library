@@ -22,4 +22,4 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 
 GEarthExtensions.prototype.util.areScreenOverlayXYSwapped_ = function() {
   return this.pluginInstance.getApiVersion() < '1.003';
-}
+};
