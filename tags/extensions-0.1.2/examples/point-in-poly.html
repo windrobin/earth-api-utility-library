@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>GEarthExtensions Samples - point in poly</title>
+  <script src="http://www.google.com/jsapi?key=ABQIAAAAsc0UQXoo2BnAJLhtpWCJFBTgHOxFyKCf35LCvsI_n4URElrkIhS9MkSlm_0NZWgrKFkOsnd5rEK0Lg" type="text/javascript"></script>
+  <script src="../dist/extensions.js" type="text/javascript"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+
+var ge = null;
+var gex = null;
+var placemark = null;
+
+google.load('earth', '1');
+
+google.setOnLoadCallback(function() {
+  google.earth.createInstance('map3d', function(pluginInstance) {
+    ge = pluginInstance;
+    ge.getWindow().setVisibility(true);
+    
+    gex = new GEarthExtensions(pluginInstance);
+    
+    var pts = [[0,0], [37,-122], [-60, -50], [0,0]];
+
+    var offStyle = gex.dom.buildStyle({
+      poly: '#f00'
+    });
+
+    var onStyle = gex.dom.buildStyle({
+      id: 'onPoly',
+      poly: '#00f'
+    });
+    
+    placemark = gex.dom.addPolygonPlacemark(pts, { style: '#offPoly' });
+    
+    google.earth.addEventListener(ge.getGlobe(), 'mousemove', function(evt) {
+      var poly = new geo.Polygon(pts);
+      var contains = poly.containsPoint(
+          new geo.Point(evt.getLatitude(), evt.getLongitude()));
+      placemark.setStyleSelector(contains ? onStyle : offStyle);
+    });
+    
+    gex.util.lookAt([40, -100], { range: 5000000 });
+
+  }, function() {});
+});
+
+
+/* ]]> */
+</script>
+</head>
+<body>
+  <div id="map3d_container" style="width: 500px; height: 500px;">
+    <div id="map3d" style="height: 100%"></div>
+  </div>
+</body>
+</html>
