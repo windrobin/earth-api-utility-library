@@ -465,6 +465,7 @@ geo.math.heading = function(start, dest) {
 };
 
 /**
+ * @function
  * @param {geo.Point} start
  * @param {geo.Point} dest
  * @return {Number}
@@ -3155,7 +3156,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     // create a mouse up listener for use once dragging has begun
     var mouseUpListener;
     mouseUpListener = function(event) {
-      if (currentDragContext_ && event.getButton() == 0) {
+      if (currentDragContext_ && event.getButton() === 0) {
         // remove listener for mousemove on the globe
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousemove', mouseMoveListener);
@@ -3175,7 +3176,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     // create a mouse down listener
     var mouseDownListener = function(event) {
-      if (event.getButton() == 0) {
+      if (event.getButton() === 0) {
         // TODO: check if getTarget() is draggable and is a placemark
         beginDragging_(me, event.getTarget(),
             event.getClientX(), event.getClientY());
@@ -3261,7 +3262,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     // create a mouse down listener
     var mouseDownListener;
     mouseDownListener = function(event) {
-      if (currentDragContext_ && event.getButton() == 0) {
+      if (currentDragContext_ && event.getButton() === 0) {
         event.preventDefault();
         event.stopPropagation();
         
@@ -3389,8 +3390,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       placemarks = [];
       done = true;
 
-      if (options.finishCallback && !abort)
+      if (options.finishCallback && !abort) {
         options.finishCallback.call(null);
+      }
     };
     
     var finishListener = function(event) {
@@ -3521,15 +3523,18 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
         // shift coordinates in the KmlCoordArray up
         // TODO: speed this up
-        for (i = coordData.index; i < numCoords - 1; i++)
+        for (i = coordData.index; i < numCoords - 1; i++) {
           coords.set(i, coords.get(i + 1));
+        }
+
         coords.pop();
 
         var leftCoordData = null;
         if (coordData.index > 0 || isRing) {
           var leftIndex = coordData.index - 1;
-          if (leftIndex < 0)
+          if (leftIndex < 0) {
             leftIndex += numCoords; // wrap
+          }
 
           leftCoordData = coordDataArr[leftIndex];
         }
@@ -3538,7 +3543,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
         // at the end of the line and there's no right-mid placemark.
         // the previous-to-last point's mid point should be removed too.
-        if (coordData.rightMidPlacemark == null && leftCoordData) {
+        if (coordData.rightMidPlacemark === null && leftCoordData) {
           me.edit.endDraggable(leftCoordData.rightMidPlacemark);
           me.dom.removeObject(leftCoordData.rightMidPlacemark);
           leftCoordData.rightMidPlacemark = null;
@@ -3571,8 +3576,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
               leftCoordData.regularPlacemark, leftCoordData);
         }
         
-        if (options.editCallback)
+        if (options.editCallback) {
           options.editCallback(null);
+        }
       };
     };
 
@@ -3588,8 +3594,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
         if (coordData.index > 0 || isRing) {
           var leftIndex = coordData.index - 1;
-          if (leftIndex < 0)
+          if (leftIndex < 0) {
             leftIndex += numCoords; // wrap
+          }
           
           var leftMidPt = new geo.Point(coords.get(leftIndex)).midpoint(
               new geo.Point(curCoord));
@@ -3608,8 +3615,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
               rightMidPt.lng());
         }
         
-        if (options.editCallback)
+        if (options.editCallback) {
           options.editCallback(null);
+        }
       };
     };
 
@@ -3631,8 +3639,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           // shift coordinates in the KmlCoordArray down
           // TODO: speed this up
           coords.push(coords.get(numCoords - 1));
-          for (i = numCoords - 1; i > coordData.index + 1; i--)
+          for (i = numCoords - 1; i > coordData.index + 1; i--) {
             coords.set(i, coords.get(i - 1));
+          }
 
           numCoords++;
 
@@ -4141,6 +4150,23 @@ GEarthExtensions.prototype.fx.rewind = function(feature) {
 
 /**
  * Animate a numeric property on a plugin object.
+ * @param {KmlObject} object The plugin object whose property to animate.
+ * @param {String} property The property to animate. This should match 1:1 to
+ *     the getter/setter methods on the plugin object. For example, to animate
+ *     a KmlPoint latitude, pass in `latitude`, since the getter/setters are
+ *     `getLatitude` and `setLatitude`.
+ * @param {Object} options The property animation options.
+ * @param {Number} [options.duration=500] The duration, in milliseconds, of the
+ *     animation.
+ * @param {Number} [options.start] The value of the property to set at the
+ *     start of the animation.
+ * @param {Number} [options.end] The desired end value of the property.
+ * @param {Number} [options.delta] If end is not specified, you may set this
+ *     to the desired change in the property value.
+ * @param {String|Function} [options.easing='none'] The easing function to use
+ *     during the animation. Valid values are 'none', 'in', 'out', or 'both'.
+ *     Alternatively, an easy function mapping `[0.0, 1.0] -> [0.0, 1.0]` can
+ *     be specified. No easing is `f(x) = x`.
  */
 GEarthExtensions.prototype.fx.animateProperty =
 function(obj, property, options) {
@@ -4262,7 +4288,7 @@ GEarthExtensions.prototype.util = {isnamespace_:true};
 
 GEarthExtensions.prototype.util.areScreenOverlayXYSwapped_ = function() {
   return this.pluginInstance.getApiVersion() < '1.003';
-}
+};
 GEarthExtensions.NAMED_COLORS = {
   'aqua': 'ffffff00',
   'black': 'ff000000',
@@ -4433,8 +4459,9 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
   function getJsTag_(object) {
     // TODO: use unique id from Earth API
     for (var tag in jsData_) {
-      if (jsData_[tag].object.equals(object))
+      if (jsData_[tag].object.equals(object)) {
         return tag;
+      }
     }
 
     return null;
@@ -4766,8 +4793,9 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
 
   // strip out 'object' and 'method' arguments
   var args = [];
-  for (i = 2; i < arguments.length; i++)
+  for (i = 2; i < arguments.length; i++) {
     args.push(arguments[i]);
+  }
 
   if (typeof object[method] == 'function') {
     // most browsers, most object/method pairs
@@ -4775,8 +4803,9 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
   } else {
     // In the Earth API in Internet Explorer, typeof returns 'unknown'
     var reprArgs = [];
-    for (i = 0; i < args.length; i++)
+    for (i = 0; i < args.length; i++) {
       reprArgs.push('args[' + i + ']');
+    }
 
     return eval('object.' + method + '(' + reprArgs.join(',') + ')');
   }
@@ -4790,8 +4819,9 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
  */
 GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
   if (enable || geo.util.isUndefined(enable)) {
-    if (this.cameraControlOldProps_)
+    if (this.cameraControlOldProps_) {
       return;
+    }
     
     this.cameraControlOldProps_ = {
       flyToSpeed: this.pluginInstance.getOptions().getFlyToSpeed(),
@@ -4806,8 +4836,9 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     this.pluginInstance.getNavigationControl().setVisibility(
         this.pluginInstance.VISIBILITY_HIDE);
   } else {
-    if (!this.cameraControlOldProps_)
+    if (!this.cameraControlOldProps_) {
       return;
+    }
     
     this.pluginInstance.getOptions().setFlyToSpeed(
         this.cameraControlOldProps_.flyToSpeed);
@@ -4818,4 +4849,4 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     
     delete this.cameraControlOldProps_;
   }
-}
+};
