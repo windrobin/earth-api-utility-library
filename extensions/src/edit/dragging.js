@@ -76,10 +76,10 @@ limitations under the License.
 
         // move 'target' screen overlay
         if (currentDragContext_.activeTargetScreenOverlay) {
+          // NOTE: overlayXY but we really are setting the screenXY due to
+          // the two being swapped in the Earth API
           extInstance.dom.setVec2(
-              extInstance.util.areScreenOverlayXYSwapped_() ?
-                currentDragContext_.activeTargetScreenOverlay.getOverlayXY() :
-                currentDragContext_.activeTargetScreenOverlay.getScreenXY(),
+              currentDragContext_.activeTargetScreenOverlay.getOverlayXY(),
               { left: event.getClientX(), top: event.getClientY() });
         }
 

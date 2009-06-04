@@ -538,11 +538,15 @@ function test_dom_buildGroundOverlay() {
  *     that will be placed at the given screenXY point and potentially
  *     rotated about. This object will be passed to
  *     GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
+ *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
+ *     whereas in the Earth API overlayXY and screenXY are swapped.
  * @param {Vec2Src} [options.screenXY] The position in the plugin window
  *     that the screen overlay should appear at. This object will
- *     be passed to GEarthExtensions#dom.setVec2
+ *     be passed to GEarthExtensions#dom.setVec2.
+ *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
+ *     whereas in the Earth API overlayXY and screenXY are swapped.
  * @param {Vec2Src} [options.size] The size of the overlay. This object will
- *     be passed to GEarthExtensions#dom.setVec2
+ *     be passed to GEarthExtensions#dom.setVec2.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     ground overlay.
  * @param {Number} [options.rotation] The rotation of the overlay, in degrees.
@@ -567,14 +571,9 @@ GEarthExtensions.domBuilder_({
     rotationXY: GEarthExtensions.ALLOWED
   },
   constructor: function(screenOverlayObj, options) {
-    if (this.util.areScreenOverlayXYSwapped_()) { // Earth API bug
-      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
-      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
-    } else {
-      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
-      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
-    }
-    
+    // NOTE: un-swapped overlayXY and screenXY.
+    this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
+    this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
     this.dom.setVec2(screenOverlayObj.getSize(), options.size);
 
     if ('rotationXY' in options) {
