@@ -1980,11 +1980,15 @@ GEarthExtensions.domBuilder_({
  *     that will be placed at the given screenXY point and potentially
  *     rotated about. This object will be passed to
  *     GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
+ *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
+ *     whereas in the Earth API overlayXY and screenXY are swapped.
  * @param {Vec2Src} [options.screenXY] The position in the plugin window
  *     that the screen overlay should appear at. This object will
- *     be passed to GEarthExtensions#dom.setVec2
+ *     be passed to GEarthExtensions#dom.setVec2.
+ *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
+ *     whereas in the Earth API overlayXY and screenXY are swapped.
  * @param {Vec2Src} [options.size] The size of the overlay. This object will
- *     be passed to GEarthExtensions#dom.setVec2
+ *     be passed to GEarthExtensions#dom.setVec2.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     ground overlay.
  * @param {Number} [options.rotation] The rotation of the overlay, in degrees.
@@ -2009,14 +2013,9 @@ GEarthExtensions.domBuilder_({
     rotationXY: GEarthExtensions.ALLOWED
   },
   constructor: function(screenOverlayObj, options) {
-    if (this.util.areScreenOverlayXYSwapped_()) { // Earth API bug
-      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
-      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
-    } else {
-      this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.overlayXY);
-      this.dom.setVec2(screenOverlayObj.getScreenXY(), options.screenXY);
-    }
-    
+    // NOTE: un-swapped overlayXY and screenXY.
+    this.dom.setVec2(screenOverlayObj.getScreenXY(), options.overlayXY);
+    this.dom.setVec2(screenOverlayObj.getOverlayXY(), options.screenXY);
     this.dom.setVec2(screenOverlayObj.getSize(), options.size);
 
     if ('rotationXY' in options) {
@@ -3061,10 +3060,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
         // move 'target' screen overlay
         if (currentDragContext_.activeTargetScreenOverlay) {
+          // NOTE: overlayXY but we really are setting the screenXY due to
+          // the two being swapped in the Earth API
           extInstance.dom.setVec2(
-              extInstance.util.areScreenOverlayXYSwapped_() ?
-                currentDragContext_.activeTargetScreenOverlay.getOverlayXY() :
-                currentDragContext_.activeTargetScreenOverlay.getScreenXY(),
+              currentDragContext_.activeTargetScreenOverlay.getOverlayXY(),
               { left: event.getClientX(), top: event.getClientY() });
         }
 
@@ -3313,6 +3312,12 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
   var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
 
+  function coordsEqual_(coord1, coord2) {
+    return coord1.getLatitude() ==  coord2.getLatitude() &&
+           coord1.getLongitude() == coord2.getLongitude() &&
+           coord1.getAltitude() == coord2.getAltitude();
+  }
+  
   /**
    * Enters a mode in which the user can draw the given line string geometry
    * on the globe by clicking on the globe to create coordinates.
@@ -3372,15 +3377,13 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     var endFunction = function(abort) {
       // duplicate the first coordinate to the end if necessary
       var numCoords = coords.getLength();
-      if (numCoords) {
-        var tempFirstCoord_ = coords.get(0);
-        var tempLastCoord_ = coords.get(numCoords - 1);
-        if (isRing && (
-            tempFirstCoord_.getLatitude() != tempLastCoord_.getLatitude() ||
-            tempFirstCoord_.getLongitude() != tempLastCoord_.getLongitude())) {
-          coords.pushLatLngAlt(tempFirstCoord_.getLatitude(),
-                               tempFirstCoord_.getLongitude(),
-                               tempFirstCoord_.getAltitude());
+      if (numCoords && isRing) {
+        var firstCoord = coords.get(0);
+        var lastCoord = coords.get(numCoords - 1);
+        if (!coordsEqual_(firstCoord, lastCoord)) {
+          coords.pushLatLngAlt(firstCoord.getLatitude(),
+                               firstCoord.getLongitude(),
+                               firstCoord.getAltitude());
         }
       }
 
@@ -3415,7 +3418,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           if (!done) {
             coords.pushLatLngAlt(
                 headPlacemark.getGeometry().getLatitude(),
-                headPlacemark.getGeometry().getLongitude(), 0);
+                headPlacemark.getGeometry().getLongitude(),
+                0); // don't use altitude because of bounce
 
             if (placemarks.length == 1) {
               // set up a click listener on the first placemark -- if it gets
@@ -3449,7 +3453,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     });
   };
   // TODO: interactive test
-
+  
   /**
    * Allows the user to edit the coordinates of the given line string by
    * dragging existing points, splitting path segments/creating new points or
@@ -3478,7 +3482,23 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     var isRing = (lineString.getType() == 'KmlLinearRing');
     var altitudeMode = lineString.getAltitudeMode();
     var coords = lineString.getCoordinates();
+    
+    // number of total coords, including any repeat first coord in the case of
+    // linear rings
     var numCoords = coords.getLength();
+    
+    // if the first coordinate isn't repeated at the end and we're editing
+    // a linear ring, repeat it
+    if (numCoords && isRing) {
+      var firstCoord = coords.get(0);
+      var lastCoord = coords.get(numCoords - 1);
+      if (!coordsEqual_(firstCoord, lastCoord)) {
+        coords.pushLatLngAlt(firstCoord.getLatitude(),
+                             firstCoord.getLongitude(),
+                             firstCoord.getAltitude());
+        numCoords++;
+      }
+    }
 
     var innerDoc = this.pluginInstance.parseKml(
         '<Document>' +
@@ -3500,20 +3520,6 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     // TODO: options: icon for placemarks
     // TODO: it may be easier to use a linked list for all this
-    
-    // remove the last coordinate temporarily if it's the same as the first
-    // coord, for editing convenience
-    if (numCoords >= 2) {
-      var tempFirstCoord_ = coords.get(0);
-      var tempLastCoord_ = coords.get(numCoords - 1);
-      if (isRing &&
-          tempFirstCoord_.getLatitude() == tempLastCoord_.getLatitude() &&
-          tempFirstCoord_.getLongitude() == tempLastCoord_.getLongitude() &&
-          tempFirstCoord_.getAltitude() == tempLastCoord_.getAltitude()) {
-        coords.pop();
-        numCoords--;
-      }
-    }
 
     var coordDataArr = [];
 
@@ -3521,35 +3527,48 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       return function(event) {
         event.preventDefault();
 
-        // shift coordinates in the KmlCoordArray up
-        // TODO: speed this up
-        for (i = coordData.index; i < numCoords - 1; i++) {
-          coords.set(i, coords.get(i + 1));
-        }
-
-        coords.pop();
-
+        // get the coord info of the left coordinate, as we'll need to
+        // update its midpoint placemark
         var leftCoordData = null;
         if (coordData.index > 0 || isRing) {
           var leftIndex = coordData.index - 1;
           if (leftIndex < 0) {
             leftIndex += numCoords; // wrap
           }
+          
+          if (isRing && coordData.index === 0) {
+            // skip repeated coord at the end
+            leftIndex--;
+          }
 
           leftCoordData = coordDataArr[leftIndex];
         }
 
+        // shift coordinates in the KmlCoordArray up
+        // TODO: speed this up
+        for (i = coordData.index; i < numCoords - 1; i++) {
+          coords.set(i, coords.get(i + 1));
+        }
+        
+        coords.pop();
+
+        // user removed first coord, make the last coord equivalent
+        // to the new first coord (previously 2nd coord)
+        if (isRing && coordData.index === 0) {
+          coords.set(numCoords - 2, coords.get(0));
+        }
+        
         numCoords--;
 
         // at the end of the line and there's no right-mid placemark.
         // the previous-to-last point's mid point should be removed too.
-        if (coordData.rightMidPlacemark === null && leftCoordData) {
+        if (!coordData.rightMidPlacemark && leftCoordData) {
           me.edit.endDraggable(leftCoordData.rightMidPlacemark);
           me.dom.removeObject(leftCoordData.rightMidPlacemark);
           leftCoordData.rightMidPlacemark = null;
         }
 
-        // teardown mid placemark
+        // tear down mid placemark
         if (coordData.rightMidPlacemark) {
           me.edit.endDraggable(coordData.rightMidPlacemark);
           me.dom.removeObject(coordData.rightMidPlacemark);
@@ -3587,7 +3606,25 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         // update this coordinate
         coords.setLatLngAlt(coordData.index,
             this.getGeometry().getLatitude(),
-            this.getGeometry().getLongitude(), 0);
+            this.getGeometry().getLongitude(),
+            this.getGeometry().getAltitude());
+        
+        // if we're editing a ring and the first and last coords are the same,
+        // keep them in sync
+        if (isRing && numCoords >= 2 && coordData.index === 0) {
+          var firstCoord = coords.get(0);
+          var lastCoord = coords.get(numCoords - 1);
+          
+          // update both first and last coordinates
+          coords.setLatLngAlt(0,
+              this.getGeometry().getLatitude(),
+              this.getGeometry().getLongitude(),
+              this.getGeometry().getAltitude());
+          coords.setLatLngAlt(numCoords - 1,
+              this.getGeometry().getLatitude(),
+              this.getGeometry().getLongitude(),
+              this.getGeometry().getAltitude());
+        }
 
         // update midpoint placemarks
         var curCoord = coords.get(coordData.index);
@@ -3598,21 +3635,38 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
             leftIndex += numCoords; // wrap
           }
           
+          if (isRing && coordData.index === 0) {
+            // skip repeated coord at the end
+            leftIndex--;
+          }
+          
           var leftMidPt = new geo.Point(coords.get(leftIndex)).midpoint(
               new geo.Point(curCoord));
           coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLatitude(
               leftMidPt.lat());
           coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLongitude(
               leftMidPt.lng());
+          coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setAltitude(
+              leftMidPt.altitude());
         }
 
         if (coordData.index < numCoords - 1 || isRing) {
+          var rightCoord;
+          if ((isRing && coordData.index == numCoords - 2) ||
+              (!isRing && coordData.index == numCoords - 1)) {
+            rightCoord = coords.get(0);
+          } else {
+            rightCoord = coords.get(coordData.index + 1);
+          }
+          
           var rightMidPt = new geo.Point(curCoord).midpoint(
-              new geo.Point(coords.get((coordData.index + 1) % numCoords)));
+              new geo.Point(rightCoord));
           coordData.rightMidPlacemark.getGeometry().setLatitude(
               rightMidPt.lat());
           coordData.rightMidPlacemark.getGeometry().setLongitude(
               rightMidPt.lng());
+          coordData.rightMidPlacemark.getGeometry().setAltitude(
+              rightMidPt.altitude());
         }
         
         if (options.editCallback) {
@@ -3690,10 +3744,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           // insert the new coordData
           coordDataArr.splice(newCoordData.index, 0, newCoordData);
 
-          // update all placemark drag callbacks after this newly inserted
+          // update all placemark indices after this newly inserted
           // coordinate, because indices have changed
-          // NOTE: the old draggable callbacks are replaced with these
-          // calls to makeDraggable
           for (i = 0; i < numCoords; i++) {
             coordDataArr[i].index = i;
           }
@@ -3706,8 +3758,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       };
     };
 
+    // create the vertex editing (regular and midpoint) placemarks
     me.util.batchExecute(function() {
-      // create the edit placemarks
       for (var i = 0; i < numCoords; i++) {
         var curCoord = coords.get(i);
         var nextCoord = coords.get((i + 1) % numCoords);
@@ -3716,6 +3768,11 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         coordDataArr.push(coordData);
         coordData.index = i;
 
+        if (isRing && i == numCoords - 1) {
+          // this is a repeat of the first coord, don't make placemarks for it
+          continue;
+        }
+        
         // create the regular placemark on the point
         coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
           altitudeMode: altitudeMode,
@@ -3765,20 +3822,21 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         me.util.batchExecute(function() {
           // duplicate the first coordinate to the end if necessary
           var numCoords = coords.getLength();
-          if (numCoords) {
-            var tempFirstCoord_ = coords.get(0);
-            var tempLastCoord_ = coords.get(numCoords - 1);
-            if (isRing && (
-                tempFirstCoord_.getLatitude() != tempLastCoord_.getLatitude() ||
-                tempFirstCoord_.getLongitude() != tempLastCoord_.getLongitude()
-                )) {
-              coords.pushLatLngAlt(tempFirstCoord_.getLatitude(),
-                                   tempFirstCoord_.getLongitude(),
-                                   tempFirstCoord_.getAltitude());
+          if (numCoords && isRing) {
+            var firstCoord = coords.get(0);
+            var lastCoord = coords.get(numCoords - 1);
+            if (!coordsEqual_(firstCoord, lastCoord)) {
+              coords.pushLatLngAlt(firstCoord.getLatitude(),
+                                   firstCoord.getLongitude(),
+                                   firstCoord.getAltitude());
             }
           }
           
           for (var i = 0; i < coordDataArr.length; i++) {
+            if (!coordDataArr[i].regularPlacemark) {
+              continue;
+            }
+            
             // teardown for regular placemark, its delete event listener
             // and its right-mid placemark
             google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
@@ -4285,10 +4343,6 @@ function(obj, property, options) {
  * @namespace
  */
 GEarthExtensions.prototype.util = {isnamespace_:true};
-
-GEarthExtensions.prototype.util.areScreenOverlayXYSwapped_ = function() {
-  return this.pluginInstance.getApiVersion() < '1.003';
-};
 GEarthExtensions.NAMED_COLORS = {
   'aqua': 'ffffff00',
   'black': 'ff000000',
