@@ -87,6 +87,9 @@ limitations under the License.
         var point = currentDragContext_.placemark.getGeometry();
         point.setLatitude(event.getLatitude());
         point.setLongitude(event.getLongitude());
+        
+        // show the placemark
+        currentDragContext_.placemark.setVisibility(true);
 
         if (currentDragContext_.draggableOptions.dragCallback) {
           currentDragContext_.draggableOptions.dragCallback.call(
@@ -273,6 +276,9 @@ limitations under the License.
 
     // create a mouse move listener
     var mouseMoveListener = makeMouseMoveListener_(me);
+    
+    // hide the placemark initially
+    placemark.setVisibility(false);
 
     // create a mouse down listener
     var mouseDownListener;

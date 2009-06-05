@@ -3071,6 +3071,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         var point = currentDragContext_.placemark.getGeometry();
         point.setLatitude(event.getLatitude());
         point.setLongitude(event.getLongitude());
+        
+        // show the placemark
+        currentDragContext_.placemark.setVisibility(true);
 
         if (currentDragContext_.draggableOptions.dragCallback) {
           currentDragContext_.draggableOptions.dragCallback.call(
@@ -3257,6 +3260,9 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     // create a mouse move listener
     var mouseMoveListener = makeMouseMoveListener_(me);
+    
+    // hide the placemark initially
+    placemark.setVisibility(false);
 
     // create a mouse down listener
     var mouseDownListener;
@@ -3328,6 +3334,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
    * @param {Object} [options] The edit options.
    * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
    *     while drawing coordinates.
+   * @param {Function} drawCallback A callback to fire when new vertices are
+   *     drawn.
    * @param {Function} finishCallback A callback to fire when drawing is
    *     successfully completed (via double click or by clicking on the first
    *     coordinate again).
@@ -3336,6 +3344,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
       bounce: true,
+      drawCallback: GEarthExtensions.ALLOWED,
       finishCallback: GEarthExtensions.ALLOWED
     });
     
@@ -3407,7 +3416,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     drawNext = function() {
       headPlacemark = me.dom.buildPointPlacemark([0, 0], {
         altitudeMode: altitudeMode,
-        style: '#_GEarthExtensions_regularCoordinate'
+        style: '#_GEarthExtensions_regularCoordinate',
+        visibility: false  // start out invisible
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
       placemarks.push(headPlacemark);
@@ -3420,6 +3430,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
                 headPlacemark.getGeometry().getLatitude(),
                 headPlacemark.getGeometry().getLongitude(),
                 0); // don't use altitude because of bounce
+                
+            if (options.drawCallback) {
+              options.drawCallback.call(null);
+            }
 
             if (placemarks.length == 1) {
               // set up a click listener on the first placemark -- if it gets

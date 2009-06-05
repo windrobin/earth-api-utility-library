@@ -33,6 +33,8 @@ limitations under the License.
    * @param {Object} [options] The edit options.
    * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
    *     while drawing coordinates.
+   * @param {Function} drawCallback A callback to fire when new vertices are
+   *     drawn.
    * @param {Function} finishCallback A callback to fire when drawing is
    *     successfully completed (via double click or by clicking on the first
    *     coordinate again).
@@ -41,6 +43,7 @@ limitations under the License.
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
       bounce: true,
+      drawCallback: GEarthExtensions.ALLOWED,
       finishCallback: GEarthExtensions.ALLOWED
     });
     
@@ -112,7 +115,8 @@ limitations under the License.
     drawNext = function() {
       headPlacemark = me.dom.buildPointPlacemark([0, 0], {
         altitudeMode: altitudeMode,
-        style: '#_GEarthExtensions_regularCoordinate'
+        style: '#_GEarthExtensions_regularCoordinate',
+        visibility: false  // start out invisible
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
       placemarks.push(headPlacemark);
@@ -125,6 +129,10 @@ limitations under the License.
                 headPlacemark.getGeometry().getLatitude(),
                 headPlacemark.getGeometry().getLongitude(),
                 0); // don't use altitude because of bounce
+                
+            if (options.drawCallback) {
+              options.drawCallback.call(null);
+            }
 
             if (placemarks.length == 1) {
               // set up a click listener on the first placemark -- if it gets
