@@ -69,9 +69,10 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
 
   // TODO: option to choose network link or fetchKml
   
-  google.earth.fetchKml(this.pluginInstance, url, function(kmlObject) {
+  var me = this;
+  google.earth.fetchKml(me.pluginInstance, url, function(kmlObject) {
     if (kmlObject) {
-      this.pluginInstance.getFeatures().appendChild(kmlObject);
+      me.pluginInstance.getFeatures().appendChild(kmlObject);
     }
   });
 };

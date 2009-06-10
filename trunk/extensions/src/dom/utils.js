@@ -250,7 +250,13 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
 GEarthExtensions.prototype.dom.removeObject = function(object) {
   // TODO: make sure this removes the feature from its parent, which may not
   // necessarily be the root feature container
+  if (!object)
+    return;
+
   var parent = object.getParentNode();
+  if (!parent)
+    throw new Error('Cannot remove an object without a parent.');
+
   var objectContainer = null; // GESchemaObjectContainer
   
   if ('getFeatures' in parent) { // GEFeatureContainer
