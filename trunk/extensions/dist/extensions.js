@@ -580,14 +580,7 @@ geo.Path = function() {
     
     // array constructor
     } else if (geo.util.isArray(path)) {
-      // check if it's an array of numbers (not array of arrays)
-      if (!path.length || geo.util.isArray(path[0])) {
-        // an array of arrays (i.e. an array of points)
-        coordArraySrc = path;
-      } else {
-        // a single-coord array
-        coordArraySrc = [path];
-      }
+      coordArraySrc = path;
     
     // construct from Earth API object
     } else if (geo.util.isEarthAPIObject_(path)) {
