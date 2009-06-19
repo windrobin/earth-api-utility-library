@@ -2747,7 +2747,7 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
     features: true,
     geometries: true,
     visitCallback: function() {
-      if (this.getId() == id) {
+      if ('getId' in this && this.getId() == id) {
         returnObject = this;
         return false; // stop walk
       }
