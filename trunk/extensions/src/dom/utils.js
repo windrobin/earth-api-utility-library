@@ -254,8 +254,9 @@ GEarthExtensions.prototype.dom.removeObject = function(object) {
     return;
 
   var parent = object.getParentNode();
-  if (!parent)
+  if (!parent) {
     throw new Error('Cannot remove an object without a parent.');
+  }
 
   var objectContainer = null; // GESchemaObjectContainer
   

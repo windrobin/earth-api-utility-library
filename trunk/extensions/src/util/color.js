@@ -54,7 +54,7 @@ GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
     return pad2_(((arg.length >= 4) ? arg[3].toString(16) : 'ff')) +
            pad2_(arg[2].toString(16)) +
            pad2_(arg[1].toString(16)) +
-           pad2_(arg[0].toString());
+           pad2_(arg[0].toString(16));
   } else if (typeof arg == 'string') {
     // parsing a string
     if (arg.toLowerCase() in GEarthExtensions.NAMED_COLORS) {
@@ -98,6 +98,7 @@ function test_util_parseColor() {
   assertEquals('ff000000', testext_.util.parseColor([0, 0, 0]));
   assertEquals('ffff8000', testext_.util.parseColor([0, 128, 255]));
   assertEquals('80ff8000', testext_.util.parseColor([0, 128, 255, 128]));
+  assertEquals('ffffffff', testext_.util.parseColor([255, 255, 255, 255]));
   assertEquals('ffff8800', testext_.util.parseColor('#0088FF'));
   assertEquals('ffff8800', testext_.util.parseColor('0088FF'));
   assertEquals('ffccbbaa', testext_.util.parseColor('#abc'));
