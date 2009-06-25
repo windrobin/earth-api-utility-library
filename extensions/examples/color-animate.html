@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>GEarthExtensions Samples - Animating a color</title>
+  <script src="http://www.google.com/jsapi?key=ABQIAAAAsc0UQXoo2BnAJLhtpWCJFBTgHOxFyKCf35LCvsI_n4URElrkIhS9MkSlm_0NZWgrKFkOsnd5rEK0Lg" type="text/javascript"></script>
+  <script src="../dist/extensions.js" type="text/javascript"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+
+var ge = null;
+var gex = null;
+var placemark = null;
+
+google.load('earth', '1');
+
+google.setOnLoadCallback(function() {
+  google.earth.createInstance('map3d', function(pluginInstance) {
+    ge = pluginInstance;
+    ge.getWindow().setVisibility(true);
+    
+    gex = new GEarthExtensions(pluginInstance);
+    
+    placemark = gex.dom.addPointPlacemark([37, -122], {
+      name: 'Hello there!',
+      stockIcon: 'paddle/wht-blank'
+    });
+    
+    gex.util.lookAt([37, -122]);
+    
+  }, function() {});
+});
+
+
+/* ]]> */
+</script>
+</head>
+<body>
+  <div id="map3d_container" style="width: 500px; height: 500px;">
+    <div id="map3d" style="height: 100%"></div>
+  </div>
+<textarea id="code" style="font-family: monospace; width: 500px; height: 200px;">
+// this is a fake bounce using animateProperty
+// one could also build a 'bounce' using
+// gex.fx.TimedAnimation
+var iconStyle = placemark.getStyleSelector().getIconStyle();
+gex.fx.animateProperty(iconStyle, 'color', {
+  duration: 1000,
+  start: 'black',
+  end: 'red', // could also use delta
+  easing: 'out',
+  callback: function() {
+    gex.fx.animateProperty(iconStyle, 'color', {
+      duration: 1000,
+      end: [255, 255, 255, 128], // could also use delta
+      easing: 'in'
+    });
+  }
+});
+</textarea><br/>
+<input type="button" onclick="eval(document.getElementById('code').value);" value="Run"/>
+</body>
+</html>

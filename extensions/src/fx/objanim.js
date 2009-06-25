@@ -99,42 +99,68 @@ function(obj, property, options) {
 
   var me = this;
   
-  // TODO: custom support for KmlColor -- gex.util.blendColors
-  
-  var getter = function() {
-    return me.util.callMethod(obj, 'get' + propertyTitleCase);
-  };
-  
-  var setter = function(val) {
-    return me.util.callMethod(obj, 'set' + propertyTitleCase, val);
-  };
-    
-  // use EITHER start/end or delta
-  if (!isFinite(options.start) && !isFinite(options.end)) {
-    // use delta
-    if (!isFinite(options.delta)) {
-      options.delta = 0.0;
+  var doAnimate_;
+  if (property == 'color') {
+    // KmlColor blending
+    if (options.delta) {
+      throw new Error('Cannot use delta with color animations.');
     }
     
-    options.start = getter();
-    options.end = getter() + options.delta;
-  } else {
+    var colorObj = obj.getColor() || {get: function(){ return ''; }};
+    
     // use start/end
-    if (!isFinite(options.start)) {
-      options.start = getter();
+    if (!options.start) {
+      options.start = colorObj.get();
     }
 
-    if (!isFinite(options.end)) {
-      options.end = getter();
+    if (!options.end) {
+      options.end = colorObj.get();
     }
+  
+    doAnimate_ = function(f) {
+      colorObj.set(me.util.blendColors(options.start, options.end,
+          options.easing.call(null, f)));
+    };
+  } else {
+    // numerical property blending
+    var getter = function() {
+      return me.util.callMethod(obj, 'get' + propertyTitleCase);
+    };
+  
+    var setter = function(val) {
+      return me.util.callMethod(obj, 'set' + propertyTitleCase, val);
+    };
+    
+    // use EITHER start/end or delta
+    if (!isFinite(options.start) && !isFinite(options.end)) {
+      // use delta
+      if (!isFinite(options.delta)) {
+        options.delta = 0.0;
+      }
+    
+      options.start = getter();
+      options.end = getter() + options.delta;
+    } else {
+      // use start/end
+      if (!isFinite(options.start)) {
+        options.start = getter();
+      }
+
+      if (!isFinite(options.end)) {
+        options.end = getter();
+      }
+    }
+  
+    doAnimate_ = function(f) {
+      setter(options.start + (options.end - options.start) *
+                             options.easing.call(null, f));
+    };
   }
   
   var anim = new this.fx.TimedAnimation(options.duration,
     function(t) {
       // render callback
-      setter(options.start +
-             options.easing.call(null, 1.0 * t / options.duration) *
-               (options.end - options.start));
+      doAnimate_(1.0 * t / options.duration);
     },
     function() {
       // completion callback
