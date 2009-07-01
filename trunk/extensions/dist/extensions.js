@@ -109,6 +109,30 @@ geo.Bounds.prototype.southWestBottom = function() {
 geo.Bounds.prototype.sw_ = null;
 
 /**
+ * The bounds' south coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.south = function() {
+  return this.sw_.lat();
+};
+
+/**
+ * The bounds' west coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.west = function() {
+  return this.sw_.lng();
+};
+
+/**
+ * The bounds' minimum altitude.
+ * @type Number
+ */
+geo.Bounds.prototype.bottom = function() {
+  return this.sw_.altitude();
+};
+
+/**
  * The bounds' northeast, top coordinate.
  * @type geo.Point
  */
@@ -116,6 +140,30 @@ geo.Bounds.prototype.northEastTop = function() {
   return this.ne_;
 };
 geo.Bounds.prototype.ne_ = null;
+
+/**
+ * The bounds' north coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.north = function() {
+  return this.ne_.lat();
+};
+
+/**
+ * The bounds' east coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.east = function() {
+  return this.ne_.lng();
+};
+
+/**
+ * The bounds' maximum altitude.
+ * @type Number
+ */
+geo.Bounds.prototype.top = function() {
+  return this.ne_.altitude();
+};
 
 /**
  * Returns whether or not the bounds intersect the antimeridian.
@@ -139,6 +187,8 @@ geo.Bounds.prototype.is3D = function() {
  * @type Boolean
  */
 geo.Bounds.prototype.containsPoint = function(point) {
+  point = new geo.Point(point);
+  
   if (this.isEmpty())
     return false;
 
@@ -178,6 +228,8 @@ geo.Bounds.lngSpan_ = function(west, east) {
  * @param {geo.Point} point The point to extend the bounds by.
  */
 geo.Bounds.prototype.extend = function(point) {
+  point = new geo.Point(point);
+  
   if (this.containsPoint(point)) {
     return;
   }
@@ -247,7 +299,7 @@ geo.Bounds.prototype.isEmpty = function() {
  * Gets the center of the bounds.
  * @type geo.Point
  */
-geo.Bounds.prototype.getCenter = function() {
+geo.Bounds.prototype.center = function() {
   if (this.isEmpty())
     return null;
 
@@ -260,6 +312,9 @@ geo.Bounds.prototype.getCenter = function() {
         (this.sw_.lng() + this.ne_.lng()) / 2,
     (this.sw_.altitude() + this.ne_.altitude()) / 2);
 };
+
+// backwards compat
+geo.Bounds.prototype.getCenter = geo.Bounds.prototype.center;
 
 /**
  * Determines whether or not the bounds occupy the entire latitudinal range.
@@ -4659,7 +4714,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
   GEarthExtensions.prototype.util.serializeView = function() {
     var camera = this.pluginInstance.getView().copyAsCamera(
         this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return this.util.encodeCamera_({
+    return '0' + this.util.encodeCamera_({
       lat: camera.getLatitude(),
       lng: camera.getLongitude(),
       altitude: camera.getAltitude(),
@@ -4676,7 +4731,10 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
    *     using GEarthExtensions#util.serializeView.
    */
   GEarthExtensions.prototype.util.deserializeView = function(s) {
-    var cameraProps = this.util.decodeCamera_(s);
+    if (s.charAt(0) != '0') // 'magic number'
+      throw new Error('Invalid serialized view string.');
+
+    var cameraProps = this.util.decodeCamera_(s.substr(1));
     var camera = this.pluginInstance.createCamera('');
     
     // TODO: isFinite checks
@@ -4691,16 +4749,16 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
 
   GEarthExtensions.prototype.util.encodeCamera_ = function(cam) {
     var encOverflow = 1073741824;
-    var alt = Math.floor(cam.altitude * 1e5);
+    var alt = Math.floor(cam.altitude * 1e1);
     return encodeArray_([
       Math.floor(fit180_(cam.lat) * 1e5),
       Math.floor(fit180_(cam.lng) * 1e5),
       Math.floor(alt / encOverflow),
       (alt >= 0) ? alt % encOverflow :
                    (encOverflow - Math.abs(alt) % encOverflow),
-      Math.floor(fit360_(cam.heading) * 1e5),
-      Math.floor(fit360_(cam.tilt) * 1e5),
-      Math.floor(fit360_(cam.roll) * 1e5)
+      Math.floor(fit360_(cam.heading) * 1e1),
+      Math.floor(fit360_(cam.tilt) * 1e1),
+      Math.floor(fit360_(cam.roll) * 1e1)
     ]);
   };
 
@@ -4710,10 +4768,10 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
     return {
       lat: arr[0] * 1e-5,
       lng: arr[1] * 1e-5,
-      altitude: (encOverflow * arr[2] + arr[3]) * 1e-5,
-      heading: arr[4] * 1e-5,
-      tilt: arr[5] * 1e-5,
-      roll: arr[6] * 1e-5
+      altitude: (encOverflow * arr[2] + arr[3]) * 1e-1,
+      heading: arr[4] * 1e-1,
+      tilt: arr[5] * 1e-1,
+      roll: arr[6] * 1e-1
     };
   };
   
