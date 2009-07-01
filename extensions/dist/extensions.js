@@ -189,25 +189,36 @@ geo.Bounds.prototype.is3D = function() {
 geo.Bounds.prototype.containsPoint = function(point) {
   point = new geo.Point(point);
   
-  if (this.isEmpty())
+  if (this.isEmpty()) {
     return false;
+  }
 
   // check latitude
-  if (!(this.sw_.lat() <= point.lat() && point.lat() <= this.ne_.lat())) {
+  if (!(this.south() <= point.lat() && point.lat() <= this.north())) {
     return false;
   }
 
   // check altitude
-  if (this.is3D() && !(this.sw_.altitude() <= point.altitude() &&
-                       point.altitude() <= this.ne_.altitude())) {
+  if (this.is3D() && !(this.bottom() <= point.altitude() &&
+                       point.altitude() <= this.top())) {
     return false;
   }
 
   // check longitude
+  return this.containsLng_(point.lng());
+};
+
+/**
+ * Returns whether or not the given line of longitude is inside the bounds.
+ * @private
+ * @param {Number} lng The longitude to test.
+ * @type Boolean
+ */
+geo.Bounds.prototype.containsLng_ = function(lng) {
   if (this.crossesAntimeridian()) {
-    return (point.lng() <= this.ne_.lng() || point.lng() >= this.sw_.lng());
+    return (lng <= this.east() || lng >= this.west());
   } else {
-    return (this.sw_.lng() <= point.lng() && point.lng() <= this.ne_.lng());
+    return (this.west() <= lng && lng <= this.east());
   }
 };
 
@@ -240,30 +251,32 @@ geo.Bounds.prototype.extend = function(point) {
   }
 
   // extend up or down
-  var newBottom = this.sw_.altitude();
-  var newTop = this.ne_.altitude();
+  var newBottom = this.bottom();
+  var newTop = this.top();
 
   if (this.is3D()) {
-    newBottom = Math.min(this.sw_.altitude(), point.altitude());
-    newTop = Math.min(this.ne_.altitude(), point.altitude());
+    newBottom = Math.min(newBottom, point.altitude());
+    newTop = Math.max(newTop, point.altitude());
   }
 
   // extend north or south
-  var newSouth = Math.min(this.sw_.lat(), point.lat());
-  var newNorth = Math.max(this.ne_.lat(), point.lat());
+  var newSouth = Math.min(this.south(), point.lat());
+  var newNorth = Math.max(this.north(), point.lat());
 
-  // try extending east and try extending west, and use the one that
-  // has the smaller longitudinal span
-  var extendEastLngSpan = geo.Bounds.lngSpan_(this.sw_.lng(), point.lng());
-  var extendWestLngSpan = geo.Bounds.lngSpan_(point.lng(), this.ne_.lng());
+  var newWest = this.west();
+  var newEast = this.east();
 
-  var newWest = this.sw_.lng();
-  var newEast = this.ne_.lng();
+  if (!this.containsLng_(point.lng())) {
+    // try extending east and try extending west, and use the one that
+    // has the smaller longitudinal span
+    var extendEastLngSpan = geo.Bounds.lngSpan_(newWest, point.lng());
+    var extendWestLngSpan = geo.Bounds.lngSpan_(point.lng(), newEast);
 
-  if (extendEastLngSpan <= extendWestLngSpan) {
-    newEast = point.lng();
-  } else {
-    newWest = point.lng();
+    if (extendEastLngSpan <= extendWestLngSpan) {
+      newEast = point.lng();
+    } else {
+      newWest = point.lng();
+    }
   }
 
   // update the bounds' coordinates
@@ -292,7 +305,7 @@ geo.Bounds.prototype.span = function() {
  * @type Boolean
  */
 geo.Bounds.prototype.isEmpty = function() {
-  return (this.sw_ == null && this.sw_ == null);
+  return (this.sw_ === null && this.sw_ === null);
 };
 
 /**
@@ -300,8 +313,9 @@ geo.Bounds.prototype.isEmpty = function() {
  * @type geo.Point
  */
 geo.Bounds.prototype.center = function() {
-  if (this.isEmpty())
+  if (this.isEmpty()) {
     return null;
+  }
 
   return new geo.Point(
     (this.sw_.lat() + this.ne_.lat()) / 2,
@@ -808,9 +822,8 @@ geo.Path.prototype.containsPoint = function(point) {
     if (((this.coords_[i].lat() < y && this.coords_[j].lat() >= y) ||
          (this.coords_[j].lat() < y && this.coords_[i].lat() >= y)) &&
         (this.coords_[i].lng() + (y - this.coords_[i].lat()) /
-                               (this.coords_[j].lat() - this.coords_[i].lat()) *
-                               (this.coords_[j].lng() - this.coords_[i].lng())
-         < x)) {
+            (this.coords_[j].lat() - this.coords_[i].lat()) *
+            (this.coords_[j].lng() - this.coords_[i].lng()) < x)) {
       oddNodes = !oddNodes;
     }
   }
@@ -1002,7 +1015,7 @@ geo.Point.prototype.flatten = function() {
  * @type Boolean
  */
 geo.Point.prototype.is3D = function() {
-  return this.altitude_ != 0;
+  return this.altitude_ !== 0;
 };
 
 /**
