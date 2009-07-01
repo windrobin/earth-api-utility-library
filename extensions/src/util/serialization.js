@@ -25,7 +25,7 @@ limitations under the License.
   GEarthExtensions.prototype.util.serializeView = function() {
     var camera = this.pluginInstance.getView().copyAsCamera(
         this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return this.util.encodeCamera_({
+    return '0' + this.util.encodeCamera_({
       lat: camera.getLatitude(),
       lng: camera.getLongitude(),
       altitude: camera.getAltitude(),
@@ -42,7 +42,10 @@ limitations under the License.
    *     using GEarthExtensions#util.serializeView.
    */
   GEarthExtensions.prototype.util.deserializeView = function(s) {
-    var cameraProps = this.util.decodeCamera_(s);
+    if (s.charAt(0) != '0') // 'magic number'
+      throw new Error('Invalid serialized view string.');
+
+    var cameraProps = this.util.decodeCamera_(s.substr(1));
     var camera = this.pluginInstance.createCamera('');
     
     // TODO: isFinite checks
@@ -57,16 +60,16 @@ limitations under the License.
 
   GEarthExtensions.prototype.util.encodeCamera_ = function(cam) {
     var encOverflow = 1073741824;
-    var alt = Math.floor(cam.altitude * 1e5);
+    var alt = Math.floor(cam.altitude * 1e1);
     return encodeArray_([
       Math.floor(fit180_(cam.lat) * 1e5),
       Math.floor(fit180_(cam.lng) * 1e5),
       Math.floor(alt / encOverflow),
       (alt >= 0) ? alt % encOverflow :
                    (encOverflow - Math.abs(alt) % encOverflow),
-      Math.floor(fit360_(cam.heading) * 1e5),
-      Math.floor(fit360_(cam.tilt) * 1e5),
-      Math.floor(fit360_(cam.roll) * 1e5)
+      Math.floor(fit360_(cam.heading) * 1e1),
+      Math.floor(fit360_(cam.tilt) * 1e1),
+      Math.floor(fit360_(cam.roll) * 1e1)
     ]);
   };
 
@@ -76,10 +79,10 @@ limitations under the License.
     return {
       lat: arr[0] * 1e-5,
       lng: arr[1] * 1e-5,
-      altitude: (encOverflow * arr[2] + arr[3]) * 1e-5,
-      heading: arr[4] * 1e-5,
-      tilt: arr[5] * 1e-5,
-      roll: arr[6] * 1e-5
+      altitude: (encOverflow * arr[2] + arr[3]) * 1e-1,
+      heading: arr[4] * 1e-1,
+      tilt: arr[5] * 1e-1,
+      roll: arr[6] * 1e-1
     };
   };
   
