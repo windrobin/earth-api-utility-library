@@ -43,7 +43,7 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
  * @param {PointOptions|KmlPoint} [options.point] A point geometry to use in the
  *     placemark.
  * @param {LineStringOptions|KmlLineString} [options.lineString] A line string
- *     geometry to usein the placemark.
+ *     geometry to use in the placemark.
  * @param {LinearRingOptions|KmlLinearRing} [options.linearRing] A linear ring
  *     geometry to use in the placemark.
  * @param {PolygonOptions|KmlPolygon} [options.polygon] A polygon geometry to
@@ -54,6 +54,21 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
  *     multi-geometry to use in the placemark.
  * @param {KmlGeometry[]} [options.geometries] An array of geometries to add
  *     to the placemark.
+ * @param {KmlAltitudeModeEnum} [options.altitudeMode] A convenience property
+ *     for the placemark geometry's altitude mode.
+ * @param {String} [options.stockIcon] A convenience property to set the
+ *     point placemark's icon to a stock icon, e.g. 'paddle/wht-blank'.
+ *     Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
+ * @param {StyleOptions|KmlStyleSelector} [options.style] The style to use for
+ *     this placemark. See also GEarthExtensions.dom.buildStyle.
+ * @param {StyleOptions|KmlStyleSelector} [options.highlightStyle] The
+ *     highlight style to use for this placemark. If this option is used, the
+ *     style and highlightStyle form a style map.
+ * @param {IconStyleOptions} [options.icon] A convenience property to build the
+ *     point placemark's icon style from the given options.
+ * @param {String} [options.stockIcon] A convenience property to set the
+ *     point placemark's icon to a stock icon, e.g. 'paddle/wht-blank'.
+ *     Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
  * @type KmlPlacemark
  */
 GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
@@ -133,7 +148,7 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
     if (options.style) {
       if (options.highlightStyle) {
         // style map
-        var styleMap = this.pluginInstance.createStyleMap(options.id);
+        var styleMap = this.pluginInstance.createStyleMap('');
       
         // set normal style
         if (typeof options.style == 'string') {

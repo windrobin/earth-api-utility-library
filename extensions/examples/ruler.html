@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>GEarthExtensions Samples - Simple Distance Ruler</title>
+  <script src="http://www.google.com/jsapi?key=ABQIAAAAsc0UQXoo2BnAJLhtpWCJFBTgHOxFyKCf35LCvsI_n4URElrkIhS9MkSlm_0NZWgrKFkOsnd5rEK0Lg" type="text/javascript"></script>
+  <script src="../dist/extensions.pack.js" type="text/javascript"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+
+var ge = null;
+var gex = null;
+
+google.load('earth', '1');
+
+google.setOnLoadCallback(function() {
+  google.earth.createInstance('map3d', function(pluginInstance) {
+    ge = pluginInstance;
+    ge.getWindow().setVisibility(true);
+    
+    gex = new GEarthExtensions(pluginInstance);
+    
+    gex.util.lookAt([1, 1], { range: 800000, tilt: 40 });
+    
+    // create start and end placemark
+    var rulerColor = '#fc0';
+    
+    var placemarkOptions = {
+      style: {
+        icon: {
+          color: rulerColor,
+          stockIcon: 'paddle/wht-stars',
+          hotSpot: { left: '50%', bottom: 0 }
+        }
+      }
+    };
+    
+    var startPlacemark = gex.dom.addPointPlacemark([0, -1], placemarkOptions);
+    var endPlacemark = gex.dom.addPointPlacemark([0, 1], placemarkOptions);
+    
+    // create the distance updater function
+    var _updateDistance = function() {
+      document.getElementById('distance').innerHTML =
+          '~' +
+          (new geo.Point(startPlacemark.getGeometry()).distance(
+            new geo.Point(endPlacemark.getGeometry())) / 1609.344).toFixed(2) +
+          ' mi';
+    };
+    
+    // create the line placemark
+    var linePlacemark = gex.dom.addPlacemark({
+      lineString: {
+        path: [startPlacemark.getGeometry(),
+               endPlacemark.getGeometry()],
+        altitudeMode: ge.ALTITUDE_CLAMP_TO_GROUND,
+        tessellate: true
+      },
+      style: {
+        line: { color: rulerColor, opacity: 0.5, width: 10 }
+      }
+    });
+    
+    // make them draggable
+    var dragOptions = {
+      bounce: false,
+      dragCallback: function() {
+        linePlacemark.setGeometry(
+            gex.dom.buildLineString({
+              path: [startPlacemark.getGeometry(),
+                     endPlacemark.getGeometry()],
+              altitudeMode: ge.ALTITUDE_CLAMP_TO_GROUND,
+              tessellate: true
+            }));
+        
+        // update the distance on drag
+        _updateDistance();
+      }
+    };
+    
+    // show start distance
+    _updateDistance();
+    
+    gex.edit.makeDraggable(startPlacemark, dragOptions);
+    gex.edit.makeDraggable(endPlacemark, dragOptions);
+
+  }, function() {});
+});
+
+
+/* ]]> */
+</script>
+</head>
+<body>
+  <div id="map3d_container" style="width: 500px; height: 500px;">
+    <div id="map3d" style="height: 100%"></div>
+  </div>
+  <p><strong>Distance: </strong><span id="distance">N/A</span></p>
+</body>
+</html>
