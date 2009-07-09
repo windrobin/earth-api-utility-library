@@ -21,11 +21,17 @@ limitations under the License.
  * @param {String|Object} [options.icon] The icon href or an icon
  *     object literal.
  * @param {String} [options.icon.href] The icon href.
+ * @param {String} [options.icon.stockIcon] A convenience property to set the
+ *     icon to a stock icon, e.g. 'paddle/wht-blank'.
+ *     Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
  * @param {Number} [options.icon.scale] The icon scaling factor.
  * @param {ColorSpec} [options.icon.color] The color of the icon.
  * @param {ColorSpec} [options.icon.opacity] The opacity of the icon,
  *     between 0.0 and 1.0. This is a convenience property, since opacity can
  *     be defined in the color.
+ * @param {Vec2Options|KmlVec2} [options.icon.hotSpot] The hot sopt of the icon,
+ *     as a KmlVec2, or as an options literal to pass to3
+ *     GEarthExtensions.dom.setVec2.
 
  * @param {ColorSpec|Object} [options.label] The label color or a label
  *     object literal.
