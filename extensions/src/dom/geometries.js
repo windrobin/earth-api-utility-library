@@ -194,6 +194,8 @@ GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
   apiFactoryFn: 'createModel',
   defaultProperty: 'link',
   propertySpec: {
+    altitudeMode: GEarthExtensions.AUTO,
+    
     link: GEarthExtensions.ALLOWED,
     location: GEarthExtensions.ALLOWED,
     scale: GEarthExtensions.ALLOWED,
