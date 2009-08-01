@@ -260,12 +260,18 @@ Creates a new placemark with the given parameters.
     * *visibility* _{{{Boolean}}}_ (Optional) Whether or not the feature should be visible.
     * *description* _{{{String}}}_ (Optional) An HTML description for the feature; may be used as balloon text.
     * *point* _{{{PointOptions}}}|{{{KmlPoint}}}_ (Optional) A point geometry to use in the placemark.
-    * *lineString* _{{{LineStringOptions}}}|{{{KmlLineString}}}_ (Optional) A line string geometry to usein the placemark.
+    * *lineString* _{{{LineStringOptions}}}|{{{KmlLineString}}}_ (Optional) A line string geometry to use in the placemark.
     * *linearRing* _{{{LinearRingOptions}}}|{{{KmlLinearRing}}}_ (Optional) A linear ring geometry to use in the placemark.
     * *polygon* _{{{PolygonOptions}}}|{{{KmlPolygon}}}_ (Optional) A polygon geometry to use in the placemark.
     * *model* _{{{ModelOptions}}}|{{{KmlModel}}}_ (Optional) A model geometry to use in the placemark.
     * *multiGeometry* _{{{MultiGeometryOptions}}}|{{{KmlMultiGeometry}}}_ (Optional) A multi-geometry to use in the placemark.
     * *geometries* _{{{KmlGeometry}}}`[``]`_ (Optional) An array of geometries to add to the placemark.
+    * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) A convenience property for the placemark geometry's altitude mode.
+    * *stockIcon* _{{{String}}}_ (Optional) A convenience property to set the point placemark's icon to a stock icon, e.g. 'paddle/wht-blank'. Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
+    * *style* _{{{StyleOptions}}}|{{{KmlStyleSelector}}}_ (Optional) The style to use for this placemark. See also GEarthExtensions.dom.buildStyle.
+    * *highlightStyle* _{{{StyleOptions}}}|{{{KmlStyleSelector}}}_ (Optional) The highlight style to use for this placemark. If this option is used, the style and highlightStyle form a style map.
+    * *icon* _{{{IconStyleOptions}}}_ (Optional) A convenience property to build the point placemark's icon style from the given options.
+    * *stockIcon* _{{{String}}}_ (Optional) A convenience property to set the point placemark's icon to a stock icon, e.g. 'paddle/wht-blank'. Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
 
 ===Type:===
 {{{KmlPlacemark}}}
@@ -380,9 +386,9 @@ Creates a new screen overlay with the given parameters.
     * *color* _{{{String}}}_ (Optional) A color to apply on the overlay.
     * *icon* _{{{String}}}_ (Optional) The URL of the overlay image.
     * *drawOrder* _{{{Number}}}_ (Optional) The drawing order of the overlay; overlays with higher draw orders appear on top of those with lower draw orders.
-    * *overlayXY* _{{{Vec2Src}}}_ (Optional) The registration point in the overlay that will be placed at the given screenXY point and potentially rotated about. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. The default is the top left of the overlay.
-    * *screenXY* _{{{Vec2Src}}}_ (Optional) The position in the plugin window that the screen overlay should appear at. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]
-    * *size* _{{{Vec2Src}}}_ (Optional) The size of the overlay. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]
+    * *overlayXY* _{{{Vec2Src}}}_ (Optional) The registration point in the overlay that will be placed at the given screenXY point and potentially rotated about. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. The default is the top left of the overlay. Note that the behavior of overlayXY in [GEarthExtensionsReference GEarthExtensions] is KML-correct; whereas in the Earth API overlayXY and screenXY are swapped.
+    * *screenXY* _{{{Vec2Src}}}_ (Optional) The position in the plugin window that the screen overlay should appear at. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. Note that the behavior of overlayXY in [GEarthExtensionsReference GEarthExtensions] is KML-correct; whereas in the Earth API overlayXY and screenXY are swapped.
+    * *size* _{{{Vec2Src}}}_ (Optional) The size of the overlay. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2].
     * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the ground overlay.
     * *rotation* _{{{Number}}}_ (Optional) The rotation of the overlay, in degrees.
 
@@ -401,9 +407,11 @@ Creates a new style with the given parameters.
   * *options* _{{{Object}}}_  The style parameters.
     * *icon* _{{{String}}}|{{{Object}}}_ (Optional) The icon href or an icon object literal.
     * *icon.href* _{{{String}}}_ (Optional) The icon href.
+    * *icon.stockIcon* _{{{String}}}_ (Optional) A convenience property to set the icon to a stock icon, e.g. 'paddle/wht-blank'. Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
     * *icon.scale* _{{{Number}}}_ (Optional) The icon scaling factor.
     * *icon.color* _{{{ColorSpec}}}_ (Optional) The color of the icon.
     * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the icon, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
+    * *icon.hotSpot* _{{{Vec2Options}}}|{{{KmlVec2}}}_ (Optional) The hot sopt of the icon, as a KmlVec2, or as an options literal to pass to3 GEarthExtensions.dom.setVec2.
     * *label* _{{{ColorSpec}}}|{{{Object}}}_ (Optional) The label color or a label object literal.
     * *label.scale* _{{{Number}}}_ (Optional) The label scaling factor.
     * *label.color* _{{{ColorSpec}}}_ (Optional) The color of the label.
