@@ -10,7 +10,7 @@ Contains methods for allowing user-interactive editing of features inside the Go
 ----
 =Static Methods=
 
-==drawLineString(lineString, options, drawCallback, finishCallback)==
+==drawLineString(lineString, options)==
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/linepoly.js src/edit/linepoly.js]
 
@@ -20,8 +20,8 @@ Enters a mode in which the user can draw the given line string geometry on the g
   * *lineString* _{{{KmlLineString}}}|{{{KmlLinearRing}}}_  The line string geometry to allow the user to draw (or append points to).
   * *options* _{{{Object}}}_ (Optional) The edit options.
     * *bounce* _{{{Boolean}}}_ (Optional) Whether or not to enable bounce effects while drawing coordinates.
-  * *drawCallback* _{{{Function}}}_  A callback to fire when new vertices are drawn.
-  * *finishCallback* _{{{Function}}}_  A callback to fire when drawing is successfully completed (via double click or by clicking on the first coordinate again).
+    * *drawCallback* _{{{Function}}}_ (Optional) A callback to fire when new vertices are drawn.
+    * *finishCallback* _{{{Function}}}_ (Optional) A callback to fire when drawing is successfully completed (via double click or by clicking on the first coordinate again).
 
 ----
 
