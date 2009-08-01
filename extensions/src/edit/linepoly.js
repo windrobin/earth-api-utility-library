@@ -33,10 +33,10 @@ limitations under the License.
    * @param {Object} [options] The edit options.
    * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
    *     while drawing coordinates.
-   * @param {Function} drawCallback A callback to fire when new vertices are
-   *     drawn.
-   * @param {Function} finishCallback A callback to fire when drawing is
-   *     successfully completed (via double click or by clicking on the first
+   * @param {Function} [options.drawCallback] A callback to fire when new
+   *     vertices are drawn.
+   * @param {Function} [options.finishCallback] A callback to fire when drawing
+   *     is successfully completed (via double click or by clicking on the first
    *     coordinate again).
    */
   GEarthExtensions.prototype.edit.drawLineString = function(lineString,
