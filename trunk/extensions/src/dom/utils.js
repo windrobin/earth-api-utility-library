@@ -120,13 +120,19 @@ GEarthExtensions.prototype.dom.walk = function() {
       if (options.features) {
         objectContainer = object.getFeatures();
       }
-    } else if ('getGeometry' in object) { // KmlFeature - descend into geoms.
+    } else if ('getGeometry' in object) { // KmlFeature - descend into
+                                          // contained geometry
       if (options.geometries && object.getGeometry()) {
         recurse_(object.getGeometry(), contextArgument.child);
       }
     } else if ('getGeometries' in object) { // GEGeometryContainer
       if (options.geometries) {
         objectContainer = object.getGeometries();
+      }
+    } else if ('getOuterBoundary' in object) { // KmlPolygon - descend into
+                                               // outer boundary
+      if (options.geometries && object.getOuterBoundary()) {
+        recurse_(object.getOuterBoundary(), contextArgument.child);
       }
     } else if ('getInnerBoundaries' in object) { // GELinearRingContainer
       if (options.geometries) {
@@ -189,8 +195,8 @@ function test_dom_walk() {
                  this.getType() == 'KmlPoint') {
         assertEquals(4, context.current); // Point and Polygon at level 4
       } else if (this.getType() == 'KmlLinearRing') {
-        assertEquals(5, context.current); // Inner boundary linear rings at
-                                          // level 5
+        assertEquals(5, context.current); // Outer and inner boundary linear
+                                          // rings at level 5
       } else {
         fail('walk hit an unexpected type: ' + this.getType());
       }
@@ -396,3 +402,62 @@ function test_dom_setVec2() {
   // TODO: check for failures such as invalid percentage string
 }
 /***IGNORE_END***/
+
+/**
+ * Computes the latitude/longitude bounding box for the given object.
+ * Note that this method walks the object's DOM, so may have poor performance
+ * for large objects.
+ * @param {KmlFeature|KmlGeometry} object The feature or geometry whose bounds
+ *     should be computed.
+ * @type geo.Bounds
+ */
+GEarthExtensions.prototype.dom.computeBounds = function(object) {
+  var bounds = new geo.Bounds();
+  
+  // Walk the object's DOM, extending the bounds as coordinates are
+  // encountered.
+  this.dom.walk({
+    rootObject: object,
+    features: true,
+    geometries: true,
+    visitCallback: function() {
+      if ('getType' in this) {
+        var type = this.getType();
+        switch (type) {
+          case 'KmlGroundOverlay':
+            var llb = this.getLatLonBox();
+            if (llb) {
+              var alt = this.getAltitude();
+              bounds.extend(new geo.Point(llb.getNorth(), llb.getEast(), alt));
+              bounds.extend(new geo.Point(llb.getNorth(), llb.getWest(), alt));
+              bounds.extend(new geo.Point(llb.getSouth(), llb.getEast(), alt));
+              bounds.extend(new geo.Point(llb.getSouth(), llb.getWest(), alt));
+            }
+            break;
+          
+          case 'KmlModel':
+            bounds.extend(new geo.Point(this.getLocation()));
+            break;
+        
+          case 'KmlLinearRing':
+          case 'KmlLineString':
+            var coords = this.getCoordinates();
+            if (coords) {
+              var n = coords.getLength();
+              for (var i = 0; i < n; i++)
+                bounds.extend(new geo.Point(coords.get(i)));
+            }
+            break;
+
+          case 'KmlCoord': // coordinates
+          case 'KmlLocation': // models
+          case 'KmlPoint': // points
+            bounds.extend(new geo.Point(this));
+            break;
+        };
+      }
+    }
+  });
+  
+  return bounds;
+};

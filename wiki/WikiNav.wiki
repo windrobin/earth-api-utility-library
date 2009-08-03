@@ -6,3 +6,4 @@
       * [GEarthExtensionsFxAnimationReference GEarthExtensions.fx.Animation]
       * [GEarthExtensionsFxTimedAnimationReference GEarthExtensions.fx.TimedAnimation]
     * [GEarthExtensionsUtilReference GEarthExtensions.util]
+    * [GEarthExtensionsViewReference GEarthExtensions.view]

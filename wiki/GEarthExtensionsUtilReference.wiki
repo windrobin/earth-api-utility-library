@@ -70,14 +70,17 @@ Clears the JS-side data for the given KmlObject associated with the given key.
 
 ----
 
-==deserializeView(viewString)==
+==decodeArray(str)==
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/serialization.js src/util/serialization.js]
 
-Sets the current plugin viewport to the view represented by the given string.
+Decodes a string representing an array of signed numbers encoded with [GEarthExtensionsUtilReference#encodeArray(arr) GEarthExtensions#util.encodeArray].
 
 ===Parameters:===
-  * *viewString* _{{{String}}}_  The modified base64 alphabet string representing the view to fly to. This string should've previously been calculated using [GEarthExtensionsUtilReference#serializeView() GEarthExtensions#util.serializeView].
+  * *str* _{{{String}}}_  The encoded string.
+
+===Type:===
+{{{Number}}}`[``]`
 
 ----
 
@@ -103,6 +106,24 @@ Simply loads and shows the given KML string in the Google Earth Plugin instance.
 ===Parameters:===
   * *str* _{{{String}}}_  The KML blob string to show.
   * *options* _{{{Object}}}_ (Optional) KML display options. There are currently no options.
+
+----
+
+==encodeArray(arr)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/serialization.js src/util/serialization.js]
+
+Encodes an array of signed numbers into a string.
+
+===Parameters:===
+  * *arr* _{{{Number}}}`[``]`_  An array of signed numbers.
+
+===Type:===
+{{{String}}}
+
+===Returns:===
+
+An encoded string representing the array of numbers.
 
 ----
 
@@ -189,26 +210,6 @@ Converts between various color formats, i.e. `#rrggbb`, to the KML color format 
 ===Returns:===
 
 _{{{String}}}_ A string in KML color format (`aabbggrr`), or null if the color could not be parsed.
-
-----
-
-==serializeView()==
-
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/util/serialization.js src/util/serialization.js]
-
-Serializes the current plugin viewport into a modified base64 alphabet string. This method is platform and browser agnostic, and is safe to store and distribute to others.
-
-===Type:===
-{{{String}}}
-
-===Returns:===
-
-_{{{String}}}_ A string representing the current viewport.
-
-===See:===
-
-http://code.google.com/apis/maps/documentation/include/polyline.js
-    for inspiration.
 
 ----
 

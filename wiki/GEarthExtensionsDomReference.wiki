@@ -439,6 +439,20 @@ Removes all top-level features from the Earth object's DOM.
 
 ----
 
+==computeBounds(object)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]
+
+Computes the latitude/longitude bounding box for the given object. Note that this method walks the object's DOM, so may have poor performance for large objects.
+
+===Parameters:===
+  * *object* _{{{KmlFeature}}}|{{{KmlGeometry}}}_  The feature or geometry whose bounds should be computed.
+
+===Type:===
+{{{geo.Bounds}}}
+
+----
+
 ==getObjectById(id, options)==
 
 Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/utils.js src/dom/utils.js]

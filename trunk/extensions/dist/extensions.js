@@ -3585,13 +3585,19 @@ GEarthExtensions.prototype.dom.walk = function() {
       if (options.features) {
         objectContainer = object.getFeatures();
       }
-    } else if ('getGeometry' in object) { // KmlFeature - descend into geoms.
+    } else if ('getGeometry' in object) { // KmlFeature - descend into
+                                          // contained geometry
       if (options.geometries && object.getGeometry()) {
         recurse_(object.getGeometry(), contextArgument.child);
       }
     } else if ('getGeometries' in object) { // GEGeometryContainer
       if (options.geometries) {
         objectContainer = object.getGeometries();
+      }
+    } else if ('getOuterBoundary' in object) { // KmlPolygon - descend into
+                                               // outer boundary
+      if (options.geometries && object.getOuterBoundary()) {
+        recurse_(object.getOuterBoundary(), contextArgument.child);
       }
     } else if ('getInnerBoundaries' in object) { // GELinearRingContainer
       if (options.geometries) {
@@ -3780,6 +3786,65 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
   }
   
   vec2.set(x, xUnits, y, yUnits);
+};
+
+/**
+ * Computes the latitude/longitude bounding box for the given object.
+ * Note that this method walks the object's DOM, so may have poor performance
+ * for large objects.
+ * @param {KmlFeature|KmlGeometry} object The feature or geometry whose bounds
+ *     should be computed.
+ * @type geo.Bounds
+ */
+GEarthExtensions.prototype.dom.computeBounds = function(object) {
+  var bounds = new geo.Bounds();
+  
+  // Walk the object's DOM, extending the bounds as coordinates are
+  // encountered.
+  this.dom.walk({
+    rootObject: object,
+    features: true,
+    geometries: true,
+    visitCallback: function() {
+      if ('getType' in this) {
+        var type = this.getType();
+        switch (type) {
+          case 'KmlGroundOverlay':
+            var llb = this.getLatLonBox();
+            if (llb) {
+              var alt = this.getAltitude();
+              bounds.extend(new geo.Point(llb.getNorth(), llb.getEast(), alt));
+              bounds.extend(new geo.Point(llb.getNorth(), llb.getWest(), alt));
+              bounds.extend(new geo.Point(llb.getSouth(), llb.getEast(), alt));
+              bounds.extend(new geo.Point(llb.getSouth(), llb.getWest(), alt));
+            }
+            break;
+          
+          case 'KmlModel':
+            bounds.extend(new geo.Point(this.getLocation()));
+            break;
+        
+          case 'KmlLinearRing':
+          case 'KmlLineString':
+            var coords = this.getCoordinates();
+            if (coords) {
+              var n = coords.getLength();
+              for (var i = 0; i < n; i++)
+                bounds.extend(new geo.Point(coords.get(i)));
+            }
+            break;
+
+          case 'KmlCoord': // coordinates
+          case 'KmlLocation': // models
+          case 'KmlPoint': // points
+            bounds.extend(new geo.Point(this));
+            break;
+        };
+      }
+    }
+  });
+  
+  return bounds;
 };
 /**
  * Creates a new lookat object with the given parameters.
@@ -4232,10 +4297,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
    * @param {Object} [options] The edit options.
    * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
    *     while drawing coordinates.
-   * @param {Function} drawCallback A callback to fire when new vertices are
-   *     drawn.
-   * @param {Function} finishCallback A callback to fire when drawing is
-   *     successfully completed (via double click or by clicking on the first
+   * @param {Function} [options.drawCallback] A callback to fire when new
+   *     vertices are drawn.
+   * @param {Function} [options.finishCallback] A callback to fire when drawing
+   *     is successfully completed (via double click or by clicking on the first
    *     coordinate again).
    */
   GEarthExtensions.prototype.edit.drawLineString = function(lineString,
@@ -5546,126 +5611,42 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
 
 }());
 (function() {
-  /**
-   * Serializes the current plugin viewport into a modified base64 alphabet
-   * string. This method is platform and browser agnostic, and is safe to
-   * store and distribute to others.
-   * @return {String} A string representing the current viewport.
-   * @see http://code.google.com/apis/maps/documentation/include/polyline.js
-   *     for inspiration.
-   */
-  GEarthExtensions.prototype.util.serializeView = function() {
-    var camera = this.pluginInstance.getView().copyAsCamera(
-        this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return '0' + this.util.encodeCamera_({
-      lat: camera.getLatitude(),
-      lng: camera.getLongitude(),
-      altitude: camera.getAltitude(),
-      heading: camera.getHeading(),
-      tilt: camera.getTilt(),
-      roll: camera.getRoll() });
-  };
-
-  /**
-   * Sets the current plugin viewport to the view represented by the given
-   * string.
-   * @param {String} viewString The modified base64 alphabet string representing
-   *     the view to fly to. This string should've previously been calculated
-   *     using GEarthExtensions#util.serializeView.
-   */
-  GEarthExtensions.prototype.util.deserializeView = function(s) {
-    if (s.charAt(0) != '0') // 'magic number'
-      throw new Error('Invalid serialized view string.');
-
-    var cameraProps = this.util.decodeCamera_(s.substr(1));
-    var camera = this.pluginInstance.createCamera('');
-    
-    // TODO: isFinite checks
-    camera.set(cameraProps.lat, cameraProps.lng, cameraProps.altitude,
-        this.pluginInstance.ALTITUDE_ABSOLUTE, cameraProps.heading,
-        cameraProps.tilt, cameraProps.roll);
-    this.pluginInstance.getView().setAbstractView(camera);
-  };
-  
-  // helper functions, most of which are from
-  // http://code.google.com/apis/maps/documentation/include/polyline.js
-
-  GEarthExtensions.prototype.util.encodeCamera_ = function(cam) {
-    var encOverflow = 1073741824;
-    var alt = Math.floor(cam.altitude * 1e1);
-    return encodeArray_([
-      Math.floor(fit180_(cam.lat) * 1e5),
-      Math.floor(fit180_(cam.lng) * 1e5),
-      Math.floor(alt / encOverflow),
-      (alt >= 0) ? alt % encOverflow :
-                   (encOverflow - Math.abs(alt) % encOverflow),
-      Math.floor(fit360_(cam.heading) * 1e1),
-      Math.floor(fit360_(cam.tilt) * 1e1),
-      Math.floor(fit360_(cam.roll) * 1e1)
-    ]);
-  };
-
-  GEarthExtensions.prototype.util.decodeCamera_ = function(s) {
-    var encOverflow = 1073741824;
-    var arr = decodeArray_(s);
-    return {
-      lat: arr[0] * 1e-5,
-      lng: arr[1] * 1e-5,
-      altitude: (encOverflow * arr[2] + arr[3]) * 1e-1,
-      heading: arr[4] * 1e-1,
-      tilt: arr[5] * 1e-1,
-      roll: arr[6] * 1e-1
-    };
-  };
-  
   // modified base64 for url
   // http://en.wikipedia.org/wiki/Base64
   var ALPHABET_ =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   
-  function encodeArray_(a) {
+  /**
+   * Encodes an array of signed numbers into a string.
+   * @param {Number[]} arr An array of signed numbers.
+   * @type String
+   * @return An encoded string representing the array of numbers.
+   */
+  GEarthExtensions.prototype.util.encodeArray = function(arr) {
     var s = '';
-    for (var i = 0; i < a.length; i++) {
-      s += encodeSignedNumber_(a[i]);
+    for (var i = 0; i < arr.length; i++) {
+      var sgn_num = arr[i] << 1;
+      sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+
+      while (sgn_num >= 0x20) {
+        s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
+        sgn_num >>= 5;
+      }
+
+      s += ALPHABET_.charAt(sgn_num);
     }
 
     return s;
-  }
-
-  function fit360_(a) {
-    while (a < 0) {
-      a += 360;
-    }
-
-    return a % 360;
-  }
-
-  function fit180_(a) {
-    a = fit360_(a);
-    return (a > 180) ? a - 360 : a;
-  }
+  };
   
-  // Encode a signed number in the encode format.
-  function encodeSignedNumber_(num) {
-    var sgn_num = num << 1;
-
-    if (num < 0) {
-      sgn_num = ~(sgn_num);
-    }
-
-    var encodeString = "";
-
-    while (sgn_num >= 0x20) {
-      encodeString += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
-      sgn_num >>= 5;
-    }
-
-    encodeString += ALPHABET_.charAt(sgn_num);
-    return encodeString;
-  }
-  
-  function decodeArray_(encoded) {
-    var len = encoded.length;
+  /**
+   * Decodes a string representing an array of signed numbers encoded with
+   * GEarthExtensions#util.encodeArray.
+   * @param {String} str The encoded string.
+   * @type Number[]
+   */
+  GEarthExtensions.prototype.util.decodeArray = function(str) {
+    var len = str.length;
     var index = 0;
     var array = [];
 
@@ -5674,7 +5655,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
       var shift = 0;
       var result = 0;
       do {
-        b = ALPHABET_.indexOf(encoded.charAt(index++));
+        b = ALPHABET_.indexOf(str.charAt(index++));
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
@@ -5683,8 +5664,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
     }
 
     return array;
-  }
-
+  };
 }());
 /**
  * Creates a KmlLookAt and sets it as the Earth plugin's view. This function
@@ -5846,3 +5826,173 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     delete this.cameraControlOldProps_;
   }
 };
+/**
+ * This class/namespace hybrid contains various camera/view
+ * related.
+ * @namespace
+ */
+GEarthExtensions.prototype.view = {isnamespace_:true};
+/**
+ * Creates a KmlAbstractView from a bounding box.
+ * @param {geo.Bounds} bounds The bounding box for which to create a view.
+ * @param {Object} options The parameters of the bounds view.
+ * @param {Number} options.aspectRatio The aspect ratio (width : height)
+ *     of the plugin viewport.
+ * @param {Number} [options.defaultRange=1000] The default lookat range to use
+ *     when creating a view for a degenerate, single-point bounding box.
+ * @param {Number} [options.rangeMultiplier=1.5] A scaling factor by which
+ *     to multiple the lookat range.
+ */
+GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
+  options = GEarthExtensions.checkParameters(options, false, {
+    aspectRatio: GEarthExtensions.REQUIRED,
+    
+    defaultRange: 1000,
+    scaleRange: 1.5
+  });
+    
+  var center = bounds.center();
+  var lookAtRange = options.defaultRange;
+  
+  var boundsSpan = bounds.span();
+  if (boundsSpan.lat != 0 | boundsSpan.lng != 0) {
+    var distEW = new geo.Point(center.lat(), bounds.east())
+       .distance(new geo.Point(center.lat(), bounds.west()));
+    var distNS = new geo.Point(bounds.north(), center.lng())
+       .distance(new geo.Point(bounds.south(), center.lng()));
+    
+    var aspectRatio = Math.min(Math.max(options.aspectRatio,
+                                        distEW / distNS),
+                               1.0);
+    
+    // Create a LookAt using the experimentally derived distance formula.
+    var alpha = (45.0 / (aspectRatio + 0.4) - 2.0).toRadians();
+    var expandToDistance = Math.max(distNS, distEW);
+    var beta = Math.min((90).toRadians(),
+                        alpha + expandToDistance / (2 * geo.math.EARTH_RADIUS));
+    
+    lookAtRange = options.scaleRange * geo.math.EARTH_RADIUS *
+        (Math.sin(beta) *
+         Math.sqrt(1 + 1 / Math.pow(Math.tan(alpha), 2))
+         - 1);
+  }
+  
+  return this.dom.buildLookAt(
+      new geo.Point(center.lat(), center.lng(),
+                    bounds.top(), bounds.northEastTop().altitudeMode()),
+      { range: lookAtRange });
+};
+// TODO: unit tests
+
+/**
+ * Creates a bounds view and sets it as the Earth plugin's view. This function
+ * takes the same parameters as GEarthExtensions#view.createBoundsView.
+ */
+GEarthExtensions.prototype.view.setToBoundsView = function() {
+  this.pluginInstance.getView().setAbstractView(
+      this.view.createBoundsView.apply(this, arguments));
+};
+(function() {
+  /**
+   * Serializes the current plugin viewport into a modified base64 alphabet
+   * string. This method is platform and browser agnostic, and is safe to
+   * store and distribute to others.
+   * @return {String} A string representing the current viewport.
+   * @see http://code.google.com/apis/maps/documentation/include/polyline.js
+   *     for inspiration.
+   */
+  GEarthExtensions.prototype.view.serialize = function() {
+    var camera = this.pluginInstance.getView().copyAsCamera(
+        this.pluginInstance.ALTITUDE_ABSOLUTE);
+    return '0' + this.view.encodeCamera_({
+      lat: camera.getLatitude(),
+      lng: camera.getLongitude(),
+      altitude: camera.getAltitude(),
+      heading: camera.getHeading(),
+      tilt: camera.getTilt(),
+      roll: camera.getRoll() });
+  };
+
+  /**
+   * Sets the current plugin viewport to the view represented by the given
+   * string.
+   * @param {String} viewString The modified base64 alphabet string representing
+   *     the view to fly to. This string should've previously been calculated
+   *     using GEarthExtensions#view.serialize.
+   */
+  GEarthExtensions.prototype.view.deserialize = function(s) {
+    if (s.charAt(0) != '0') {  // Magic number.
+      throw new Error('Invalid serialized view string.');
+    }
+
+    var cameraProps = this.view.decodeCamera_(s.substr(1));
+    var camera = this.pluginInstance.createCamera('');
+    
+    // TODO: isFinite checks
+    camera.set(cameraProps.lat, cameraProps.lng, cameraProps.altitude,
+        this.pluginInstance.ALTITUDE_ABSOLUTE, cameraProps.heading,
+        cameraProps.tilt, cameraProps.roll);
+    this.pluginInstance.getView().setAbstractView(camera);
+  };
+  
+  // helper functions, most of which are from
+  // http://code.google.com/apis/maps/documentation/include/polyline.js
+  
+  function wrap_(minValue, maxValue, value) {
+    // Don't wrap minValue as maxValue.
+    if (value === minValue)
+      return minValue;
+    
+    // Normalize to min = 0.
+    value -= minValue;
+    
+    value = value % (maxValue - minValue);
+    if (value < 0)
+      value += (maxValue - minValue);
+    
+    // Reverse normalization.
+    value += minValue;
+    
+    // When ambiguous (min or max), return maxValue.
+    return (value === minValue) ? maxValue : value;
+  }
+  
+
+  function constrain_(minValue, maxValue, value) {
+    return Math.max(minValue, Math.min(maxValue, value));
+  }
+  
+  var ENC_OVERFLOW_ = 1073741824;
+  
+  GEarthExtensions.prototype.view.encodeCamera_ = function(cam) {
+    var alt = Math.floor(cam.altitude * 1e1);
+    return this.util.encodeArray([
+      Math.floor(constrain_(-90, 90, cam.lat) * 1e5),
+      Math.floor(wrap_(-180, 180, cam.lng) * 1e5),
+      Math.floor(alt / ENC_OVERFLOW_),
+      (alt >= 0) ? alt % ENC_OVERFLOW_ :
+                   (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
+      Math.floor(wrap_(0, 360, cam.heading) * 1e1),
+      Math.floor(wrap_(0, 180, cam.tilt) * 1e1),
+      Math.floor(wrap_(-180, 180, cam.roll) * 1e1)
+    ]);
+  };
+
+  GEarthExtensions.prototype.view.decodeCamera_ = function(str) {
+    var arr = this.util.decodeArray(str);
+    return {
+      lat: constrain_(-90, 90, arr[0] * 1e-5),
+      lng: wrap_(-180, 180, arr[1] * 1e-5),
+      altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
+      heading: wrap_(0, 360, arr[4] * 1e-1),
+      tilt: wrap_(0, 180, arr[5] * 1e-1),
+      roll: wrap_(-180, 180, arr[6] * 1e-1)
+    };
+  };
+  
+  // Backwards compatibility.
+  GEarthExtensions.prototype.util.serializeView =
+      GEarthExtensions.prototype.view.serialize;
+  GEarthExtensions.prototype.util.deserializeView =
+      GEarthExtensions.prototype.view.deserialize;
+}());

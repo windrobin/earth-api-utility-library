@@ -14,126 +14,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 (function() {
-  /**
-   * Serializes the current plugin viewport into a modified base64 alphabet
-   * string. This method is platform and browser agnostic, and is safe to
-   * store and distribute to others.
-   * @return {String} A string representing the current viewport.
-   * @see http://code.google.com/apis/maps/documentation/include/polyline.js
-   *     for inspiration.
-   */
-  GEarthExtensions.prototype.util.serializeView = function() {
-    var camera = this.pluginInstance.getView().copyAsCamera(
-        this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return '0' + this.util.encodeCamera_({
-      lat: camera.getLatitude(),
-      lng: camera.getLongitude(),
-      altitude: camera.getAltitude(),
-      heading: camera.getHeading(),
-      tilt: camera.getTilt(),
-      roll: camera.getRoll() });
-  };
-
-  /**
-   * Sets the current plugin viewport to the view represented by the given
-   * string.
-   * @param {String} viewString The modified base64 alphabet string representing
-   *     the view to fly to. This string should've previously been calculated
-   *     using GEarthExtensions#util.serializeView.
-   */
-  GEarthExtensions.prototype.util.deserializeView = function(s) {
-    if (s.charAt(0) != '0') // 'magic number'
-      throw new Error('Invalid serialized view string.');
-
-    var cameraProps = this.util.decodeCamera_(s.substr(1));
-    var camera = this.pluginInstance.createCamera('');
-    
-    // TODO: isFinite checks
-    camera.set(cameraProps.lat, cameraProps.lng, cameraProps.altitude,
-        this.pluginInstance.ALTITUDE_ABSOLUTE, cameraProps.heading,
-        cameraProps.tilt, cameraProps.roll);
-    this.pluginInstance.getView().setAbstractView(camera);
-  };
-  
-  // helper functions, most of which are from
-  // http://code.google.com/apis/maps/documentation/include/polyline.js
-
-  GEarthExtensions.prototype.util.encodeCamera_ = function(cam) {
-    var encOverflow = 1073741824;
-    var alt = Math.floor(cam.altitude * 1e1);
-    return encodeArray_([
-      Math.floor(fit180_(cam.lat) * 1e5),
-      Math.floor(fit180_(cam.lng) * 1e5),
-      Math.floor(alt / encOverflow),
-      (alt >= 0) ? alt % encOverflow :
-                   (encOverflow - Math.abs(alt) % encOverflow),
-      Math.floor(fit360_(cam.heading) * 1e1),
-      Math.floor(fit360_(cam.tilt) * 1e1),
-      Math.floor(fit360_(cam.roll) * 1e1)
-    ]);
-  };
-
-  GEarthExtensions.prototype.util.decodeCamera_ = function(s) {
-    var encOverflow = 1073741824;
-    var arr = decodeArray_(s);
-    return {
-      lat: arr[0] * 1e-5,
-      lng: arr[1] * 1e-5,
-      altitude: (encOverflow * arr[2] + arr[3]) * 1e-1,
-      heading: arr[4] * 1e-1,
-      tilt: arr[5] * 1e-1,
-      roll: arr[6] * 1e-1
-    };
-  };
-  
   // modified base64 for url
   // http://en.wikipedia.org/wiki/Base64
   var ALPHABET_ =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   
-  function encodeArray_(a) {
+  /**
+   * Encodes an array of signed numbers into a string.
+   * @param {Number[]} arr An array of signed numbers.
+   * @type String
+   * @return An encoded string representing the array of numbers.
+   */
+  GEarthExtensions.prototype.util.encodeArray = function(arr) {
     var s = '';
-    for (var i = 0; i < a.length; i++) {
-      s += encodeSignedNumber_(a[i]);
+    for (var i = 0; i < arr.length; i++) {
+      var sgn_num = arr[i] << 1;
+      sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+
+      while (sgn_num >= 0x20) {
+        s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
+        sgn_num >>= 5;
+      }
+
+      s += ALPHABET_.charAt(sgn_num);
     }
 
     return s;
-  }
-
-  function fit360_(a) {
-    while (a < 0) {
-      a += 360;
-    }
-
-    return a % 360;
-  }
-
-  function fit180_(a) {
-    a = fit360_(a);
-    return (a > 180) ? a - 360 : a;
-  }
+  };
   
-  // Encode a signed number in the encode format.
-  function encodeSignedNumber_(num) {
-    var sgn_num = num << 1;
-
-    if (num < 0) {
-      sgn_num = ~(sgn_num);
-    }
-
-    var encodeString = "";
-
-    while (sgn_num >= 0x20) {
-      encodeString += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
-      sgn_num >>= 5;
-    }
-
-    encodeString += ALPHABET_.charAt(sgn_num);
-    return encodeString;
-  }
-  
-  function decodeArray_(encoded) {
-    var len = encoded.length;
+  /**
+   * Decodes a string representing an array of signed numbers encoded with
+   * GEarthExtensions#util.encodeArray.
+   * @param {String} str The encoded string.
+   * @type Number[]
+   */
+  GEarthExtensions.prototype.util.decodeArray = function(str) {
+    var len = str.length;
     var index = 0;
     var array = [];
 
@@ -142,7 +58,7 @@ limitations under the License.
       var shift = 0;
       var result = 0;
       do {
-        b = ALPHABET_.indexOf(encoded.charAt(index++));
+        b = ALPHABET_.indexOf(str.charAt(index++));
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
@@ -151,32 +67,21 @@ limitations under the License.
     }
 
     return array;
-  }
-
+  };
 }());
 /***IGNORE_BEGIN***/
-/** @ignore */
-function test_encode_decode_camera() {
-  var cam = {
-    lat: 37.123,
-    lng: -122.123,
-    altitude: 12345678,
-    heading: 12.3456,
-    tilt: 45.12345,
-    roll: 19.1552
-  };
+function test_util_encodeArray() {
+  var arr = [1, 5, 15, -10, 0, 5e20, -5e20];
   
-  var s = testext_.util.encodeCamera_(cam);
+  var str = testext_.util.encodeArray(arr);
   // TODO: check for string length and used characters
-  var cam2 = testext_.util.decodeCamera_(s);
+  var arr2 = testext_.util.decodeArray(str);
   
-  assertWithinThresholdPercent(0.01, cam.lat, cam2.lat);
-  assertWithinThresholdPercent(0.01, cam.lng, cam2.lng);
-  assertWithinThresholdPercent(0.01, cam.altitude, cam2.altitude);
-  assertWithinThresholdPercent(0.01, cam.heading, cam2.heading);
-  assertWithinThresholdPercent(0.01, cam.tilt, cam2.tilt);
-  assertWithinThresholdPercent(0.01, cam.roll, cam2.roll);
-  
-  // TODO: test extremes of camera parameters
+  assertEquals(arr.lat, arr2.lat);
+  assertEquals(arr.lng, arr2.lng);
+  assertEquals(arr.altitude, arr2.altitude);
+  assertEquals(arr.heading, arr2.heading);
+  assertEquals(arr.tilt, arr2.tilt);
+  assertEquals(arr.roll, arr2.roll);
 }
 /***IGNORE_END***/
