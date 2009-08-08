@@ -82,7 +82,12 @@ limitations under the License.
         '</Pair></StyleMap>' +
         '</Document>');
 
+    var finishListener;
+    
     var endFunction = function(abort) {
+      google.earth.removeEventListener(me.pluginInstance.getWindow(),
+          'dblclick', finishListener);
+      
       // duplicate the first coordinate to the end if necessary
       var numCoords = coords.getLength();
       if (numCoords && isRing) {
@@ -106,7 +111,7 @@ limitations under the License.
       }
     };
     
-    var finishListener = function(event) {
+    finishListener = function(event) {
       event.preventDefault();
       endFunction.call(null);
     };
@@ -160,8 +165,6 @@ limitations under the License.
     this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
       abortAndEndFn: function() {
         endFunction.call(null, true); // abort
-        google.earth.removeEventListener(me.pluginInstance.getWindow(),
-            'dblclick', finishListener);
       }
     });
   };

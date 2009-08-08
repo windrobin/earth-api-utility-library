@@ -4346,7 +4346,12 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         '</Pair></StyleMap>' +
         '</Document>');
 
+    var finishListener;
+    
     var endFunction = function(abort) {
+      google.earth.removeEventListener(me.pluginInstance.getWindow(),
+          'dblclick', finishListener);
+      
       // duplicate the first coordinate to the end if necessary
       var numCoords = coords.getLength();
       if (numCoords && isRing) {
@@ -4370,7 +4375,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
       }
     };
     
-    var finishListener = function(event) {
+    finishListener = function(event) {
       event.preventDefault();
       endFunction.call(null);
     };
@@ -4424,8 +4429,6 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
       abortAndEndFn: function() {
         endFunction.call(null, true); // abort
-        google.earth.removeEventListener(me.pluginInstance.getWindow(),
-            'dblclick', finishListener);
       }
     });
   };
