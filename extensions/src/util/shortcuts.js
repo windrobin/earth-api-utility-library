@@ -59,20 +59,40 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
  * @param {Object} [options] KML display options.
  * @param {Boolean} [options.cacheBuster] Enforce freshly downloading the KML
  *     by introducing a cache-busting query parameter.
+ * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
+ *     in the loaded KML after loading it. If no explicit view is available,
+ *     a default bounds view will be calculated and used unless
+ *     options.flyToBoundsFallback is false.
+ *     See GEarthExtensions#util.flyToObject for more information.
+ * @param {Boolean} [options.flyToBoundsFallback] If options.flyToView is true
+ *     and no document-level abstract view is explicitly defined, do not
+ *     calculate and fly to a bounds view.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
-  options = options || {};
+  options = GEarthExtensions.checkParameters(options, false, {
+    cacheBuster: false,
+    flyToView: false,
+    flyToBoundsFallback: true,
+    aspectRatio: 1.0
+  });
+  
   if (options.cacheBuster) {
     url += (url.match(/\?/) ? '&' : '?') + '_cacheBuster=' +
         Number(new Date()).toString();
   }
 
   // TODO: option to choose network link or fetchKml
-  
   var me = this;
   google.earth.fetchKml(me.pluginInstance, url, function(kmlObject) {
     if (kmlObject) {
       me.pluginInstance.getFeatures().appendChild(kmlObject);
+      
+      if (options.flyToView) {
+        me.util.flyToObject(kmlObject, {
+          boundsFallback: options.flyToBoundsFallback,
+          aspectRatio: options.aspectRatio
+        });
+      }
     }
   });
 };
@@ -81,12 +101,73 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * Simply loads and shows the given KML string in the Google Earth Plugin
  * instance.
  * @param {String} str The KML blob string to show.
- * @param {Object} [options] KML display options. There are currently no
- *     options.
+ * @param {Object} [options] KML display options.
+ * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
+ *     in the parsed KML. If no explicit view is available,
+ *     a default bounds view will be calculated and used unless
+ *     options.flyToBoundsFallback is false.
+ *     See GEarthExtensions#util.flyToObject for more information.
+ * @param {Boolean} [options.flyToBoundsFallback] If options.flyToView is true
+ *     and no document-level abstract view is explicitly defined, do not
+ *     calculate and fly to a bounds view.
+ * @return Returns the parsed object on success, or null if there was an error.
  */
 GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
+  options = GEarthExtensions.checkParameters(options, false, {
+    flyToView: false,
+    flyToBoundsFallback: true,
+    aspectRatio: 1.0
+  });
+  
   var kmlObject = this.pluginInstance.parseKml(str);
-  this.pluginInstance.getFeatures().appendChild(kmlObject);
+  if (kmlObject) {
+    this.pluginInstance.getFeatures().appendChild(kmlObject);
+    
+    if (options.flyToView) {
+      this.util.flyToObject(kmlObject, {
+        boundsFallback: options.flyToBoundsFallback,
+        aspectRatio: options.aspectRatio
+      });
+    }
+  }
+  
+  return kmlObject;
+};
+
+/**
+ * Flies to an object; if the object is a feature and has an explicitly defined
+ * abstract view, that view is used. Otherwise, attempts to calculate a bounds
+ * view of the object and flies to that (assuming options.boundsFallback is
+ * true).
+ * @param {KmlObject} obj The object to fly to.
+ * @param {Object} [options] Flyto options.
+ * @param {Boolean} [options.boundsFallback] Whether or not to attempt to
+ *     calculate a bounding box view of the object if it doesn't have an
+ *     abstract view.
+ * @param {Number} [options.aspectRatio=1.0] When calculating a bounding box
+ *     view, this should be the current aspect ratio of the plugin window.
+ */
+GEarthExtensions.prototype.util.flyToObject = function(obj, options) {
+  options = GEarthExtensions.checkParameters(options, false, {
+    boundsFallback: true,
+    aspectRatio: 1.0
+  });
+  
+  if (!obj) {
+    throw new Error('flyToObject was given an invalid object.');
+  }
+  
+  if ('getAbstractView' in obj && obj.getAbstractView()) {
+    this.pluginInstance.getView().setAbstractView(
+        obj.getAbstractView());
+  } else if (options.boundsFallback) {
+    var bounds = this.dom.computeBounds(obj);
+    if (bounds && !bounds.isEmpty()) {
+      this.view.setToBoundsView(bounds, {
+        aspectRatio: options.aspectRatio
+      });
+    }
+  }
 };
 
 /**

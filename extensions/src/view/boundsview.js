@@ -31,7 +31,7 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
     defaultRange: 1000,
     scaleRange: 1.5
   });
-    
+  
   var center = bounds.center();
   var lookAtRange = options.defaultRange;
   
