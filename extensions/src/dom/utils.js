@@ -133,10 +133,7 @@ GEarthExtensions.prototype.dom.walk = function() {
                                                // outer boundary
       if (options.geometries && object.getOuterBoundary()) {
         recurse_(object.getOuterBoundary(), contextArgument.child);
-      }
-    } else if ('getInnerBoundaries' in object) { // GELinearRingContainer
-      if (options.geometries) {
-        objectContainer = object.getInnerBoundaries();
+        objectContainer = object.getInnerBoundaries(); // GELinearRingContainer
       }
     }
     

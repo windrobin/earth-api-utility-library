@@ -59,6 +59,10 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
  * @param {Number} [options.box.maxAltitude] The high altitude for the region.
  * @param {KmlAltitudeModeEnum} [options.box.altitudeMode] The altitude mode
  *     of the region, pertaining to min and max altitude.
+ * @param {Number[]} [options.lod] An array of values indicating the LOD range
+ *     for the region. The array can either contain 2 values, i.e.
+ *     [minLodPixels, maxLodPixels], or 4 values to indicate fade extents, i.e.
+ *     [minLodPixels, minFadeExtent, maxFadeExtent, maxLodPixels].
  * @type KmlRegion
  */
 GEarthExtensions.prototype.dom.buildRegion =

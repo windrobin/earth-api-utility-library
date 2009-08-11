@@ -54,8 +54,8 @@ GEarthExtensions.checkParameters = function(explicitParams,
       }
       
       throw new Error(
-        'Unexpected parameter \'' + member + '\'. ' +
-        'Allowed parameters are: ' + allowed.join(', ') + '.');
+          'Unexpected parameter \'' + member + '\'. ' +
+          'Allowed parameters are: ' + allowed.join(', ') + '.');
     }
     
     finalParams[member] = explicitParams[member];
