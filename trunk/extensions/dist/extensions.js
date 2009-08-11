@@ -2233,8 +2233,8 @@ GEarthExtensions.checkParameters = function(explicitParams,
       }
       
       throw new Error(
-        'Unexpected parameter \'' + member + '\'. ' +
-        'Allowed parameters are: ' + allowed.join(', ') + '.');
+          'Unexpected parameter \'' + member + '\'. ' +
+          'Allowed parameters are: ' + allowed.join(', ') + '.');
     }
     
     finalParams[member] = explicitParams[member];
@@ -3234,6 +3234,10 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
  * @param {Number} [options.box.maxAltitude] The high altitude for the region.
  * @param {KmlAltitudeModeEnum} [options.box.altitudeMode] The altitude mode
  *     of the region, pertaining to min and max altitude.
+ * @param {Number[]} [options.lod] An array of values indicating the LOD range
+ *     for the region. The array can either contain 2 values, i.e.
+ *     [minLodPixels, maxLodPixels], or 4 values to indicate fade extents, i.e.
+ *     [minLodPixels, minFadeExtent, maxFadeExtent, maxLodPixels].
  * @type KmlRegion
  */
 GEarthExtensions.prototype.dom.buildRegion =
@@ -3598,10 +3602,7 @@ GEarthExtensions.prototype.dom.walk = function() {
                                                // outer boundary
       if (options.geometries && object.getOuterBoundary()) {
         recurse_(object.getOuterBoundary(), contextArgument.child);
-      }
-    } else if ('getInnerBoundaries' in object) { // GELinearRingContainer
-      if (options.geometries) {
-        objectContainer = object.getInnerBoundaries();
+        objectContainer = object.getInnerBoundaries(); // GELinearRingContainer
       }
     }
     
