@@ -63,6 +63,7 @@ geo.Bounds = function() {
       this.ne_ = new geo.Point(bounds.northEastTop());
 
     // anything else, treated as the lone coordinate
+    // TODO: accept array of points, a Path, or a Polygon
     } else {
       this.sw_ = this.ne_ = new geo.Point(arguments[0]);
 
@@ -1143,6 +1144,230 @@ Matrix.Zero = function(n, m) {
   }
   return Matrix.create(els);
 };
+// Line class - depends on Vector, and some methods require Matrix and Plane.
+
+function Line() {}
+Line.prototype = {
+
+  // Returns true if the argument occupies the same space as the line
+  eql: function(line) {
+    return (this.isParallelTo(line) && this.contains(line.anchor));
+  },
+
+  // Returns a copy of the line
+  dup: function() {
+    return Line.create(this.anchor, this.direction);
+  },
+
+  // Returns the result of translating the line by the given vector/array
+  translate: function(vector) {
+    var V = vector.elements || vector;
+    return Line.create([
+      this.anchor.elements[0] + V[0],
+      this.anchor.elements[1] + V[1],
+      this.anchor.elements[2] + (V[2] || 0)
+    ], this.direction);
+  },
+
+  // Returns true if the line is parallel to the argument. Here, 'parallel to'
+  // means that the argument's direction is either parallel or antiparallel to
+  // the line's own direction. A line is parallel to a plane if the two do not
+  // have a unique intersection.
+  isParallelTo: function(obj) {
+    if (obj.normal || (obj.start && obj.end)) { return obj.isParallelTo(this); }
+    var theta = this.direction.angleFrom(obj.direction);
+    return (Math.abs(theta) <= Sylvester.precision || Math.abs(theta - Math.PI) <= Sylvester.precision);
+  },
+
+  // Returns the line's perpendicular distance from the argument,
+  // which can be a point, a line or a plane
+  distanceFrom: function(obj) {
+    if (obj.normal || (obj.start && obj.end)) { return obj.distanceFrom(this); }
+    if (obj.direction) {
+      // obj is a line
+      if (this.isParallelTo(obj)) { return this.distanceFrom(obj.anchor); }
+      var N = this.direction.cross(obj.direction).toUnitVector().elements;
+      var A = this.anchor.elements, B = obj.anchor.elements;
+      return Math.abs((A[0] - B[0]) * N[0] + (A[1] - B[1]) * N[1] + (A[2] - B[2]) * N[2]);
+    } else {
+      // obj is a point
+      var P = obj.elements || obj;
+      var A = this.anchor.elements, D = this.direction.elements;
+      var PA1 = P[0] - A[0], PA2 = P[1] - A[1], PA3 = (P[2] || 0) - A[2];
+      var modPA = Math.sqrt(PA1*PA1 + PA2*PA2 + PA3*PA3);
+      if (modPA === 0) return 0;
+      // Assumes direction vector is normalized
+      var cosTheta = (PA1 * D[0] + PA2 * D[1] + PA3 * D[2]) / modPA;
+      var sin2 = 1 - cosTheta*cosTheta;
+      return Math.abs(modPA * Math.sqrt(sin2 < 0 ? 0 : sin2));
+    }
+  },
+
+  // Returns true iff the argument is a point on the line, or if the argument
+  // is a line segment lying within the receiver
+  contains: function(obj) {
+    if (obj.start && obj.end) { return this.contains(obj.start) && this.contains(obj.end); }
+    var dist = this.distanceFrom(obj);
+    return (dist !== null && dist <= Sylvester.precision);
+  },
+
+  // Returns the distance from the anchor of the given point. Negative values are
+  // returned for points that are in the opposite direction to the line's direction from
+  // the line's anchor point.
+  positionOf: function(point) {
+    if (!this.contains(point)) { return null; }
+    var P = point.elements || point;
+    var A = this.anchor.elements, D = this.direction.elements;
+    return (P[0] - A[0]) * D[0] + (P[1] - A[1]) * D[1] + ((P[2] || 0) - A[2]) * D[2];
+  },
+
+  // Returns true iff the line lies in the given plane
+  liesIn: function(plane) {
+    return plane.contains(this);
+  },
+
+  // Returns true iff the line has a unique point of intersection with the argument
+  intersects: function(obj) {
+    if (obj.normal) { return obj.intersects(this); }
+    return (!this.isParallelTo(obj) && this.distanceFrom(obj) <= Sylvester.precision);
+  },
+
+  // Returns the unique intersection point with the argument, if one exists
+  intersectionWith: function(obj) {
+    if (obj.normal || (obj.start && obj.end)) { return obj.intersectionWith(this); }
+    if (!this.intersects(obj)) { return null; }
+    var P = this.anchor.elements, X = this.direction.elements,
+        Q = obj.anchor.elements, Y = obj.direction.elements;
+    var X1 = X[0], X2 = X[1], X3 = X[2], Y1 = Y[0], Y2 = Y[1], Y3 = Y[2];
+    var PsubQ1 = P[0] - Q[0], PsubQ2 = P[1] - Q[1], PsubQ3 = P[2] - Q[2];
+    var XdotQsubP = - X1*PsubQ1 - X2*PsubQ2 - X3*PsubQ3;
+    var YdotPsubQ = Y1*PsubQ1 + Y2*PsubQ2 + Y3*PsubQ3;
+    var XdotX = X1*X1 + X2*X2 + X3*X3;
+    var YdotY = Y1*Y1 + Y2*Y2 + Y3*Y3;
+    var XdotY = X1*Y1 + X2*Y2 + X3*Y3;
+    var k = (XdotQsubP * YdotY / XdotX + XdotY * YdotPsubQ) / (YdotY - XdotY * XdotY);
+    return Vector.create([P[0] + k*X1, P[1] + k*X2, P[2] + k*X3]);
+  },
+
+  // Returns the point on the line that is closest to the given point or line/line segment
+  pointClosestTo: function(obj) {
+    if (obj.start && obj.end) {
+      // obj is a line segment
+      var P = obj.pointClosestTo(this);
+      return (P === null) ? null : this.pointClosestTo(P);
+    } else if (obj.direction) {
+      // obj is a line
+      if (this.intersects(obj)) { return this.intersectionWith(obj); }
+      if (this.isParallelTo(obj)) { return null; }
+      var D = this.direction.elements, E = obj.direction.elements;
+      var D1 = D[0], D2 = D[1], D3 = D[2], E1 = E[0], E2 = E[1], E3 = E[2];
+      // Create plane containing obj and the shared normal and intersect this with it
+      // Thank you: http://www.cgafaq.info/wiki/Line-line_distance
+      var x = (D3 * E1 - D1 * E3), y = (D1 * E2 - D2 * E1), z = (D2 * E3 - D3 * E2);
+      var N = [x * E3 - y * E2, y * E1 - z * E3, z * E2 - x * E1];
+      var P = Plane.create(obj.anchor, N);
+      return P.intersectionWith(this);
+    } else {
+      // obj is a point
+      var P = obj.elements || obj;
+      if (this.contains(P)) { return Vector.create(P); }
+      var A = this.anchor.elements, D = this.direction.elements;
+      var D1 = D[0], D2 = D[1], D3 = D[2], A1 = A[0], A2 = A[1], A3 = A[2];
+      var x = D1 * (P[1]-A2) - D2 * (P[0]-A1), y = D2 * ((P[2] || 0) - A3) - D3 * (P[1]-A2),
+          z = D3 * (P[0]-A1) - D1 * ((P[2] || 0) - A3);
+      var V = Vector.create([D2 * x - D3 * z, D3 * y - D1 * x, D1 * z - D2 * y]);
+      var k = this.distanceFrom(P) / V.modulus();
+      return Vector.create([
+        P[0] + V.elements[0] * k,
+        P[1] + V.elements[1] * k,
+        (P[2] || 0) + V.elements[2] * k
+      ]);
+    }
+  },
+
+  // Returns a copy of the line rotated by t radians about the given line. Works by
+  // finding the argument's closest point to this line's anchor point (call this C) and
+  // rotating the anchor about C. Also rotates the line's direction about the argument's.
+  // Be careful with this - the rotation axis' direction affects the outcome!
+  rotate: function(t, line) {
+    // If we're working in 2D
+    if (typeof(line.direction) == 'undefined') { line = Line.create(line.to3D(), Vector.k); }
+    var R = Matrix.Rotation(t, line.direction).elements;
+    var C = line.pointClosestTo(this.anchor).elements;
+    var A = this.anchor.elements, D = this.direction.elements;
+    var C1 = C[0], C2 = C[1], C3 = C[2], A1 = A[0], A2 = A[1], A3 = A[2];
+    var x = A1 - C1, y = A2 - C2, z = A3 - C3;
+    return Line.create([
+      C1 + R[0][0] * x + R[0][1] * y + R[0][2] * z,
+      C2 + R[1][0] * x + R[1][1] * y + R[1][2] * z,
+      C3 + R[2][0] * x + R[2][1] * y + R[2][2] * z
+    ], [
+      R[0][0] * D[0] + R[0][1] * D[1] + R[0][2] * D[2],
+      R[1][0] * D[0] + R[1][1] * D[1] + R[1][2] * D[2],
+      R[2][0] * D[0] + R[2][1] * D[1] + R[2][2] * D[2]
+    ]);
+  },
+
+  // Returns a copy of the line with its direction vector reversed.
+  // Useful when using lines for rotations.
+  reverse: function() {
+    return Line.create(this.anchor, this.direction.x(-1));
+  },
+
+  // Returns the line's reflection in the given point or line
+  reflectionIn: function(obj) {
+    if (obj.normal) {
+      // obj is a plane
+      var A = this.anchor.elements, D = this.direction.elements;
+      var A1 = A[0], A2 = A[1], A3 = A[2], D1 = D[0], D2 = D[1], D3 = D[2];
+      var newA = this.anchor.reflectionIn(obj).elements;
+      // Add the line's direction vector to its anchor, then mirror that in the plane
+      var AD1 = A1 + D1, AD2 = A2 + D2, AD3 = A3 + D3;
+      var Q = obj.pointClosestTo([AD1, AD2, AD3]).elements;
+      var newD = [Q[0] + (Q[0] - AD1) - newA[0], Q[1] + (Q[1] - AD2) - newA[1], Q[2] + (Q[2] - AD3) - newA[2]];
+      return Line.create(newA, newD);
+    } else if (obj.direction) {
+      // obj is a line - reflection obtained by rotating PI radians about obj
+      return this.rotate(Math.PI, obj);
+    } else {
+      // obj is a point - just reflect the line's anchor in it
+      var P = obj.elements || obj;
+      return Line.create(this.anchor.reflectionIn([P[0], P[1], (P[2] || 0)]), this.direction);
+    }
+  },
+
+  // Set the line's anchor point and direction.
+  setVectors: function(anchor, direction) {
+    // Need to do this so that line's properties are not
+    // references to the arguments passed in
+    anchor = Vector.create(anchor);
+    direction = Vector.create(direction);
+    if (anchor.elements.length == 2) {anchor.elements.push(0); }
+    if (direction.elements.length == 2) { direction.elements.push(0); }
+    if (anchor.elements.length > 3 || direction.elements.length > 3) { return null; }
+    var mod = direction.modulus();
+    if (mod === 0) { return null; }
+    this.anchor = anchor;
+    this.direction = Vector.create([
+      direction.elements[0] / mod,
+      direction.elements[1] / mod,
+      direction.elements[2] / mod
+    ]);
+    return this;
+  }
+};
+
+// Constructor function
+Line.create = function(anchor, direction) {
+  var L = new Line();
+  return L.setVectors(anchor, direction);
+};
+var $L = Line.create;
+
+// Axes
+Line.X = Line.create(Vector.Zero(3), Vector.i);
+Line.Y = Line.create(Vector.Zero(3), Vector.j);
+Line.Z = Line.create(Vector.Zero(3), Vector.k);
 
 geo.linalg = {};
 
@@ -1150,10 +1375,31 @@ geo.linalg.Vector = function() {
   return Vector.create.apply(null, arguments);
 };
 geo.linalg.Vector.create = Vector.create;
+geo.linalg.Vector.i = Vector.i;
+geo.linalg.Vector.j = Vector.j;
+geo.linalg.Vector.k = Vector.k;
+geo.linalg.Vector.Random = Vector.Random;
+geo.linalg.Vector.Zero = Vector.Zero;
 
 geo.linalg.Matrix = function() {
   return Matrix.create.apply(null, arguments);
 };
+geo.linalg.Matrix.create = Matrix.create;
+geo.linalg.Matrix.I = Matrix.I;
+geo.linalg.Matrix.Random = Matrix.Random;
+geo.linalg.Matrix.Rotation = Matrix.Rotation;
+geo.linalg.Matrix.RotationX = Matrix.RotationX;
+geo.linalg.Matrix.RotationY = Matrix.RotationY;
+geo.linalg.Matrix.RotationZ = Matrix.RotationZ;
+geo.linalg.Matrix.Zero = Matrix.Zero;
+
+geo.linalg.Line = function() {
+  return Line.create.apply(null, arguments);
+};
+geo.linalg.Line.create = Line.create;
+geo.linalg.Line.X = Line.X;
+geo.linalg.Line.Y = Line.Y;
+geo.linalg.Line.Z = Line.Z;
 
 }());
 /**
@@ -1435,11 +1681,11 @@ geo.math.destination = function(start, options) {
 };
 /**
  * Creates a new path from the given parameters.
- * @param {geo.Path|geo.Point[]|PointSrc[]|KmlLineString} path The path data.
+ * @param {geo.Path|geo.Point[]|PointSrc[]|KmlLineString|GPolyline|GPolygon}
+ *     path The path data.
  * @constructor
  */
 geo.Path = function() {
-  // TODO: accept instances of GPolyline
   this.coords_ = []; // don't use mutable objects in global defs
   var coordArraySrc = null;
   var i;
@@ -1474,6 +1720,13 @@ geo.Path = function() {
       } else {
         throw new TypeError(
             'Could not create a path from the given arguments');
+      }
+    
+    // GPolyline or GPolygon constructor
+    } else if ('getVertex' in path && 'getVertexCount' in path) {
+      var n = path.getVertexCount();
+      for (i = 0; i < n; i++) {
+        this.coords_.push(new geo.Point(path.getVertex(i)));
       }
     
     // can't construct from the given argument
@@ -1687,12 +1940,11 @@ geo.Path.prototype.area = function() {
 // TODO: unit test
 /**
  * Creates a new point from the given parameters.
- * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation} src
- *     The point data.
+ * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation|GLatLng}
+ *     src The point data.
  * @constructor
  */
 geo.Point = function() {
-  // TODO: accept instances of GLatLng and accept point object literals
   var pointArraySrc = null;
   
   // 1 argument constructor
@@ -1735,6 +1987,11 @@ geo.Point = function() {
             'Could not create a point from the given Earth object');
       }
     
+    // GLatLng constructor
+    } else if (geo.util.isGLatLng_(point)) {
+      this.lat_ = point.lat();
+      this.lng_ = point.lng();
+
     // Error, can't create a Point from the single argument
     } else {
       throw new TypeError('Could not create a point from the given arguments');
@@ -1896,6 +2153,50 @@ geo.Point.prototype.midpoint = function(dest, fraction) {
 geo.Point.prototype.destination = function(options) {
   return geo.math.destination(this, options);
 };
+
+/**
+ * Returns the cartesian representation of the point, as a 3-vector,
+ * assuming a spherical Earth of radius geo.math.EARTH_RADIUS.
+ * @return {geo.linalg.Vector}
+ */
+geo.Point.prototype.toCartesian = function() {
+  var sin_phi = Math.sin(this.lng().toRadians());
+  var cos_phi = Math.cos(this.lng().toRadians());
+  var sin_lmd = Math.sin(this.lat().toRadians());
+  var cos_lmd = Math.cos(this.lat().toRadians());
+
+  var r = geo.math.EARTH_RADIUS + this.altitude();
+  return new geo.linalg.Vector([r * cos_phi * cos_lmd,
+                                r * sin_lmd,
+                                r * -sin_phi * cos_lmd]);
+};
+
+/**
+ * A static method to create a point from a 3-vector representing the cartesian
+ * coordinates of a point on the Earth, assuming a spherical Earth of radius
+ * geo.math.EARTH_RADIUS.
+ * @param {geo.linalg.Vector} cartesianVector The cartesian representation of
+ *     the point to create.
+ * @return {geo.Point} The point, or null if the point doesn't exist.
+ */
+geo.Point.fromCartesian = function(cartesianVector) {
+  var r = cartesianVector.distanceFrom(geo.linalg.Vector.Zero(3));
+  var unitVector = cartesianVector.toUnitVector();
+  
+  var altitude = r - geo.math.EARTH_RADIUS;
+  
+  var lat = Math.asin(unitVector.e(2)).toDegrees();
+  if (lat > 90) {
+    lat -= 180;
+  }
+  
+  var lng = 0;
+  if (Math.abs(lat) < 90) {
+    lng = -Math.atan2(unitVector.e(3), unitVector.e(1)).toDegrees();
+  }
+  
+  return new geo.Point(lat, lng, altitude);
+};
 /**
  * Creates a new polygon from the given parameters.
  * @param {geo.Polygon|geo.Path} outerBoundary
@@ -1905,7 +2206,6 @@ geo.Point.prototype.destination = function(options) {
  * @constructor
  */
 geo.Polygon = function() {
-  // TODO: accept instances of GPolygon, GPolyline
   this.innerBoundaries_ = [];
   var i;
   
@@ -1973,7 +2273,7 @@ geo.Polygon = function() {
         this.innerBoundaries_.push(new geo.Path(arguments[1][i]));
       }
     } else {
-      throw new Error('Cannot create a path from the given arguments.');
+      throw new TypeError('Cannot create a path from the given arguments.');
     }
   }
 };
@@ -2036,7 +2336,7 @@ geo.Polygon.prototype.innerBoundaries = function() {
  */
 geo.Polygon.prototype.containsPoint = function(point) {
   // outer boundary should contain the point
-  if (!this.outerBoundary_.containsPoint(point)) {
+  if (!this.outerBoundary_ || !this.outerBoundary_.containsPoint(point)) {
     return false;
   }
   
@@ -2051,11 +2351,27 @@ geo.Polygon.prototype.containsPoint = function(point) {
 };
 
 /**
+ * Returns the latitude/longitude bounds wholly containing this polygon.
+ * @type geo.Bounds
+ */
+geo.Polygon.prototype.bounds = function() {
+  if (!this.outerBoundary_) {
+    return new geo.Bounds();
+  }
+  
+  return this.outerBoundary_.bounds();
+};
+
+/**
  * Returns the approximate area of the polygon.
  * @return {Number} The approximate area, in square meters.
  * @see geo.Path.area
  */
 geo.Polygon.prototype.area = function() {
+  if (!this.outerBoundary_) {
+    return 0;
+  }
+  
   // start with outer boundary area
   var area = this.outerBoundary_.area();
   
@@ -2067,7 +2383,6 @@ geo.Polygon.prototype.area = function() {
   
   return area;
 };
-
 /**
  * The geo.util namespace contains generic JavaScript and JS/Geo utility
  * functions.
@@ -2125,6 +2440,17 @@ geo.util.isEarthAPIObject_ = function(object) {
       'getType' in object;
 };
 
+/**
+ * Determins whether or not the given object is a google.maps.LatLng object
+ * (GLatLng).
+ */
+geo.util.isGLatLng_ = function(object) {
+  return (window.google &&
+          window.google.maps &&
+          window.google.maps.LatLng &&
+          object.constructor === window.google.maps.LatLng);
+};
+
 /*
 Copyright 2009 Google Inc.
 
@@ -2159,18 +2485,18 @@ var GEarthExtensions = function(pluginInstance) {
   
   // bind all functions in namespaces to this GEarthExtensions instance
   /** @private */
-  function bindFunction(fn_, this_) {
+  function bindFunction_(fn_) {
     return function() {
-      return fn_.apply(this_, arguments);
+      return fn_.apply(me, arguments);
     };
   }
 
   /** @private */
-  function bindNamespaceMembers(nsParent, context) {
+  function bindNamespaceMembers_(nsParent) {
     for (var mstr in nsParent) {
       var member = nsParent[mstr];
       
-      // bind this namespace's functions to the given context
+      // bind this namespace's functions to the GEarthExtensions object
       if (geo.util.isFunction(member)) {
         if (member.isclass_) {
           // if it's a class constructor, give it access to this
@@ -2179,18 +2505,25 @@ var GEarthExtensions = function(pluginInstance) {
         } else {
           // function's not a constructor, just bind it to this
           // GEarthExtensions instance
-          nsParent[mstr] = bindFunction(member, context);
+          nsParent[mstr] = bindFunction_(member);
         }
       }
       
-      // bind functions of all sub-namespaces
+      // duplicate sub-namespace objects (required for multiple instances to
+      // work) and bind functions of all sub-namespaces
       if (GEarthExtensions.isExtensionsNamespace_(member)) {
-        bindNamespaceMembers(member, context);
+        var nsDuplicate = {};
+        for (var subMstr in member)
+          nsDuplicate[subMstr] = member[subMstr];
+        
+        bindNamespaceMembers_(nsDuplicate);
+        
+        nsParent[mstr] = nsDuplicate;
       }
     }
   }
   
-  bindNamespaceMembers(this, this);
+  bindNamespaceMembers_(this);
 };
 /** @private */
 GEarthExtensions.AUTO = Infinity; // for dom builder (auto property setters)
@@ -5345,6 +5678,152 @@ function(obj, property, options) {
   return anim;
 };
 /**
+ * Contains methods for 3D math, including linear algebra/geo bindings.
+ * @namespace
+ */
+GEarthExtensions.prototype.math3d = {isnamespace_:true};
+(function() {
+  /**
+   * Converts heading, tilt, and roll (HTR) to a local orientation matrix
+   * that transforms global direction vectors to local direction vectors.
+   * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
+   *     degrees.
+   * @return {geo.linalg.Matrix} A local orientation matrix.
+   */
+  GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
+    return eulerAnglesToMatrix_([
+        htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
+  };
+
+  /**
+   * Converts a local orientation matrix (right, dir, up vectors) in local
+   * cartesian coordinates to heading, tilt, and roll.
+   * @param {geo.linalg.Matrix} matrix A local orientation matrix.
+   * @return {Number[]} A heading, tilt, roll array, where each angle is in
+   *     degrees.
+   */
+  GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
+    var htr = matrixToEulerAngles_(matrix);
+    return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
+  };
+  
+  /**
+   * Converts an array of 3 Euler angle rotations to matrix form.
+   * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
+   * "Euler Angle Conversion" by Ken Shoemake.
+   * @see http://vered.rose.utoronto.ca/people/spike/GEMS/GEMS.html
+   * @param {Number[]} eulerAngles An array of 3 frame-relative Euler rotation
+   *     angles, each in radians.
+   * @return {geo.linalg.Matrix} A matrix representing the transformation.
+   * @private
+   */
+  function eulerAnglesToMatrix_(eulerAngles) {
+    var I = 2; // used for roll, in radians
+    var J = 0; // heading, in radians
+    var K = 1; // tilt
+  
+    var m = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  
+    var cos_ti = Math.cos(eulerAngles[0]);
+    var cos_tj = Math.cos(eulerAngles[1]);
+    var cos_th = Math.cos(eulerAngles[2]);
+  
+    var sin_ti = Math.sin(eulerAngles[0]);
+    var sin_tj = Math.sin(eulerAngles[1]);
+    var sin_th = Math.sin(eulerAngles[2]);
+  
+    var cos_c = cos_ti * cos_th;
+    var cos_s = cos_ti * sin_th;
+    var sin_c = sin_ti * cos_th;
+    var sin_s = sin_ti * sin_th;
+  
+    m[I][I] = cos_tj * cos_th;
+    m[I][J] = sin_tj * sin_c - cos_s;
+    m[I][K] = sin_tj * cos_c + sin_s;
+  
+    m[J][I] = cos_tj * sin_th;
+    m[J][J] = sin_tj * sin_s + cos_c;
+    m[J][K] = sin_tj * cos_s - sin_c;
+  
+    m[K][I] = -sin_tj;
+    m[K][J] = cos_tj * sin_ti;
+    m[K][K] = cos_tj * cos_ti;
+  
+    return new geo.linalg.Matrix(m);
+  }
+
+  /**
+   * Converts a matrix to an array of 3 Euler angle rotations.
+   * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
+   * "Euler Angle Conversion" by Ken Shoemake.
+   * @see http://vered.rose.utoronto.ca/people/spike/GEMS/GEMS.html
+   * @param {geo.linalg.Matrix} matrix A homogenous matrix representing a
+   *     transformation.
+   * @return {Number[]} An array of 3 frame-relative Euler rotation angles
+   *     representing the transformation, each in radians.
+   */
+  function matrixToEulerAngles_(matrix) {
+    var I = 2 + 1; // + 1 because Sylvester uses 1-based indices.
+    var J = 0 + 1;
+    var K = 1 + 1;
+    var FLT_EPSILON = 1e-6;
+  
+    var cy = Math.sqrt(matrix.e(I, I) * matrix.e(I, I) +
+                       matrix.e(J, I) * matrix.e(J, I));
+  
+    if (cy <= 16 * FLT_EPSILON) {
+      return [Math.atan2(-matrix.e(J, K), matrix.e(J, J)),
+              Math.atan2(-matrix.e(K, I), cy),
+              0];
+    }
+
+    return [Math.atan2( matrix.e(K, J), matrix.e(K, K)),
+            Math.atan2(-matrix.e(K, I), cy),
+            Math.atan2( matrix.e(J, I), matrix.e(I, I))];
+  }
+}());
+/**
+ * Creates an orthonormal orientation matrix for a given set of object direction
+ * and up vectors. The matrix rows will each be unit length and orthogonal to
+ * each other. If the dir and up vectors are collinear, this function will fail
+ * and return null.
+ * @param {geo.linalg.Vector} dir The object direction vector.
+ * @param {geo.linalg.Vector} up The object up vector.
+ * @return {geo.linalg.Matrix} Returns the orthonormal orientation matrix,
+ *     or null if none is possible.
+ */
+GEarthExtensions.prototype.math3d.makeOrthonormalFrame = function(dir, up) {
+  var newRight = dir.cross(up).toUnitVector();
+  if (newRight.eql(geo.linalg.Vector.Zero(3))) {
+    // dir and up are collinear.
+    return null;
+  }
+  
+  var newDir = up.cross(newRight).toUnitVector();
+  var newUp = newRight.cross(newDir);
+  return new geo.linalg.Matrix([newRight.elements,
+                                newDir.elements,
+                                newUp.elements]);
+};
+
+/**
+ * Creates a local orientation matrix that can transform direction vectors
+ * local to a given point to global direction vectors. The transpose of the
+ * returned matrix performs the inverse transformation.
+ * @param {geo.Point} point The world point at which local coordinates are to
+ *     be transformed.
+ * @return {geo.linalg.Matrix} An orientation matrix that can transform local
+ *     coordinate vectors to global coordinate vectors.
+ */
+GEarthExtensions.prototype.math3d.makeLocalToGlobalFrame = function(point) {
+  var vertical = point.toCartesian().toUnitVector();
+  var east = new geo.linalg.Vector([0, 1, 0]).cross(vertical).toUnitVector();
+  var north = vertical.cross(east).toUnitVector();
+  return new geo.linalg.Matrix([east.elements,
+                                north.elements,
+                                vertical.elements]);
+};
+/**
  * This class/namespace hybrid contains miscellaneous
  * utility functions and shortcuts for the Earth API.
  * @namespace
@@ -5440,7 +5919,7 @@ GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
  *     that can be parsed with GEarthExtensions#util.parseColor.
  * @param {Number} [fraction=0.5] The amount of color2 to composite onto/blend
  *     with color1, as a fraction from 0.0 to 1.0.
- * @type {String}
+ * @type String
  */
 GEarthExtensions.prototype.util.blendColors = function(color1, color2,
                                                        fraction) {
@@ -5675,7 +6154,6 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
  * takes the same parameters as GEarthExtensions#dom.buildLookAt.
  */
 GEarthExtensions.prototype.util.lookAt = function() {
-  //this.pluginInstance.getView().setAbstractView(this.dom.LookAt(...));
   this.pluginInstance.getView().setAbstractView(
       this.dom.buildLookAt.apply(null, arguments));
 };
@@ -5927,6 +6405,7 @@ GEarthExtensions.prototype.view = {isnamespace_:true};
  *     when creating a view for a degenerate, single-point bounding box.
  * @param {Number} [options.rangeMultiplier=1.5] A scaling factor by which
  *     to multiple the lookat range.
+ * @type KmlAbstractView
  */
 GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
   options = GEarthExtensions.checkParameters(options, false, {
@@ -6081,3 +6560,48 @@ GEarthExtensions.prototype.view.setToBoundsView = function() {
   GEarthExtensions.prototype.util.deserializeView =
       GEarthExtensions.prototype.view.deserialize;
 }());
+/**
+ * Creates an abstract view with the viewer at the given camera point, looking
+ * towards the given look at point. For best results, use ALTITUDE_ABSOLUTE
+ * camera and look at points.
+ * @param {PointOptions|geo.Point} cameraPoint The viewer location.
+ * @param {PointOptions|geo.Point} lookAtPoint The location to look at/towards.
+ * @type KmlAbstractView
+ */
+GEarthExtensions.prototype.view.createVantageView = function(cameraPoint,
+                                                             lookAtPoint) {
+  // TODO: handle case where lookat point is directly below camera.
+  cameraPoint = new geo.Point(cameraPoint);
+  lookAtPoint = new geo.Point(lookAtPoint);
+  
+  var heading = cameraPoint.heading(lookAtPoint);
+  var roll = 0;
+  
+  // Tilt is the hard part:
+  // 
+  // Put the positions in world space and get a local orientation matrix for the
+  // camera position. The matrix is used to figure out the angle between the
+  // upside up vector of the local frame and the direction towards the
+  // placemark. This is used for tilt.
+  // 
+  // Tilt is complicated for two reasons:
+  //   1. tilt = 0 is facing down instead of facing towards horizon. This is 
+  //      opposite of KML model behavior.
+  //   2. tilt is relative to the current position of the camera. Not relative
+  //      to say, the North Pole or some other global axis. Tilt is *relative*.
+  var cameraCartesian = cameraPoint.toCartesian();
+  var lookAtCartesian = lookAtPoint.toCartesian();
+  var frame = this.math3d.makeLocalToGlobalFrame(cameraPoint);
+
+  // Create the unit direction vector from the camera to the look at point.
+  var lookVec = lookAtCartesian.subtract(cameraCartesian).toUnitVector();
+
+  // Take the angle from the negative upside down vector.
+  // See tilt complication reason (1).
+  var downVec = new geo.linalg.Vector(frame.elements[2]).multiply(-1);
+
+  // Figure out the tilt angle in degrees.
+  var tilt = Math.acos(downVec.dot(lookVec)).toDegrees();
+
+  return this.dom.buildCamera(cameraPoint, {heading: heading, tilt: tilt});
+};

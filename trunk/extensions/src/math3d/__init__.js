@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * This class/namespace hybrid contains various camera/view
- * related.
+ * Contains methods for 3D math, including linear algebra/geo bindings.
  * @namespace
  */
-GEarthExtensions.prototype.view = {isnamespace_:true};
+GEarthExtensions.prototype.math3d = {isnamespace_:true};

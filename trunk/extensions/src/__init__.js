@@ -32,18 +32,18 @@ var GEarthExtensions = function(pluginInstance) {
   
   // bind all functions in namespaces to this GEarthExtensions instance
   /** @private */
-  function bindFunction(fn_, this_) {
+  function bindFunction_(fn_) {
     return function() {
-      return fn_.apply(this_, arguments);
+      return fn_.apply(me, arguments);
     };
   }
 
   /** @private */
-  function bindNamespaceMembers(nsParent, context) {
+  function bindNamespaceMembers_(nsParent) {
     for (var mstr in nsParent) {
       var member = nsParent[mstr];
       
-      // bind this namespace's functions to the given context
+      // bind this namespace's functions to the GEarthExtensions object
       if (geo.util.isFunction(member)) {
         if (member.isclass_) {
           // if it's a class constructor, give it access to this
@@ -52,16 +52,23 @@ var GEarthExtensions = function(pluginInstance) {
         } else {
           // function's not a constructor, just bind it to this
           // GEarthExtensions instance
-          nsParent[mstr] = bindFunction(member, context);
+          nsParent[mstr] = bindFunction_(member);
         }
       }
       
-      // bind functions of all sub-namespaces
+      // duplicate sub-namespace objects (required for multiple instances to
+      // work) and bind functions of all sub-namespaces
       if (GEarthExtensions.isExtensionsNamespace_(member)) {
-        bindNamespaceMembers(member, context);
+        var nsDuplicate = {};
+        for (var subMstr in member)
+          nsDuplicate[subMstr] = member[subMstr];
+        
+        bindNamespaceMembers_(nsDuplicate);
+        
+        nsParent[mstr] = nsDuplicate;
       }
     }
   }
   
-  bindNamespaceMembers(this, this);
+  bindNamespaceMembers_(this);
 };

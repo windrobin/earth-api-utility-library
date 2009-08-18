@@ -23,6 +23,7 @@ limitations under the License.
  *     when creating a view for a degenerate, single-point bounding box.
  * @param {Number} [options.rangeMultiplier=1.5] A scaling factor by which
  *     to multiple the lookat range.
+ * @type KmlAbstractView
  */
 GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
   options = GEarthExtensions.checkParameters(options, false, {

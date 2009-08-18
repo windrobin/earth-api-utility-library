@@ -18,7 +18,6 @@ limitations under the License.
  * takes the same parameters as GEarthExtensions#dom.buildLookAt.
  */
 GEarthExtensions.prototype.util.lookAt = function() {
-  //this.pluginInstance.getView().setAbstractView(this.dom.LookAt(...));
   this.pluginInstance.getView().setAbstractView(
       this.dom.buildLookAt.apply(null, arguments));
 };
