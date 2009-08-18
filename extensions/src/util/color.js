@@ -125,7 +125,7 @@ function test_util_parseColor() {
  *     that can be parsed with GEarthExtensions#util.parseColor.
  * @param {Number} [fraction=0.5] The amount of color2 to composite onto/blend
  *     with color1, as a fraction from 0.0 to 1.0.
- * @type {String}
+ * @type String
  */
 GEarthExtensions.prototype.util.blendColors = function(color1, color2,
                                                        fraction) {

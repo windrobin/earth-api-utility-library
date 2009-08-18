@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>GEarthExtensions Samples - Multiple instances</title>
+  <script src="http://www.google.com/jsapi?key=ABQIAAAAsc0UQXoo2BnAJLhtpWCJFBTgHOxFyKCf35LCvsI_n4URElrkIhS9MkSlm_0NZWgrKFkOsnd5rEK0Lg" type="text/javascript"></script>
+  <script src="../dist/extensions.js" type="text/javascript"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+
+var ge1 = null;
+var gex1 = null;
+
+var ge2 = null;
+var gex2 = null;
+
+google.load('earth', '1');
+
+google.setOnLoadCallback(function() {
+  google.earth.createInstance('map3d1', function(pluginInstance1) {
+    ge1 = pluginInstance1;
+    ge1.getWindow().setVisibility(true);
+    
+    gex1 = new GEarthExtensions(ge1);
+    gex1.util.lookAt([37, -122]);
+  }, function() {});
+  
+  google.earth.createInstance('map3d2', function(pluginInstance2) {
+    ge2 = pluginInstance2;
+    ge2.getWindow().setVisibility(true);
+    
+    gex2 = new GEarthExtensions(ge2);
+    gex2.util.lookAt([37, -122]);
+  }, function() {});
+});
+
+/* ]]> */
+</script>
+</head>
+<body>
+  <table width="100%">
+    <tr>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+    <tr>
+      <td><div id="map3d1" style="width: 500px; height: 500px;"></td>
+      <td><div id="map3d2" style="width: 500px; height: 500px;"></td>
+    </tr>
+  </table>
+</body>
+</html>
