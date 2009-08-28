@@ -60,6 +60,12 @@ limitations under the License.
  *     between 0.0 and 1.0. This is a convenience property, since opacity can
  *     be defined in the color.
 
+ * @param {ColorSpec|Object} [options.balloon] The balloon bgColor or a balloon
+ *     style object literal.
+ * @param {Boolean} [options.balloon.bgColor] The balloon background color.
+ * @param {Boolean} [options.balloon.textColor] The balloon text color.
+ * @param {String} [options.balloon.text] The balloon text template.
+
  * @type KmlStyle
  */
 GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
@@ -69,7 +75,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
     icon: GEarthExtensions.ALLOWED,
     label: GEarthExtensions.ALLOWED,
     line: GEarthExtensions.ALLOWED,
-    poly: GEarthExtensions.ALLOWED
+    poly: GEarthExtensions.ALLOWED,
+    balloon: GEarthExtensions.ALLOWED,
   },
   constructor: function(styleObj, options) {
     // set icon style
@@ -79,7 +86,7 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
     
     var me = this;
     
-    var mergeColorOpacity = function(color, opacity) {
+    var mergeColorOpacity_ = function(color, opacity) {
       color = color ? me.util.parseColor(color) : 'ffffffff';
       if (!geo.util.isUndefined(opacity)) {
         color = pad2(Math.floor(255 * opacity).toString(16)) +
@@ -119,8 +126,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         iconStyle.setHeading(options.icon.heading);
       }
       if ('color' in options.icon || 'opacity' in options.icon) {
-        options.icon.color = mergeColorOpacity(options.icon.color,
-                                               options.icon.opacity);
+        options.icon.color = mergeColorOpacity_(options.icon.color,
+                                                options.icon.opacity);
         iconStyle.getColor().set(options.icon.color);
       }
       if ('opacity' in options.icon) {
@@ -150,8 +157,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         labelStyle.setScale(options.label.scale);
       }
       if ('color' in options.label || 'opacity' in options.label) {
-        options.label.color = mergeColorOpacity(options.label.color,
-                                                options.label.opacity);
+        options.label.color = mergeColorOpacity_(options.label.color,
+                                                 options.label.opacity);
         labelStyle.getColor().set(options.label.color);
       }
       // TODO: add colormode
@@ -170,8 +177,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         lineStyle.setWidth(options.line.width);
       }
       if ('color' in options.line || 'opacity' in options.line) {
-        options.line.color = mergeColorOpacity(options.line.color,
-                                               options.line.opacity);
+        options.line.color = mergeColorOpacity_(options.line.color,
+                                                options.line.opacity);
         lineStyle.getColor().set(options.line.color);
       }
       // TODO: add colormode
@@ -193,11 +200,33 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         polyStyle.setOutline(options.poly.outline);
       }
       if ('color' in options.poly || 'opacity' in options.poly) {
-        options.poly.color = mergeColorOpacity(options.poly.color,
-                                               options.poly.opacity);
+        options.poly.color = mergeColorOpacity_(options.poly.color,
+                                                options.poly.opacity);
         polyStyle.getColor().set(options.poly.color);
       }
       // TODO: add colormode
+    }
+    
+    // set balloon style
+    if (options.balloon) {
+      var balloonStyle = styleObj.getBalloonStyle();
+    
+      if (typeof options.balloon == 'string') {
+        options.balloon = { bgColor: options.balloon };
+      }
+    
+      // more options
+      if ('bgColor' in options.balloon) {
+        balloonStyle.getBgColor().set(
+            me.util.parseColor(options.balloon.bgColor));
+      }
+      if ('textColor' in options.balloon) {
+        balloonStyle.getTextColor().set(
+            me.util.parseColor(options.balloon.textColor));
+      }
+      if ('text' in options.balloon) {
+        balloonStyle.setText(options.balloon.text);
+      }
     }
   }
 });
