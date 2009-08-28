@@ -31,20 +31,25 @@ limitations under the License.
    * @param {KmlLineString|KmlLinearRing} lineString The line string geometry
    *     to allow the user to draw (or append points to).
    * @param {Object} [options] The edit options.
-   * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
-   *     while drawing coordinates.
+   * @param {Boolean} [options.bounce=true] Whether or not to enable bounce
+   *     effects while drawing coordinates.
    * @param {Function} [options.drawCallback] A callback to fire when new
-   *     vertices are drawn.
+   *     vertices are drawn. The only argument passed will be the index of the
+   *     new coordinate (it can either be prepended or appended, depending on
+   *     whether or not ensuring counter-clockwisedness).
    * @param {Function} [options.finishCallback] A callback to fire when drawing
    *     is successfully completed (via double click or by clicking on the first
    *     coordinate again).
+   * @param {Boolean} [options.ensureCounterClockwise=true] Whether or not to
+   *     automatically keep polygon coordinates in counter clockwise order.
    */
   GEarthExtensions.prototype.edit.drawLineString = function(lineString,
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
       bounce: true,
       drawCallback: GEarthExtensions.ALLOWED,
-      finishCallback: GEarthExtensions.ALLOWED
+      finishCallback: GEarthExtensions.ALLOWED,
+      ensureCounterClockwise: true
     });
     
     var lineStringEditData = this.util.getJsDataValue(
@@ -57,6 +62,10 @@ limitations under the License.
 
     // TODO: options: icon for placemarks
 
+    // used to ensure counterclockwise-ness
+    var isReverse = false;
+    var tempPoly = new geo.Polygon();
+    
     var done = false;
     var placemarks = [];
     var altitudeMode = lineString.getAltitudeMode();
@@ -124,19 +133,43 @@ limitations under the License.
         visibility: false  // start out invisible
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
-      placemarks.push(headPlacemark);
+      if (isReverse) {
+        placemarks.unshift(headPlacemark);
+      } else {
+        placemarks.push(headPlacemark);
+      }
 
       me.edit.place(headPlacemark, {
         bounce: options.bounce,
         dropCallback: function() {
           if (!done) {
-            coords.pushLatLngAlt(
-                headPlacemark.getGeometry().getLatitude(),
-                headPlacemark.getGeometry().getLongitude(),
-                0); // don't use altitude because of bounce
+            var coord = [headPlacemark.getGeometry().getLatitude(),
+                         headPlacemark.getGeometry().getLongitude(),
+                         0]; // don't use altitude because of bounce
+            if (isReverse) {
+              coords.unshiftLatLngAlt(coord[0], coord[1], coord[2]);
+            } else {
+              coords.pushLatLngAlt(coord[0], coord[1], coord[2]);
+            }
+            
+            // ensure counterclockwise-ness
+            if (options.ensureCounterClockwise) {
+              if (isReverse) {
+                tempPoly.outerBoundary().prepend(coord);
+              } else {
+                tempPoly.outerBoundary().append(coord);
+              }
+              
+              if (!tempPoly.isCounterClockwise()) {
+                tempPoly.outerBoundary().reverse();
+                coords.reverse();
+                isReverse = !isReverse;
+              }
+            }
                 
             if (options.drawCallback) {
-              options.drawCallback.call(null);
+              options.drawCallback.call(null,
+                  isReverse ? 0 : coords.getLength() - 1);
             }
 
             if (placemarks.length == 1) {
