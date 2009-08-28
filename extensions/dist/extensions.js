@@ -114,7 +114,7 @@ geo.Bounds.prototype.sw_ = null;
  * @type Number
  */
 geo.Bounds.prototype.south = function() {
-  return this.sw_.lat();
+  return !this.isEmpty() ? this.sw_.lat() : null;
 };
 
 /**
@@ -122,7 +122,7 @@ geo.Bounds.prototype.south = function() {
  * @type Number
  */
 geo.Bounds.prototype.west = function() {
-  return this.sw_.lng();
+  return !this.isEmpty() ? this.sw_.lng() : null;
 };
 
 /**
@@ -130,7 +130,7 @@ geo.Bounds.prototype.west = function() {
  * @type Number
  */
 geo.Bounds.prototype.bottom = function() {
-  return this.sw_.altitude();
+  return !this.isEmpty() ? this.sw_.altitude() : null;
 };
 
 /**
@@ -147,7 +147,7 @@ geo.Bounds.prototype.ne_ = null;
  * @type Number
  */
 geo.Bounds.prototype.north = function() {
-  return this.ne_.lat();
+  return !this.isEmpty() ? this.ne_.lat() : null;
 };
 
 /**
@@ -155,7 +155,7 @@ geo.Bounds.prototype.north = function() {
  * @type Number
  */
 geo.Bounds.prototype.east = function() {
-  return this.ne_.lng();
+  return !this.isEmpty() ? this.ne_.lng() : null;
 };
 
 /**
@@ -163,7 +163,7 @@ geo.Bounds.prototype.east = function() {
  * @type Number
  */
 geo.Bounds.prototype.top = function() {
-  return this.ne_.altitude();
+  return !this.isEmpty() ? this.ne_.altitude() : null;
 };
 
 /**
@@ -171,7 +171,7 @@ geo.Bounds.prototype.top = function() {
  * @type Boolean
  */
 geo.Bounds.prototype.crossesAntimeridian = function() {
-  return (this.sw_.lng() > this.ne_.lng());
+  return !this.isEmpty() && (this.sw_.lng() > this.ne_.lng());
 };
 
 /**
@@ -293,6 +293,10 @@ geo.Bounds.prototype.extend = function(point) {
  *     aren't 3D.
  */
 geo.Bounds.prototype.span = function() {
+  if (this.isEmpty()) {
+    return {lat: 0, lng: 0, altitude: 0};
+  }
+  
   return {
     lat: (this.ne_.lat() - this.sw_.lat()),
     lng: geo.Bounds.lngSpan_(this.sw_.lng(), this.ne_.lng()),
@@ -336,7 +340,7 @@ geo.Bounds.prototype.getCenter = geo.Bounds.prototype.center;
  * @type Boolean
  */
 geo.Bounds.prototype.isFullLat = function() {
-  return (this.sw_.lat() == -90 && this.ne_.lng() == 90);
+  return !this.isEmpty() && (this.south() == -90 && this.north() == 90);
 };
 
 /**
@@ -344,7 +348,7 @@ geo.Bounds.prototype.isFullLat = function() {
  * @type Boolean
  */
 geo.Bounds.prototype.isFullLng = function() {
-  return (this.sw_.lng() == -180 && this.ne_.lng() == 180);
+  return !this.isEmpty() && (this.west() == -180 && this.east() == 180);
 };
 
 // TODO: equals(other)
@@ -354,6 +358,8 @@ geo.Bounds.prototype.isFullLng = function() {
 geo.ALTITUDE_CLAMP_TO_GROUND = 0;
 geo.ALTITUDE_RELATIVE_TO_GROUND = 1;
 geo.ALTITUDE_ABSOLUTE = 2;
+geo.ALTITUDE_CLAMP_TO_SEA_FLOOR = 4;
+geo.ALTITUDE_RELATIVE_TO_SEA_FLOOR = 5;
 (function(){
 // This file is required in order for any other classes to work. Some Vector methods work with the
 // other Sylvester classes and are useless unless they are included. Other classes such as Line and
@@ -1849,9 +1855,12 @@ geo.Path.prototype.subPath = function(startIndex, endIndex) {
   return this.coords_.slice(startIndex, endIndex);
 };
 
-
-///////////////
-// non-trivial stuff
+/**
+ * Reverses the order of the path's coordinates.
+ */
+geo.Path.prototype.reverse = function() {
+  this.coords_.reverse();
+};
 
 /**
  * Calculates the total length of the path using great circle distance
@@ -1913,17 +1922,16 @@ geo.Path.prototype.bounds = function() {
 // TODO: unit test
 
 /**
- * Returns the approximate area of the polygon formed by the path when the path
- * is closed.
- * @return {Number} The approximate area, in square meters.
- * @see http://econym.googlepages.com/epoly.htm
- * @note This method only works with non-intersecting polygons.
+ * Returns the signed approximate area of the polygon formed by the path when
+ * the path is closed.
+ * @see http://econym.org.uk/gmap/epoly.htm
+ * @private
  */
-geo.Path.prototype.area = function() {
+geo.Path.prototype.signedArea_ = function() {
   var a = 0;
   var b = this.bounds();
-  var x0 = b.southWestBottom().lng();
-  var y0 = b.southWestBottom().lat();
+  var x0 = b.west();
+  var y0 = b.south();
 
   var numCoords = this.numCoords();
   for (var i = 0; i < numCoords; i++) {
@@ -1935,9 +1943,31 @@ geo.Path.prototype.area = function() {
     a += x1 * y2 - x2 * y1;
   }
 
-  return Math.abs(a * 0.5);
+  return a * 0.5;
+};
+
+/**
+ * Returns the approximate area of the polygon formed by the path when the path
+ * is closed.
+ * @return {Number} The approximate area, in square meters.
+ * @see http://econym.org.uk/gmap/epoly.htm
+ * @note This method only works with non-intersecting polygons.
+ * @note The method is inaccurate for large regions because the Earth's
+ *     curvature is not accounted for.
+ */
+geo.Path.prototype.area = function() {
+  return Math.abs(self.signedArea_());
 };
 // TODO: unit test
+
+/**
+ * Returns whether or not the coordinates of the polygon formed by the path when
+ * the path is closed are in counter clockwise order.
+ * @type Boolean
+ */
+geo.Path.prototype.isCounterClockwise_ = function() {
+  return Boolean(this.signedArea_() >= 0);
+};
 /**
  * Creates a new point from the given parameters.
  * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation|GLatLng}
@@ -2206,13 +2236,13 @@ geo.Point.fromCartesian = function(cartesianVector) {
  * @constructor
  */
 geo.Polygon = function() {
+  this.outerBoundary_ = new geo.Path();
   this.innerBoundaries_ = [];
   var i;
   
   // 0 argument constructor
   if (arguments.length === 0) {
-    this.outerBoundary_ = new geo.Path();
-  
+    
   // 1 argument constructor
   } else if (arguments.length == 1) {
     var poly = arguments[0];
@@ -2336,7 +2366,7 @@ geo.Polygon.prototype.innerBoundaries = function() {
  */
 geo.Polygon.prototype.containsPoint = function(point) {
   // outer boundary should contain the point
-  if (!this.outerBoundary_ || !this.outerBoundary_.containsPoint(point)) {
+  if (!this.outerBoundary_.containsPoint(point)) {
     return false;
   }
   
@@ -2355,10 +2385,6 @@ geo.Polygon.prototype.containsPoint = function(point) {
  * @type geo.Bounds
  */
 geo.Polygon.prototype.bounds = function() {
-  if (!this.outerBoundary_) {
-    return new geo.Bounds();
-  }
-  
   return this.outerBoundary_.bounds();
 };
 
@@ -2368,10 +2394,6 @@ geo.Polygon.prototype.bounds = function() {
  * @see geo.Path.area
  */
 geo.Polygon.prototype.area = function() {
-  if (!this.outerBoundary_) {
-    return 0;
-  }
-  
   // start with outer boundary area
   var area = this.outerBoundary_.area();
   
@@ -2382,6 +2404,26 @@ geo.Polygon.prototype.area = function() {
   }
   
   return area;
+};
+
+/**
+ * Returns whether or not the polygon's outer boundary coordinates are
+ * in counter clockwise order.
+ * @type Boolean
+ */
+geo.Polygon.prototype.isCounterClockwise = function() {
+  return this.outerBoundary_.isCounterClockwise_();
+};
+
+/**
+ * Ensures that the polygon's outer boundary coordinates are in counter
+ * clockwise order by reversing them if they are counter clockwise.
+ * @see geo.Polygon.isCounterClockwise
+ */
+geo.Polygon.prototype.makeCounterClockwise = function() {
+  if (this.isCounterClockwise()) {
+    this.outerBoundary_.reverse();
+  }
 };
 /**
  * The geo.util namespace contains generic JavaScript and JS/Geo utility
@@ -3681,6 +3723,12 @@ GEarthExtensions.domBuilder_({
  *     between 0.0 and 1.0. This is a convenience property, since opacity can
  *     be defined in the color.
 
+ * @param {ColorSpec|Object} [options.balloon] The balloon bgColor or a balloon
+ *     style object literal.
+ * @param {Boolean} [options.balloon.bgColor] The balloon background color.
+ * @param {Boolean} [options.balloon.textColor] The balloon text color.
+ * @param {String} [options.balloon.text] The balloon text template.
+
  * @type KmlStyle
  */
 GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
@@ -3690,7 +3738,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
     icon: GEarthExtensions.ALLOWED,
     label: GEarthExtensions.ALLOWED,
     line: GEarthExtensions.ALLOWED,
-    poly: GEarthExtensions.ALLOWED
+    poly: GEarthExtensions.ALLOWED,
+    balloon: GEarthExtensions.ALLOWED,
   },
   constructor: function(styleObj, options) {
     // set icon style
@@ -3700,7 +3749,7 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
     
     var me = this;
     
-    var mergeColorOpacity = function(color, opacity) {
+    var mergeColorOpacity_ = function(color, opacity) {
       color = color ? me.util.parseColor(color) : 'ffffffff';
       if (!geo.util.isUndefined(opacity)) {
         color = pad2(Math.floor(255 * opacity).toString(16)) +
@@ -3740,8 +3789,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         iconStyle.setHeading(options.icon.heading);
       }
       if ('color' in options.icon || 'opacity' in options.icon) {
-        options.icon.color = mergeColorOpacity(options.icon.color,
-                                               options.icon.opacity);
+        options.icon.color = mergeColorOpacity_(options.icon.color,
+                                                options.icon.opacity);
         iconStyle.getColor().set(options.icon.color);
       }
       if ('opacity' in options.icon) {
@@ -3771,8 +3820,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         labelStyle.setScale(options.label.scale);
       }
       if ('color' in options.label || 'opacity' in options.label) {
-        options.label.color = mergeColorOpacity(options.label.color,
-                                                options.label.opacity);
+        options.label.color = mergeColorOpacity_(options.label.color,
+                                                 options.label.opacity);
         labelStyle.getColor().set(options.label.color);
       }
       // TODO: add colormode
@@ -3791,8 +3840,8 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         lineStyle.setWidth(options.line.width);
       }
       if ('color' in options.line || 'opacity' in options.line) {
-        options.line.color = mergeColorOpacity(options.line.color,
-                                               options.line.opacity);
+        options.line.color = mergeColorOpacity_(options.line.color,
+                                                options.line.opacity);
         lineStyle.getColor().set(options.line.color);
       }
       // TODO: add colormode
@@ -3814,11 +3863,33 @@ GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
         polyStyle.setOutline(options.poly.outline);
       }
       if ('color' in options.poly || 'opacity' in options.poly) {
-        options.poly.color = mergeColorOpacity(options.poly.color,
-                                               options.poly.opacity);
+        options.poly.color = mergeColorOpacity_(options.poly.color,
+                                                options.poly.opacity);
         polyStyle.getColor().set(options.poly.color);
       }
       // TODO: add colormode
+    }
+    
+    // set balloon style
+    if (options.balloon) {
+      var balloonStyle = styleObj.getBalloonStyle();
+    
+      if (typeof options.balloon == 'string') {
+        options.balloon = { bgColor: options.balloon };
+      }
+    
+      // more options
+      if ('bgColor' in options.balloon) {
+        balloonStyle.getBgColor().set(
+            me.util.parseColor(options.balloon.bgColor));
+      }
+      if ('textColor' in options.balloon) {
+        balloonStyle.getTextColor().set(
+            me.util.parseColor(options.balloon.textColor));
+      }
+      if ('text' in options.balloon) {
+        balloonStyle.setText(options.balloon.text);
+      }
     }
   }
 });
@@ -4029,7 +4100,8 @@ GEarthExtensions.prototype.dom.removeObject = function(object) {
  * Sets the given KmlVec2 object to the point defined in the options.
  * @param {KmlVec2} vec2 The object to set, for example a screen overlay's
  *     screenXY.
- * @param {Object} options The options literal defining the point.
+ * @param {Object|KmlVec2} options The options literal defining the point, or
+ *     an existing KmlVec2 object to copy.
  * @param {Number|String} [options.left] The left offset, in pixels (i.e. 5),
  *     or as a percentage (i.e. '25%').
  * @param {Number|String} [options.top] The top offset, in pixels or a string
@@ -4045,6 +4117,12 @@ GEarthExtensions.prototype.dom.removeObject = function(object) {
  *     percentage.
  */
 GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
+  if ('getType' in options && options.getType() == 'KmlVec2') {
+    vec2.set(options.getX(), options.getXUnits(),
+             options.getY(), options.getYUnits());
+    return;
+  }
+  
   options = GEarthExtensions.checkParameters(options, false, {
     left: GEarthExtensions.ALLOWED,
     top: GEarthExtensions.ALLOWED,
@@ -4629,20 +4707,25 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
    * @param {KmlLineString|KmlLinearRing} lineString The line string geometry
    *     to allow the user to draw (or append points to).
    * @param {Object} [options] The edit options.
-   * @param {Boolean} [options.bounce] Whether or not to enable bounce effects
-   *     while drawing coordinates.
+   * @param {Boolean} [options.bounce=true] Whether or not to enable bounce
+   *     effects while drawing coordinates.
    * @param {Function} [options.drawCallback] A callback to fire when new
-   *     vertices are drawn.
+   *     vertices are drawn. The only argument passed will be the index of the
+   *     new coordinate (it can either be prepended or appended, depending on
+   *     whether or not ensuring counter-clockwisedness).
    * @param {Function} [options.finishCallback] A callback to fire when drawing
    *     is successfully completed (via double click or by clicking on the first
    *     coordinate again).
+   * @param {Boolean} [options.ensureCounterClockwise=true] Whether or not to
+   *     automatically keep polygon coordinates in counter clockwise order.
    */
   GEarthExtensions.prototype.edit.drawLineString = function(lineString,
                                                             options) {
     options = GEarthExtensions.checkParameters(options, false, {
       bounce: true,
       drawCallback: GEarthExtensions.ALLOWED,
-      finishCallback: GEarthExtensions.ALLOWED
+      finishCallback: GEarthExtensions.ALLOWED,
+      ensureCounterClockwise: true
     });
     
     var lineStringEditData = this.util.getJsDataValue(
@@ -4655,6 +4738,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
     // TODO: options: icon for placemarks
 
+    // used to ensure counterclockwise-ness
+    var isReverse = false;
+    var tempPoly = new geo.Polygon();
+    
     var done = false;
     var placemarks = [];
     var altitudeMode = lineString.getAltitudeMode();
@@ -4722,19 +4809,43 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         visibility: false  // start out invisible
       });
       innerDoc.getFeatures().appendChild(headPlacemark);
-      placemarks.push(headPlacemark);
+      if (isReverse) {
+        placemarks.unshift(headPlacemark);
+      } else {
+        placemarks.push(headPlacemark);
+      }
 
       me.edit.place(headPlacemark, {
         bounce: options.bounce,
         dropCallback: function() {
           if (!done) {
-            coords.pushLatLngAlt(
-                headPlacemark.getGeometry().getLatitude(),
-                headPlacemark.getGeometry().getLongitude(),
-                0); // don't use altitude because of bounce
+            var coord = [headPlacemark.getGeometry().getLatitude(),
+                         headPlacemark.getGeometry().getLongitude(),
+                         0]; // don't use altitude because of bounce
+            if (isReverse) {
+              coords.unshiftLatLngAlt(coord[0], coord[1], coord[2]);
+            } else {
+              coords.pushLatLngAlt(coord[0], coord[1], coord[2]);
+            }
+            
+            // ensure counterclockwise-ness
+            if (options.ensureCounterClockwise) {
+              if (isReverse) {
+                tempPoly.outerBoundary().prepend(coord);
+              } else {
+                tempPoly.outerBoundary().append(coord);
+              }
+              
+              if (!tempPoly.isCounterClockwise()) {
+                tempPoly.outerBoundary().reverse();
+                coords.reverse();
+                isReverse = !isReverse;
+              }
+            }
                 
             if (options.drawCallback) {
-              options.drawCallback.call(null);
+              options.drawCallback.call(null,
+                  isReverse ? 0 : coords.getLength() - 1);
             }
 
             if (placemarks.length == 1) {
@@ -5548,7 +5659,8 @@ function(obj, property, options) {
     end: GEarthExtensions.ALLOWED,
     delta: GEarthExtensions.ALLOWED,
     easing: 'none',
-    callback: GEarthExtensions.ALLOWED
+    callback: GEarthExtensions.ALLOWED,
+    featureProxy: GEarthExtensions.ALLOWED
   });
   
   // http://www.timotheegroleau.com/Flash/experiments/easing_function_generator.htm
@@ -5647,7 +5759,8 @@ function(obj, property, options) {
       // completion callback
       
       // remove this animation from the list of animations on the object
-      var animations = me.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+      var animations = me.util.getJsDataValue(options.featureProxy || obj,
+          '_GEarthExtensions_anim');
       if (animations) {
         for (var i = 0; i < animations.length; i++) {
           if (animations[i] == this) {
@@ -5657,7 +5770,8 @@ function(obj, property, options) {
         }
         
         if (!animations.length) {
-          me.util.clearJsDataValue(obj, '_GEarthExtensions_anim');
+          me.util.clearJsDataValue(options.featureProxy || obj,
+              '_GEarthExtensions_anim');
         }
       }
 
@@ -5667,11 +5781,13 @@ function(obj, property, options) {
     });
   
   // add this animation to the list of animations on the object
-  var animations = this.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+  var animations = this.util.getJsDataValue(options.featureProxy || obj,
+      '_GEarthExtensions_anim');
   if (animations) {
     animations.push(anim);
   } else {
-    this.util.setJsDataValue(obj, '_GEarthExtensions_anim', [anim]);
+    this.util.setJsDataValue(options.featureProxy || obj,
+        '_GEarthExtensions_anim', [anim]);
   }
   
   anim.start();

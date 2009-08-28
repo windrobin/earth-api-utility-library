@@ -32,7 +32,7 @@ AWK_TEST_RANGE="/\/\*\*\*IGNORE_BEGIN\*\*\*\//,/\/\*\*\*IGNORE_END\*\*\*\//"
 
 all: tests dist docs
 
-dist: makegeojs concat
+dist: concat
 # make sure the concat file isn't instrumented
 	[[ ! -f ${TMP}/.instrumented ]]
 	mkdir -p ${DIST}
@@ -54,7 +54,7 @@ lint:
 		-exec java -classpath .:${TLIB}/rhino.jar \
 		org.mozilla.javascript.tools.shell.Main ${TLIB}/jslint.js {} \;
 
-tests: makegeojs consolidatetests concat
+tests: consolidatetests concat
 	mkdir -p ${TEST}
 	cp -rf ${TLIB}/test/* ${TEST}
 	cp -rf ${LIB}/test/* ${TEST}
@@ -78,7 +78,7 @@ docs: concat
 		-d=${DOCS} ${SRC} -r -j=${TLIB}/jsdoc-toolkit/app/run.js
 	@echo ------ GEarthExtensions: Docs are ready. Copy to wiki/ folder in SVN repository.
 
-clean: cleangeojs
+clean:
 	rm -rf ${TMP}
 # don't wipe out .svn/ in DIST dir
 	touch ${DIST}/dummy.js
@@ -87,12 +87,6 @@ clean: cleangeojs
 	rm -rf ${TEST}
 
 # INTERNAL #####################################################################
-
-makegeojs:
-	make -C ${GEOJS} dist
-
-cleangeojs:
-	make -C ${GEOJS} clean
 
 concat: consolidatetests
 	# strip license header while concatenating
