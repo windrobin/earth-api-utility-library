@@ -67,7 +67,8 @@ function(obj, property, options) {
     end: GEarthExtensions.ALLOWED,
     delta: GEarthExtensions.ALLOWED,
     easing: 'none',
-    callback: GEarthExtensions.ALLOWED
+    callback: GEarthExtensions.ALLOWED,
+    featureProxy: GEarthExtensions.ALLOWED
   });
   
   // http://www.timotheegroleau.com/Flash/experiments/easing_function_generator.htm
@@ -166,7 +167,8 @@ function(obj, property, options) {
       // completion callback
       
       // remove this animation from the list of animations on the object
-      var animations = me.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+      var animations = me.util.getJsDataValue(options.featureProxy || obj,
+          '_GEarthExtensions_anim');
       if (animations) {
         for (var i = 0; i < animations.length; i++) {
           if (animations[i] == this) {
@@ -176,7 +178,8 @@ function(obj, property, options) {
         }
         
         if (!animations.length) {
-          me.util.clearJsDataValue(obj, '_GEarthExtensions_anim');
+          me.util.clearJsDataValue(options.featureProxy || obj,
+              '_GEarthExtensions_anim');
         }
       }
 
@@ -186,11 +189,13 @@ function(obj, property, options) {
     });
   
   // add this animation to the list of animations on the object
-  var animations = this.util.getJsDataValue(obj, '_GEarthExtensions_anim');
+  var animations = this.util.getJsDataValue(options.featureProxy || obj,
+      '_GEarthExtensions_anim');
   if (animations) {
     animations.push(anim);
   } else {
-    this.util.setJsDataValue(obj, '_GEarthExtensions_anim', [anim]);
+    this.util.setJsDataValue(options.featureProxy || obj,
+        '_GEarthExtensions_anim', [anim]);
   }
   
   anim.start();
