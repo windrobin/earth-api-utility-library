@@ -17,28 +17,29 @@ limitations under the License.
  * Bounce a placemark once.
  */
 GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
-  this.fx.rewind(placemark);
-  
   options = GEarthExtensions.checkParameters(options, false, {
-    duration: 250,
+    duration: 300,
     startAltitude: GEarthExtensions.ALLOWED,
     altitude: this.util.getCamera().getAltitude() / 5,
     phase: GEarthExtensions.ALLOWED,
     repeat: 0,
-    dampen: 1.0,
-    callback: GEarthExtensions.ALLOWED
+    dampen: 0.3,
+    callback: function(){}
   });
+  
+  var me = this;
+  this.fx.rewind(placemark);
   
   // double check that we're given a placemark with a point geometry
   if (!'getGeometry' in placemark ||
       !placemark.getGeometry() ||
       placemark.getGeometry().getType() != 'KmlPoint') {
-    throw new Error('Placemark must be a KmlPoint geometry');
+    throw new TypeError('Placemark must be a KmlPoint geometry');
   }
   
   var point = placemark.getGeometry();
   var origAltitudeMode = point.getAltitudeMode();
-  
+
   // changing altitude if the mode is clamp to ground does nothing, so switch
   // to relative to ground
   if (origAltitudeMode == this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND) {
@@ -50,43 +51,55 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
     point.setAltitude(0);
     point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_SEA_FLOOR);
   }
-  
-  var startAltitude = point.getAltitude();
-  if ('startAltitude' in options) {
-    startAltitude = options.startAltitude;
+
+  if (typeof(options.startAltitude) != 'number') {
+    options.startAltitude = point.getAltitude();
   }
   
   // setup the animation phases
   var phase1, phase2;
-  var me = this;
   
   // up
   phase1 = function() {
     me.fx.animateProperty(point, 'altitude', {
       duration: options.duration / 2,
-      end: startAltitude + options.altitude,
+      end: options.startAltitude + options.altitude,
       easing: 'out',
-      callback: phase2
+      featureProxy: placemark,
+      callback: phase2 || function(){}
     });
   };
   
   // down and repeats
-  phase2 = function() {
+  phase2 = function(e) {
+    if (e && e.cancelled) {
+      return;
+    }
+    
     me.fx.animateProperty(point, 'altitude', {
       duration: options.duration / 2,
-      end: startAltitude,
+      start: options.startAltitude + options.altitude,
+      end: options.startAltitude,
       easing: 'in',
-      callback: function() {
+      featureProxy: placemark,
+      callback: function(e2) {
         point.setAltitudeMode(origAltitudeMode);
-        
+
+        if (e2.cancelled) {
+          point.setAltitude(options.startAltitude);
+          options.callback.call(placemark, e2);
+          return;
+        }
+
         // done with this bounce, should we bounce again?
         if (options.repeat >= 1) {
           --options.repeat;
           options.altitude *= options.dampen;
+          options.duration *= Math.sqrt(options.dampen);
           options.phase = 0; // do all phases
           me.fx.bounce(placemark, options);
-        } else if (options.callback) {
-          options.callback.call(placemark);
+        } else {
+          options.callback.call(placemark, e2);
         }
       }
     });
@@ -122,8 +135,8 @@ function test_fx_bounce(successCallback, errorCallback) {
 
         setTimeout(function() {
           try {
-            if (!confirm('Press OK if you saw the placemark bounce twice, the ' +
-                         'second time not as high as the first.')) {
+            if (!confirm('Press OK if you saw the placemark bounce twice, the '
+                         + 'second time not as high as the first.')) {
               fail('User reported placemark didnt bounce');
             }
 

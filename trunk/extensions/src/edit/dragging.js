@@ -23,13 +23,14 @@ limitations under the License.
 
   var DRAGDATA_JSDATA_KEY = '_GEarthExtensions_dragData';
 
-  function beginDragging_(extInstance, placemark, x, y) {
+  function beginDragging_(extInstance, placemark) {
     // get placemark's drag data
     var placemarkDragData = extInstance.util.getJsDataValue(
         placemark, DRAGDATA_JSDATA_KEY) || {};
 
     currentDragContext_ = {
       placemark: placemark,
+      startAltitude: placemark.getGeometry().getAltitude(),
       draggableOptions: placemarkDragData.draggableOptions,
       dragged: false
     };
@@ -46,14 +47,6 @@ limitations under the License.
         
         if (!currentDragContext_.dragged) {
           currentDragContext_.dragged = true;
-          
-          // animate
-          if (currentDragContext_.draggableOptions.bounce) {
-            extInstance.fx.cancel(currentDragContext_.placemark);
-            extInstance.fx.bounce(currentDragContext_.placemark, {
-              phase: 1
-            });
-          }
 
           // set dragging style
           if (currentDragContext_.draggableOptions.draggingStyle) {
@@ -62,6 +55,14 @@ limitations under the License.
             currentDragContext_.placemark.setStyleSelector(
                 extInstance.dom.buildStyle(
                 currentDragContext_.draggableOptions.draggingStyle));
+          }
+
+          // animate
+          if (currentDragContext_.draggableOptions.bounce) {
+            extInstance.fx.cancel(currentDragContext_.placemark);
+            extInstance.fx.bounce(currentDragContext_.placemark, {
+              phase: 1
+            });
           }
 
           // show 'target' screen overlay (will be correctly positioned
@@ -120,7 +121,7 @@ limitations under the License.
         if (currentDragContext_.draggableOptions.bounce) {
           extInstance.fx.cancel(currentDragContext_.placemark);
           extInstance.fx.bounce(currentDragContext_.placemark, {
-            startAltitude: 0,
+            startAltitude: currentDragContext_.startAltitude,
             phase: 2,
             repeat: 1,
             dampen: 0.3
@@ -196,8 +197,7 @@ limitations under the License.
     var mouseDownListener = function(event) {
       if (event.getButton() === 0) {
         // TODO: check if getTarget() is draggable and is a placemark
-        beginDragging_(me, event.getTarget(),
-            event.getClientX(), event.getClientY());
+        beginDragging_(me, event.getTarget());
 
         // listen for mousemove on the globe
         google.earth.addEventListener(me.pluginInstance.getWindow(),
@@ -319,7 +319,7 @@ limitations under the License.
     });
 
     // enter dragging mode right away to 'place' the placemark on the globe
-    beginDragging_(me, placemark, -999, -999);
+    beginDragging_(me, placemark);
 
     // listen for mousemove on the window
     google.earth.addEventListener(me.pluginInstance.getWindow(),
