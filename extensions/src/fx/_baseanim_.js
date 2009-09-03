@@ -148,13 +148,15 @@ function() {
  *     a frame of the animation. Its sole parameter will be the time, in
  *     seconds, of the frame to render.
  * @param {Function} [completionCallback] A callback method to fire when the
- *     animation is completed/stopped.
+ *     animation is completed/stopped. The callback will receive an object
+ *     literal argument that will contain a 'cancelled' boolean value that will
+ *     be true if the effect was cancelled.
  */
 GEarthExtensions.prototype.fx.Animation =
 GEarthExtensions.createClass_(function(renderFn, completionFn) {
   this.extInstance = arguments.callee.extInstance_;
   this.renderFn = renderFn;
-  this.completionFn = completionFn; // optional
+  this.completionFn = completionFn || function(){};
 });
 
 /**
@@ -166,15 +168,15 @@ GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
 
 /**
  * Stop this animation.
- * @param {Boolean} [completed=true] Whether or not to call the completion
- *     callback.
+ * @param {Boolean} [completed=true] Whether or not the animation is being
+ *     stopped due to a successful completion. If not, the stop call is treated
+ *     as a cancellation of the animation.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
-  
-  if (this.completionFn && (completed || geo.util.isUndefined(completed))) {
-    this.completionFn.call(this); // clean exit
-  }
+  this.completionFn({
+    cancelled: !Boolean(completed || geo.util.isUndefined(completed))
+  });
 };
 
 /**
@@ -201,7 +203,9 @@ GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
  *     a frame of the animation. Its sole parameter will be the time, in
  *     seconds, of the frame to render.
  * @param {Function} [completionCallback] A callback method to fire when the
- *     animation is completed/stopped.
+ *     animation is completed/stopped. The callback will receive an object
+ *     literal argument that will contain a 'cancelled' boolean value that will
+ *     be true if the effect was cancelled.
  * @extends GEarthExtensions#fx.Animation
  */
 GEarthExtensions.prototype.fx.TimedAnimation =
@@ -211,7 +215,8 @@ function(duration, renderFn, completionFn) {
   this.extInstance = arguments.callee.extInstance_;
   this.duration = duration;
   this.renderFn = renderFn;
-  this.completionFn = completionFn; // optional
+  this.complete = false;
+  this.completionFn = completionFn || function(){};
 });
 
 /**
@@ -220,9 +225,13 @@ function(duration, renderFn, completionFn) {
  */
 GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
+  if (this.complete)
+    return;
+  
   if (t > this.duration) {
     this.renderFn.call(this, this.duration);
     this.stop();
+    this.complete = true;
     return;
   }
   

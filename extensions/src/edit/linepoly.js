@@ -16,6 +16,10 @@ limitations under the License.
 (function() {
 
   var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
+  var LINESTRING_COORD_ICON = 'http://maps.google.com/mapfiles/kml/' +
+                              'shapes/placemark_circle.png';
+  var LINESTRING_COORD_ICON_SCALE = 0.85;
+  var LINESTRING_MIDPOINT_ICON_SCALE = 0.6;
 
   function coordsEqual_(coord1, coord2) {
     return coord1.getLatitude() ==  coord2.getLatitude() &&
@@ -72,24 +76,22 @@ limitations under the License.
     var headPlacemark = null;
     var isRing = (lineString.getType() == 'KmlLinearRing');
     var coords = lineString.getCoordinates();
-    var innerDoc = this.pluginInstance.parseKml(
-        '<Document>' +
-        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '</IconStyle></Style>' +
-        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '<scale>1.3</scale><color>ff00ff00</color>' +
-        '</IconStyle></Style>' +
-        '<StyleMap id="_GEarthExtensions_firstCoordinate">' +
-        '<Pair><key>normal</key>' +
-        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
-        '</Pair><Pair><key>highlight</key>' +
-        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>' +
-        '</Pair></StyleMap>' +
-        '</Document>');
+    var innerDoc = this.pluginInstance.parseKml([
+        '<Document>',
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
+        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<scale>', LINESTRING_COORD_ICON_SCALE * 1.3, '</scale>',
+        '<color>ff00ff00</color></IconStyle></Style>',
+        '<StyleMap id="_GEarthExtensions_firstCoordinate">',
+        '<Pair><key>normal</key>',
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
+        '</Pair><Pair><key>highlight</key>',
+        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>',
+        '</Pair></StyleMap>',
+        '</Document>'].join(''));
 
     var finishListener;
     
@@ -248,24 +250,23 @@ limitations under the License.
         numCoords++;
       }
     }
-
-    var innerDoc = this.pluginInstance.parseKml(
-        '<Document>' +
-        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '</IconStyle></Style>' +
-        '<StyleMap id="_GEarthExtensions_midCoordinate">' +
-        '<Pair><key>normal</key>' +
-        '<Style><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '<color>60ffffff</color><scale>0.75</scale>' +
-        '</IconStyle></Style></Pair>' +
-        '<Pair><key>highlight</key>' +
-        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
-        '</Pair></StyleMap>' +
-        '</Document>');
+    
+    var innerDoc = this.pluginInstance.parseKml([
+        '<Document>',
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<color>ffffffff</color>',
+        '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
+        '<StyleMap id="_GEarthExtensions_midCoordinate">',
+        '<Pair><key>normal</key>',
+        '<Style><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<color>60ffffff</color><scale>', LINESTRING_MIDPOINT_ICON_SCALE,
+        '</scale></IconStyle></Style></Pair>',
+        '<Pair><key>highlight</key>',
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
+        '</Pair></StyleMap>',
+        '</Document>'].join(''));
 
     // TODO: options: icon for placemarks
     // TODO: it may be easier to use a linked list for all this

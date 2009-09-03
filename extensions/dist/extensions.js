@@ -4382,13 +4382,14 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 
   var DRAGDATA_JSDATA_KEY = '_GEarthExtensions_dragData';
 
-  function beginDragging_(extInstance, placemark, x, y) {
+  function beginDragging_(extInstance, placemark) {
     // get placemark's drag data
     var placemarkDragData = extInstance.util.getJsDataValue(
         placemark, DRAGDATA_JSDATA_KEY) || {};
 
     currentDragContext_ = {
       placemark: placemark,
+      startAltitude: placemark.getGeometry().getAltitude(),
       draggableOptions: placemarkDragData.draggableOptions,
       dragged: false
     };
@@ -4405,14 +4406,6 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         
         if (!currentDragContext_.dragged) {
           currentDragContext_.dragged = true;
-          
-          // animate
-          if (currentDragContext_.draggableOptions.bounce) {
-            extInstance.fx.cancel(currentDragContext_.placemark);
-            extInstance.fx.bounce(currentDragContext_.placemark, {
-              phase: 1
-            });
-          }
 
           // set dragging style
           if (currentDragContext_.draggableOptions.draggingStyle) {
@@ -4421,6 +4414,14 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
             currentDragContext_.placemark.setStyleSelector(
                 extInstance.dom.buildStyle(
                 currentDragContext_.draggableOptions.draggingStyle));
+          }
+
+          // animate
+          if (currentDragContext_.draggableOptions.bounce) {
+            extInstance.fx.cancel(currentDragContext_.placemark);
+            extInstance.fx.bounce(currentDragContext_.placemark, {
+              phase: 1
+            });
           }
 
           // show 'target' screen overlay (will be correctly positioned
@@ -4479,7 +4480,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         if (currentDragContext_.draggableOptions.bounce) {
           extInstance.fx.cancel(currentDragContext_.placemark);
           extInstance.fx.bounce(currentDragContext_.placemark, {
-            startAltitude: 0,
+            startAltitude: currentDragContext_.startAltitude,
             phase: 2,
             repeat: 1,
             dampen: 0.3
@@ -4555,8 +4556,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     var mouseDownListener = function(event) {
       if (event.getButton() === 0) {
         // TODO: check if getTarget() is draggable and is a placemark
-        beginDragging_(me, event.getTarget(),
-            event.getClientX(), event.getClientY());
+        beginDragging_(me, event.getTarget());
 
         // listen for mousemove on the globe
         google.earth.addEventListener(me.pluginInstance.getWindow(),
@@ -4678,7 +4678,7 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     });
 
     // enter dragging mode right away to 'place' the placemark on the globe
-    beginDragging_(me, placemark, -999, -999);
+    beginDragging_(me, placemark);
 
     // listen for mousemove on the window
     google.earth.addEventListener(me.pluginInstance.getWindow(),
@@ -4692,6 +4692,10 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
 (function() {
 
   var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
+  var LINESTRING_COORD_ICON = 'http://maps.google.com/mapfiles/kml/' +
+                              'shapes/placemark_circle.png';
+  var LINESTRING_COORD_ICON_SCALE = 0.85;
+  var LINESTRING_MIDPOINT_ICON_SCALE = 0.6;
 
   function coordsEqual_(coord1, coord2) {
     return coord1.getLatitude() ==  coord2.getLatitude() &&
@@ -4748,24 +4752,22 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     var headPlacemark = null;
     var isRing = (lineString.getType() == 'KmlLinearRing');
     var coords = lineString.getCoordinates();
-    var innerDoc = this.pluginInstance.parseKml(
-        '<Document>' +
-        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '</IconStyle></Style>' +
-        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '<scale>1.3</scale><color>ff00ff00</color>' +
-        '</IconStyle></Style>' +
-        '<StyleMap id="_GEarthExtensions_firstCoordinate">' +
-        '<Pair><key>normal</key>' +
-        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
-        '</Pair><Pair><key>highlight</key>' +
-        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>' +
-        '</Pair></StyleMap>' +
-        '</Document>');
+    var innerDoc = this.pluginInstance.parseKml([
+        '<Document>',
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
+        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<scale>', LINESTRING_COORD_ICON_SCALE * 1.3, '</scale>',
+        '<color>ff00ff00</color></IconStyle></Style>',
+        '<StyleMap id="_GEarthExtensions_firstCoordinate">',
+        '<Pair><key>normal</key>',
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
+        '</Pair><Pair><key>highlight</key>',
+        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>',
+        '</Pair></StyleMap>',
+        '</Document>'].join(''));
 
     var finishListener;
     
@@ -4924,24 +4926,23 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         numCoords++;
       }
     }
-
-    var innerDoc = this.pluginInstance.parseKml(
-        '<Document>' +
-        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '</IconStyle></Style>' +
-        '<StyleMap id="_GEarthExtensions_midCoordinate">' +
-        '<Pair><key>normal</key>' +
-        '<Style><IconStyle>' +
-        '<Icon><href>http://maps.google.com/mapfiles/kml/' +
-        'shapes/placemark_circle.png</href></Icon>' +
-        '<color>60ffffff</color><scale>0.75</scale>' +
-        '</IconStyle></Style></Pair>' +
-        '<Pair><key>highlight</key>' +
-        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>' +
-        '</Pair></StyleMap>' +
-        '</Document>');
+    
+    var innerDoc = this.pluginInstance.parseKml([
+        '<Document>',
+        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<color>ffffffff</color>',
+        '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
+        '<StyleMap id="_GEarthExtensions_midCoordinate">',
+        '<Pair><key>normal</key>',
+        '<Style><IconStyle>',
+        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+        '<color>60ffffff</color><scale>', LINESTRING_MIDPOINT_ICON_SCALE,
+        '</scale></IconStyle></Style></Pair>',
+        '<Pair><key>highlight</key>',
+        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
+        '</Pair></StyleMap>',
+        '</Document>'].join(''));
 
     // TODO: options: icon for placemarks
     // TODO: it may be easier to use a linked list for all this
@@ -5436,13 +5437,15 @@ function() {
  *     a frame of the animation. Its sole parameter will be the time, in
  *     seconds, of the frame to render.
  * @param {Function} [completionCallback] A callback method to fire when the
- *     animation is completed/stopped.
+ *     animation is completed/stopped. The callback will receive an object
+ *     literal argument that will contain a 'cancelled' boolean value that will
+ *     be true if the effect was cancelled.
  */
 GEarthExtensions.prototype.fx.Animation =
 GEarthExtensions.createClass_(function(renderFn, completionFn) {
   this.extInstance = arguments.callee.extInstance_;
   this.renderFn = renderFn;
-  this.completionFn = completionFn; // optional
+  this.completionFn = completionFn || function(){};
 });
 
 /**
@@ -5454,15 +5457,15 @@ GEarthExtensions.prototype.fx.Animation.prototype.start = function() {
 
 /**
  * Stop this animation.
- * @param {Boolean} [completed=true] Whether or not to call the completion
- *     callback.
+ * @param {Boolean} [completed=true] Whether or not the animation is being
+ *     stopped due to a successful completion. If not, the stop call is treated
+ *     as a cancellation of the animation.
  */
 GEarthExtensions.prototype.fx.Animation.prototype.stop = function(completed) {
   this.extInstance.fx.getAnimationManager_().stopAnimation(this);
-  
-  if (this.completionFn && (completed || geo.util.isUndefined(completed))) {
-    this.completionFn.call(this); // clean exit
-  }
+  this.completionFn({
+    cancelled: !Boolean(completed || geo.util.isUndefined(completed))
+  });
 };
 
 /**
@@ -5489,7 +5492,9 @@ GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
  *     a frame of the animation. Its sole parameter will be the time, in
  *     seconds, of the frame to render.
  * @param {Function} [completionCallback] A callback method to fire when the
- *     animation is completed/stopped.
+ *     animation is completed/stopped. The callback will receive an object
+ *     literal argument that will contain a 'cancelled' boolean value that will
+ *     be true if the effect was cancelled.
  * @extends GEarthExtensions#fx.Animation
  */
 GEarthExtensions.prototype.fx.TimedAnimation =
@@ -5499,7 +5504,8 @@ function(duration, renderFn, completionFn) {
   this.extInstance = arguments.callee.extInstance_;
   this.duration = duration;
   this.renderFn = renderFn;
-  this.completionFn = completionFn; // optional
+  this.complete = false;
+  this.completionFn = completionFn || function(){};
 });
 
 /**
@@ -5508,9 +5514,13 @@ function(duration, renderFn, completionFn) {
  */
 GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
+  if (this.complete)
+    return;
+  
   if (t > this.duration) {
     this.renderFn.call(this, this.duration);
     this.stop();
+    this.complete = true;
     return;
   }
   
@@ -5520,28 +5530,29 @@ function(t) {
  * Bounce a placemark once.
  */
 GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
-  this.fx.rewind(placemark);
-  
   options = GEarthExtensions.checkParameters(options, false, {
-    duration: 250,
+    duration: 300,
     startAltitude: GEarthExtensions.ALLOWED,
     altitude: this.util.getCamera().getAltitude() / 5,
     phase: GEarthExtensions.ALLOWED,
     repeat: 0,
-    dampen: 1.0,
-    callback: GEarthExtensions.ALLOWED
+    dampen: 0.3,
+    callback: function(){}
   });
+  
+  var me = this;
+  this.fx.rewind(placemark);
   
   // double check that we're given a placemark with a point geometry
   if (!'getGeometry' in placemark ||
       !placemark.getGeometry() ||
       placemark.getGeometry().getType() != 'KmlPoint') {
-    throw new Error('Placemark must be a KmlPoint geometry');
+    throw new TypeError('Placemark must be a KmlPoint geometry');
   }
   
   var point = placemark.getGeometry();
   var origAltitudeMode = point.getAltitudeMode();
-  
+
   // changing altitude if the mode is clamp to ground does nothing, so switch
   // to relative to ground
   if (origAltitudeMode == this.pluginInstance.ALTITUDE_CLAMP_TO_GROUND) {
@@ -5553,43 +5564,55 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
     point.setAltitude(0);
     point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_SEA_FLOOR);
   }
-  
-  var startAltitude = point.getAltitude();
-  if ('startAltitude' in options) {
-    startAltitude = options.startAltitude;
+
+  if (typeof(options.startAltitude) != 'number') {
+    options.startAltitude = point.getAltitude();
   }
   
   // setup the animation phases
   var phase1, phase2;
-  var me = this;
   
   // up
   phase1 = function() {
     me.fx.animateProperty(point, 'altitude', {
       duration: options.duration / 2,
-      end: startAltitude + options.altitude,
+      end: options.startAltitude + options.altitude,
       easing: 'out',
-      callback: phase2
+      featureProxy: placemark,
+      callback: phase2 || function(){}
     });
   };
   
   // down and repeats
-  phase2 = function() {
+  phase2 = function(e) {
+    if (e && e.cancelled) {
+      return;
+    }
+    
     me.fx.animateProperty(point, 'altitude', {
       duration: options.duration / 2,
-      end: startAltitude,
+      start: options.startAltitude + options.altitude,
+      end: options.startAltitude,
       easing: 'in',
-      callback: function() {
+      featureProxy: placemark,
+      callback: function(e2) {
         point.setAltitudeMode(origAltitudeMode);
-        
+
+        if (e2.cancelled) {
+          point.setAltitude(options.startAltitude);
+          options.callback.call(placemark, e2);
+          return;
+        }
+
         // done with this bounce, should we bounce again?
         if (options.repeat >= 1) {
           --options.repeat;
           options.altitude *= options.dampen;
+          options.duration *= Math.sqrt(options.dampen);
           options.phase = 0; // do all phases
           me.fx.bounce(placemark, options);
-        } else if (options.callback) {
-          options.callback.call(placemark);
+        } else {
+          options.callback.call(placemark, e2);
         }
       }
     });
@@ -5614,7 +5637,7 @@ GEarthExtensions.prototype.fx.cancel = function(feature) {
   var animations = this.util.getJsDataValue(feature,
                        '_GEarthExtensions_anim') || [];
   for (var i = 0; i < animations.length; i++) {
-    animations[i].stop();
+    animations[i].stop(false);
   }
 };
 
@@ -5650,6 +5673,13 @@ GEarthExtensions.prototype.fx.rewind = function(feature) {
  *     during the animation. Valid values are 'none', 'in', 'out', or 'both'.
  *     Alternatively, an easy function mapping `[0.0, 1.0] -> [0.0, 1.0]` can
  *     be specified. No easing is `f(x) = x`.
+ * @param {Function} [options.callback] A callback method to fire when the
+ *     animation is completed/stopped. The callback will receive an object
+ *     literal argument that will contain a 'cancelled' boolean value that will
+ *     be true if the effect was cancelled.
+ * @param {KmlFeature} [options.featureProxy] A feature to associate with this
+ *     property animation for use with GEarthExtensions#fx.cancel or
+ *     GEarthExtensions#fx.rewind.
  */
 GEarthExtensions.prototype.fx.animateProperty =
 function(obj, property, options) {
@@ -5755,7 +5785,7 @@ function(obj, property, options) {
       // render callback
       doAnimate_(1.0 * t / options.duration);
     },
-    function() {
+    function(e) {
       // completion callback
       
       // remove this animation from the list of animations on the object
@@ -5776,7 +5806,7 @@ function(obj, property, options) {
       }
 
       if (options.callback) {
-        options.callback.call(obj);
+        options.callback.call(obj, e);
       }
     });
   

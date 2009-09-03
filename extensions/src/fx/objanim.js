@@ -22,7 +22,7 @@ GEarthExtensions.prototype.fx.cancel = function(feature) {
   var animations = this.util.getJsDataValue(feature,
                        '_GEarthExtensions_anim') || [];
   for (var i = 0; i < animations.length; i++) {
-    animations[i].stop();
+    animations[i].stop(false);
   }
 };
 
@@ -58,6 +58,13 @@ GEarthExtensions.prototype.fx.rewind = function(feature) {
  *     during the animation. Valid values are 'none', 'in', 'out', or 'both'.
  *     Alternatively, an easy function mapping `[0.0, 1.0] -> [0.0, 1.0]` can
  *     be specified. No easing is `f(x) = x`.
+ * @param {Function} [options.callback] A callback method to fire when the
+ *     animation is completed/stopped. The callback will receive an object
+ *     literal argument that will contain a 'cancelled' boolean value that will
+ *     be true if the effect was cancelled.
+ * @param {KmlFeature} [options.featureProxy] A feature to associate with this
+ *     property animation for use with GEarthExtensions#fx.cancel or
+ *     GEarthExtensions#fx.rewind.
  */
 GEarthExtensions.prototype.fx.animateProperty =
 function(obj, property, options) {
@@ -163,7 +170,7 @@ function(obj, property, options) {
       // render callback
       doAnimate_(1.0 * t / options.duration);
     },
-    function() {
+    function(e) {
       // completion callback
       
       // remove this animation from the list of animations on the object
@@ -184,7 +191,7 @@ function(obj, property, options) {
       }
 
       if (options.callback) {
-        options.callback.call(obj);
+        options.callback.call(obj, e);
       }
     });
   
