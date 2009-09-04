@@ -3296,7 +3296,8 @@ GEarthExtensions.domBuilder_({
   var autoShortcut = ['Placemark',
                       'PointPlacemark', 'LineStringPlacemark',
                       'PolygonPlacemark',
-                      'Folder', 'NetworkLink', 'GroundOverlay', 'Style'];
+                      'Folder', 'NetworkLink', 'GroundOverlay', 'ScreenOverlay',
+                      'Style'];
   for (var i = 0; i < autoShortcut.length; i++) {
     GEarthExtensions.prototype.dom['add' + autoShortcut[i]] =
       function(shortcutBase) {
@@ -4948,6 +4949,18 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
     // TODO: it may be easier to use a linked list for all this
 
     var coordDataArr = [];
+    
+    var checkDupMidpoints_ = function() {
+      if (!isRing)
+        return;
+      
+      // handle special case for polygons w/ 2 coordinates
+      if (numCoords == 3) /* including duplicate first coord */ {
+        coordDataArr[1].rightMidPlacemark.setVisibility(false);
+      } else if (numCoords >= 4) {
+        coordDataArr[numCoords - 2].rightMidPlacemark.setVisibility(true);
+      }
+    };
 
     var makeRegularDeleteEventListener_ = function(coordData) {
       return function(event) {
@@ -5020,6 +5033,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           leftCoordData.regularDragCallback.call(
               leftCoordData.regularPlacemark, leftCoordData);
         }
+        
+        checkDupMidpoints_();
         
         if (options.editCallback) {
           options.editCallback(null);
@@ -5094,6 +5109,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           coordData.rightMidPlacemark.getGeometry().setAltitude(
               rightMidPt.altitude());
         }
+        
+        checkDupMidpoints_();
         
         if (options.editCallback) {
           options.editCallback(null);
@@ -5236,6 +5253,8 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
           });
         }
       }
+      
+      checkDupMidpoints_();
 
       // display the editing UI
       me.pluginInstance.getFeatures().appendChild(innerDoc);
@@ -6592,7 +6611,6 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
                     bounds.top(), bounds.northEastTop().altitudeMode()),
       { range: lookAtRange });
 };
-// TODO: unit tests
 
 /**
  * Creates a bounds view and sets it as the Earth plugin's view. This function

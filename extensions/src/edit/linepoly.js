@@ -272,6 +272,18 @@ limitations under the License.
     // TODO: it may be easier to use a linked list for all this
 
     var coordDataArr = [];
+    
+    var checkDupMidpoints_ = function() {
+      if (!isRing)
+        return;
+      
+      // handle special case for polygons w/ 2 coordinates
+      if (numCoords == 3) /* including duplicate first coord */ {
+        coordDataArr[1].rightMidPlacemark.setVisibility(false);
+      } else if (numCoords >= 4) {
+        coordDataArr[numCoords - 2].rightMidPlacemark.setVisibility(true);
+      }
+    };
 
     var makeRegularDeleteEventListener_ = function(coordData) {
       return function(event) {
@@ -344,6 +356,8 @@ limitations under the License.
           leftCoordData.regularDragCallback.call(
               leftCoordData.regularPlacemark, leftCoordData);
         }
+        
+        checkDupMidpoints_();
         
         if (options.editCallback) {
           options.editCallback(null);
@@ -418,6 +432,8 @@ limitations under the License.
           coordData.rightMidPlacemark.getGeometry().setAltitude(
               rightMidPt.altitude());
         }
+        
+        checkDupMidpoints_();
         
         if (options.editCallback) {
           options.editCallback(null);
@@ -560,6 +576,8 @@ limitations under the License.
           });
         }
       }
+      
+      checkDupMidpoints_();
 
       // display the editing UI
       me.pluginInstance.getFeatures().appendChild(innerDoc);
