@@ -611,7 +611,8 @@ GEarthExtensions.domBuilder_({
   var autoShortcut = ['Placemark',
                       'PointPlacemark', 'LineStringPlacemark',
                       'PolygonPlacemark',
-                      'Folder', 'NetworkLink', 'GroundOverlay', 'Style'];
+                      'Folder', 'NetworkLink', 'GroundOverlay', 'ScreenOverlay',
+                      'Style'];
   for (var i = 0; i < autoShortcut.length; i++) {
     GEarthExtensions.prototype.dom['add' + autoShortcut[i]] =
       function(shortcutBase) {

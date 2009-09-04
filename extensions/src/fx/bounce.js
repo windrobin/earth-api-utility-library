@@ -119,48 +119,35 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
 function test_fx_bounce(successCallback, errorCallback) {
   testext_.dom.clearFeatures();
   
-  function vce() {
-    google.earth.removeEventListener(testplugin_.getView(),
-        'viewchangeend', vce);
+  testhelpers_.setViewAndContinue(
+      testext_.dom.buildLookAt([0, 0], { tilt: 45, range: 100000 }),
+      function() {
     var pm = testext_.dom.addPointPlacemark([0, 0]);
     
     var callbackCalled = false;
     
-    testext_.fx.bounce(pm, {
-      duration: 350,
-      repeat: 1,
-      dampen: 0.3,
-      callback: function() {
-        callbackCalled = true;
+    try {
+      testext_.fx.bounce(pm, {
+        duration: 350,
+        repeat: 1,
+        dampen: 0.3,
+        callback: function() {
+          callbackCalled = true;
 
-        setTimeout(function() {
-          try {
-            if (!confirm('Press OK if you saw the placemark bounce twice, the '
-                         + 'second time not as high as the first.')) {
-              fail('User reported placemark didnt bounce');
-            }
-
-            successCallback();
-          } catch (e) {
-            errorCallback(e);
-          }
-        }, 0);
-      }
-    });
+          testhelpers_.confirm(
+              'Did the placemark bounce twice, the second time not as high ' +
+              'as the first?', successCallback, errorCallback);
+        }
+      });
+    } catch(e) { errorCallback(e); }
     
     // check to make sure the callback was called
     window.setTimeout(function() {
       if (!callbackCalled) {
-        try {
-          fail('Bounce callback never called.');
-        } catch (e) { errorCallback(e); }
+        errorCallback({ message: 'Bounce callback never called.' });
       }
     }, 350 * 2 + 1000); // allow time for two bounces and 1s overhead
-  }
-  
-  google.earth.addEventListener(testplugin_.getView(),
-      'viewchangeend', vce);
-  testext_.util.lookAt([0, 0], { tilt: 45, range: 100000 });
+  });
 }
 test_fx_bounce.interactive = true;
 /***IGNORE_END***/

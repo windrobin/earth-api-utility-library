@@ -64,7 +64,6 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
                     bounds.top(), bounds.northEastTop().altitudeMode()),
       { range: lookAtRange });
 };
-// TODO: unit tests
 
 /**
  * Creates a bounds view and sets it as the Earth plugin's view. This function
@@ -74,3 +73,42 @@ GEarthExtensions.prototype.view.setToBoundsView = function() {
   this.pluginInstance.getView().setAbstractView(
       this.view.createBoundsView.apply(this, arguments));
 };
+/***IGNORE_BEGIN***/
+function test_view_boundsView(successCallback, errorCallback) {
+  testext_.dom.clearFeatures();
+  
+  // Step 1.
+  var folder = testext_.dom.addFolder([
+    testext_.dom.buildPointPlacemark([37, -122]),
+    testext_.dom.buildPointPlacemark([40, -79]),
+    testext_.dom.buildPointPlacemark([25, -80])
+  ]);
+  
+  var bounds = testext_.dom.computeBounds(folder);
+  var boundsView = testext_.view.createBoundsView(bounds, { aspectRatio: 1.0 });
+
+  testhelpers_.setViewAndContinue(boundsView, function() {
+    // Step 2.
+    testhelpers_.confirm(
+        'Is the view conformed to 3 placemarks?',
+        function() {
+          testext_.dom.clearFeatures();
+          var folder = testext_.dom.addFolder([
+            testext_.dom.buildPointPlacemark([37, -122]),
+            testext_.dom.buildPointPlacemark([37, -122])
+          ]);
+
+          bounds = testext_.dom.computeBounds(folder);
+          boundsView = testext_.view.createBoundsView(bounds,
+              { aspectRatio: 1.0 });
+
+          testhelpers_.setViewAndContinue(boundsView, function() {
+            testhelpers_.confirm(
+                'Now, is the view on two placemarks (one on top of the other)?',
+                successCallback, errorCallback);
+          });
+        }, errorCallback);
+  });
+}
+test_view_boundsView.interactive = true;
+/***IGNORE_END***/
