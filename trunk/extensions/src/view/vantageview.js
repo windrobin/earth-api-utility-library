@@ -58,3 +58,37 @@ GEarthExtensions.prototype.view.createVantageView = function(cameraPoint,
 
   return this.dom.buildCamera(cameraPoint, {heading: heading, tilt: tilt});
 };
+/***IGNORE_BEGIN***/
+function test_view_vantageView(successCallback, errorCallback) {
+  testext_.dom.clearFeatures();
+  testplugin_.getLayerRoot().enableLayerById(
+      testplugin_.LAYER_BUILDINGS, true);
+  
+  // From Marin Headlands to Golden Gate bridge.
+  var marin = new geo.Point(37.827402, -122.498988,
+                            243.4, geo.ALTITUDE_ABSOLUTE);
+  var ggbridge = new geo.Point(37.814029, -122.478015,
+                               226.4, geo.ALTITUDE_ABSOLUTE);
+
+  var vantageView = testext_.view.createVantageView(marin, ggbridge);
+  testext_.dom.addScreenOverlay({
+    icon: 'http://maps.google.com/mapfiles/kml/shapes/cross-hairs.png',
+    overlayXY: { left: '50%', top: '50%' },
+    screenXY: { left: '50%', top: '50%' },
+    size: { width: 32, height: 32 }
+  });
+
+  testhelpers_.setViewAndContinue(vantageView, function() {
+    testhelpers_.confirm(
+        'Is the viewport from the Marin Headlands, directly looking at the ' +
+        'of the Golden Gate bridge? The top of the far tower of the bridge ' +
+        'should be in the crosshairs.', function() {
+          testext_.dom.clearFeatures();
+          testplugin_.getLayerRoot().enableLayerById(
+              testplugin_.LAYER_BUILDINGS, false);
+          successCallback();
+        }, errorCallback);
+  });
+}
+test_view_vantageView.interactive = true;
+/***IGNORE_END***/

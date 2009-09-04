@@ -621,3 +621,82 @@ limitations under the License.
     }
   };
 })();
+/***IGNORE_BEGIN***/
+function test_edit_LinePolyEditing(successCallback, errorCallback) {
+  testext_.dom.clearFeatures();
+  
+  var step = 1;
+  
+  testhelpers_.setViewAndContinue(
+      testext_.dom.buildLookAt([0, 0], { tilt: 45, range: 100000 }),
+      function() {
+    var pm = testext_.dom.addPolygonPlacemark({
+      polygon: [[-0.1, -0.1], [0.1, -0.1], [0.1, 0.1], [-0.1, 0.1]],
+      style: { poly: '#fc0' }
+    });
+
+    testhelpers_.alert('First, add 4 new points to the polygon.');
+    
+    try {
+      testext_.edit.editLineString(pm.getGeometry().getOuterBoundary(), {
+        editCallback: function(i) {
+          switch (step) {
+            case 1:
+              if (pm.getGeometry().getOuterBoundary()
+                    .getCoordinates().getLength() >= 9) {
+                step = 2;
+                testhelpers_.alert('Next, delete all but 2 points.');
+              }
+              break;
+          
+            case 2:
+              if (pm.getGeometry().getOuterBoundary()
+                    .getCoordinates().getLength() <= 3) {
+                step = 3;
+                testhelpers_.alert('Now, add a new point.');
+              }
+              break;
+
+            case 3:
+              if (pm.getGeometry().getOuterBoundary()
+                    .getCoordinates().getLength() >= 4) {
+                step = 4;
+                testhelpers_.confirm(
+                    'Does the polygon still look and behave ' +
+                    'correctly?', successCallback, errorCallback);
+              }
+              break;
+            }
+        }
+      });
+    } catch(e) { errorCallback(e); }
+  });
+}
+test_edit_LinePolyEditing.interactive = true;
+
+function test_edit_LinePolyDrawing(successCallback, errorCallback) {
+  testext_.dom.clearFeatures();
+  
+  testhelpers_.setViewAndContinue(
+      testext_.dom.buildLookAt([0, 0], { tilt: 45, range: 100000 }),
+      function() {
+    var pm = testext_.dom.addLineStringPlacemark({
+      lineString: [],
+      style: { line: { color: '#fc0', opacity: 0.5, width: 4 } }
+    });
+
+    testhelpers_.alert('Draw a line string.');
+    
+    try {
+      testext_.edit.drawLineString(pm.getGeometry(), {
+        finishCallback: function() {
+          testhelpers_.confirm(
+              'Does the line string look correct?',
+              successCallback, errorCallback);
+        }
+      });
+    } catch(e) { errorCallback(e); }
+  });
+}
+test_edit_LinePolyDrawing.interactive = true;
+/***IGNORE_END***/

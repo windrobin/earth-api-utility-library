@@ -334,39 +334,46 @@ limitations under the License.
 function test_edit_Dragging(successCallback, errorCallback) {
   testext_.dom.clearFeatures();
   
-  var vce;
-  vce = function() {
-    google.earth.removeEventListener(testplugin_.getView(),
-        'viewchangeend', vce);
+  testhelpers_.setViewAndContinue(
+      testext_.dom.buildLookAt([0, 0], { tilt: 45, range: 100000 }),
+      function() {
     var pm = testext_.dom.addPointPlacemark([0, 0]);
 
-    var callbackCalled = false;
-    setTimeout(function() {
-      alert('Drag and drop the placemark');
-    }, 0);
+    testhelpers_.alert('Drag and drop the placemark.');
     
-    testext_.edit.makeDraggable(pm, {
-      dropCallback: function() {
-        window.setTimeout(function() {
-          try {
-            if (!confirm('Press OK if the drag worked as expected.')) {
-              fail('User reported placemark drag failed');
-            }
-
-            callbackCalled = true;
-            successCallback();
-          } catch (e) {
-            errorCallback(e);
-          }
-        }, 1000);
-      }
-    });
-    
-    // TODO: make sure drop callback was called
-  };
-  
-  google.earth.addEventListener(testplugin_.getView(), 'viewchangeend', vce);
-  testext_.util.lookAt([0, 0], { tilt: 45, range: 100000 });
+    try {
+      testext_.edit.makeDraggable(pm, {
+        dropCallback: function() {
+          testhelpers_.confirm(
+              'Did the drag worked as expected?',
+              successCallback, errorCallback);
+        }
+      });
+    } catch (e) { errorCallback(e); }
+  });
 }
 test_edit_Dragging.interactive = true;
+
+function test_edit_Place(successCallback, errorCallback) {
+  testext_.dom.clearFeatures();
+  
+  testhelpers_.setViewAndContinue(
+      testext_.dom.buildLookAt([0, 0], { tilt: 45, range: 100000 }),
+      function() {
+    var pm = testext_.dom.addPointPlacemark([0,0]);
+
+    testhelpers_.alert('Place the placemark.');
+    
+    try {
+      testext_.edit.place(pm, {
+        dropCallback: function() {
+          testhelpers_.confirm(
+              'Was the placemark placed as expected?',
+              successCallback, errorCallback);
+        }
+      });
+    } catch (e) { errorCallback(e); }
+  });
+}
+test_edit_Place.interactive = true;
 /***IGNORE_END***/
