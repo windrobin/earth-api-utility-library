@@ -126,3 +126,39 @@ GEarthExtensions.domBuilder_({
     regionObj.setLod(lod);
   }
 });
+/***IGNORE_BEGIN***/
+function test_dom_buildRegion() {
+  var region = testext_.dom.buildRegion({
+    box: { center: [37, -122], span: [10, 10],
+           minAltitude: 10, maxAltitude: 100 },
+    lod: [512, 100, 200, 1024]
+  });
+  
+  assertEquals('KmlRegion', region.getType());
+  assertEquals(42, region.getLatLonAltBox().getNorth());
+  assertEquals(32, region.getLatLonAltBox().getSouth());
+  assertEquals(-117, region.getLatLonAltBox().getEast());
+  assertEquals(-127, region.getLatLonAltBox().getWest());
+  assertEquals(10, region.getLatLonAltBox().getMinAltitude());
+  assertEquals(100, region.getLatLonAltBox().getMaxAltitude());
+  
+  assertEquals(512, region.getLod().getMinLodPixels());
+  assertEquals(100, region.getLod().getMinFadeExtent());
+  assertEquals(200, region.getLod().getMaxFadeExtent());
+  assertEquals(1024, region.getLod().getMaxLodPixels());
+  
+  region = testext_.dom.buildRegion({
+    box: { north: 90, south: -90, east: 180, west: -180 },
+    lod: [256, 512]
+  });
+  
+  assertEquals('KmlRegion', region.getType());
+  assertEquals(90, region.getLatLonAltBox().getNorth());
+  assertEquals(-90, region.getLatLonAltBox().getSouth());
+  assertEquals(180, region.getLatLonAltBox().getEast());
+  assertEquals(-180, region.getLatLonAltBox().getWest());
+  
+  assertEquals(256, region.getLod().getMinLodPixels());
+  assertEquals(512, region.getLod().getMaxLodPixels());
+}
+/***IGNORE_END***/

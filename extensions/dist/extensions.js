@@ -3954,21 +3954,13 @@ GEarthExtensions.prototype.dom.walk = function() {
     throw new Error('walk takes at most 1 arguments');
   }
   
-  if (!('visitCallback' in options)) {
-    throw new Error('walk requires a visit callback function');
-  }
-  
-  if (!('features' in options)) {
-    options.features = true;
-  }
-  
-  if (!('geometries' in options)) {
-    options.geometries = false;
-  }
-  
-  if (!('rootObject' in options)) {
-    options.rootObject = this.pluginInstance;
-  }
+  options = GEarthExtensions.checkParameters(options, false, {
+    visitCallback: GEarthExtensions.REQUIRED,
+    features: true,
+    geometries: false,
+    rootObject: this.pluginInstance,
+    rootContext: GEarthExtensions.ALLOWED
+  });
   
   var recurse_ = function(object, currentContext) {
     var contextArgument = {
@@ -4073,10 +4065,9 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
  * @param {KmlObject} object The object to remove.
  */
 GEarthExtensions.prototype.dom.removeObject = function(object) {
-  // TODO: make sure this removes the feature from its parent, which may not
-  // necessarily be the root feature container
-  if (!object)
+  if (!object) {
     return;
+  }
 
   var parent = object.getParentNode();
   if (!parent) {
@@ -4230,6 +4221,7 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
               bounds.extend(new geo.Point(llb.getNorth(), llb.getWest(), alt));
               bounds.extend(new geo.Point(llb.getSouth(), llb.getEast(), alt));
               bounds.extend(new geo.Point(llb.getSouth(), llb.getWest(), alt));
+              // TODO: factor in rotation
             }
             break;
           
@@ -6258,103 +6250,8 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
   };
 
 }());
-(function() {
-  // modified base64 for url
-  // http://en.wikipedia.org/wiki/Base64
-  var ALPHABET_ =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  
-  /**
-   * Encodes an array of signed numbers into a string.
-   * @param {Number[]} arr An array of signed numbers.
-   * @type String
-   * @return An encoded string representing the array of numbers.
-   */
-  GEarthExtensions.prototype.util.encodeArray = function(arr) {
-    var s = '';
-    for (var i = 0; i < arr.length; i++) {
-      var sgn_num = arr[i] << 1;
-      sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
-
-      while (sgn_num >= 0x20) {
-        s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
-        sgn_num >>= 5;
-      }
-
-      s += ALPHABET_.charAt(sgn_num);
-    }
-
-    return s;
-  };
-  
-  /**
-   * Decodes a string representing an array of signed numbers encoded with
-   * GEarthExtensions#util.encodeArray.
-   * @param {String} str The encoded string.
-   * @type Number[]
-   */
-  GEarthExtensions.prototype.util.decodeArray = function(str) {
-    var len = str.length;
-    var index = 0;
-    var array = [];
-
-    while (index < len) {
-      var b;
-      var shift = 0;
-      var result = 0;
-      do {
-        b = ALPHABET_.indexOf(str.charAt(index++));
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-
-      array.push(((result & 1) ? ~(result >> 1) : (result >> 1)));
-    }
-
-    return array;
-  };
-}());
 /**
- * Creates a KmlLookAt and sets it as the Earth plugin's view. This function
- * takes the same parameters as GEarthExtensions#dom.buildLookAt.
- */
-GEarthExtensions.prototype.util.lookAt = function() {
-  this.pluginInstance.getView().setAbstractView(
-      this.dom.buildLookAt.apply(null, arguments));
-};
-
-/**
- * Gets the current view as a KmlLookAt.
- * @param {Number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
- *     that the resulting LookAt should be in.
- * @type KmlLookAt
- * @return Returns the current view as a KmlLookAt.
- */
-GEarthExtensions.prototype.util.getLookAt = function(altitudeMode) {
-  if (geo.util.isUndefined(altitudeMode)) {
-    altitudeMode = this.pluginInstance.ALTITUDE_ABSOLUTE;
-  }
-  
-  return this.pluginInstance.getView().copyAsLookAt(altitudeMode);
-};
-
-/**
- * Gets the current view as a KmlCamera.
- * @param {Number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
- *     that the resulting camera should be in.
- * @type KmlCamera
- * @return Returns the current view as a KmlCamera.
- */
-GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
-  if (geo.util.isUndefined(altitudeMode)) {
-    altitudeMode = this.pluginInstance.ALTITUDE_ABSOLUTE;
-  }
-  
-  return this.pluginInstance.getView().copyAsCamera(altitudeMode);
-};
-
-/**
- * Simply loads and shows the given KML URL in the Google Earth Plugin instance.
+ * Loads and shows the given KML URL in the Google Earth Plugin instance.
  * @param {String} url The URL of the KML content to show.
  * @param {Object} [options] KML display options.
  * @param {Boolean} [options.cacheBuster] Enforce freshly downloading the KML
@@ -6398,9 +6295,8 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
 };
 
 /**
- * Simply loads and shows the given KML string in the Google Earth Plugin
- * instance.
- * @param {String} str The KML blob string to show.
+ * Loads and shows the given KML string in the Google Earth Plugin instance.
+ * @param {String} str The KML string to show.
  * @param {Object} [options] KML display options.
  * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
  *     in the parsed KML. If no explicit view is available,
@@ -6432,6 +6328,44 @@ GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
   }
   
   return kmlObject;
+};
+/**
+ * Creates a KmlLookAt and sets it as the Earth plugin's view. This function
+ * takes the same parameters as GEarthExtensions#dom.buildLookAt.
+ */
+GEarthExtensions.prototype.util.lookAt = function() {
+  this.pluginInstance.getView().setAbstractView(
+      this.dom.buildLookAt.apply(null, arguments));
+};
+
+/**
+ * Gets the current view as a KmlLookAt.
+ * @param {Number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
+ *     that the resulting LookAt should be in.
+ * @type KmlLookAt
+ * @return Returns the current view as a KmlLookAt.
+ */
+GEarthExtensions.prototype.util.getLookAt = function(altitudeMode) {
+  if (geo.util.isUndefined(altitudeMode)) {
+    altitudeMode = this.pluginInstance.ALTITUDE_ABSOLUTE;
+  }
+  
+  return this.pluginInstance.getView().copyAsLookAt(altitudeMode);
+};
+
+/**
+ * Gets the current view as a KmlCamera.
+ * @param {Number} [altitudeMode=ALTITUDE_ABSOLUTE] The altitude mode
+ *     that the resulting camera should be in.
+ * @type KmlCamera
+ * @return Returns the current view as a KmlCamera.
+ */
+GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
+  if (geo.util.isUndefined(altitudeMode)) {
+    altitudeMode = this.pluginInstance.ALTITUDE_ABSOLUTE;
+  }
+  
+  return this.pluginInstance.getView().copyAsCamera(altitudeMode);
 };
 
 /**
@@ -6554,6 +6488,62 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     delete this.cameraControlOldProps_;
   }
 };
+(function() {
+  // modified base64 for url
+  // http://en.wikipedia.org/wiki/Base64
+  var ALPHABET_ =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  
+  /**
+   * Encodes an array of signed numbers into a string.
+   * @param {Number[]} arr An array of signed numbers.
+   * @type String
+   * @return An encoded string representing the array of numbers.
+   */
+  GEarthExtensions.prototype.util.encodeArray = function(arr) {
+    var s = '';
+    for (var i = 0; i < arr.length; i++) {
+      var sgn_num = arr[i] << 1;
+      sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+
+      while (sgn_num >= 0x20) {
+        s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
+        sgn_num >>= 5;
+      }
+
+      s += ALPHABET_.charAt(sgn_num);
+    }
+
+    return s;
+  };
+  
+  /**
+   * Decodes a string representing an array of signed numbers encoded with
+   * GEarthExtensions#util.encodeArray.
+   * @param {String} str The encoded string.
+   * @type Number[]
+   */
+  GEarthExtensions.prototype.util.decodeArray = function(str) {
+    var len = str.length;
+    var index = 0;
+    var array = [];
+
+    while (index < len) {
+      var b;
+      var shift = 0;
+      var result = 0;
+      do {
+        b = ALPHABET_.indexOf(str.charAt(index++));
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      array.push(((result & 1) ? ~(result >> 1) : (result >> 1)));
+    }
+
+    return array;
+  };
+}());
 /**
  * This class/namespace hybrid contains various camera/view
  * related.

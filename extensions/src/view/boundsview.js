@@ -79,8 +79,11 @@ function test_view_boundsView(successCallback, errorCallback) {
   
   // Step 1.
   var folder = testext_.dom.addFolder([
-    testext_.dom.buildPointPlacemark([37, -122]),
-    testext_.dom.buildPointPlacemark([40, -79]),
+    testext_.dom.buildGroundOverlay({
+      icon: 'http://www.google.com/intl/en_ALL/images/logo.gif',
+      box: { north: 37, south: 30, east: -110, west: -140 }
+    }),
+    testext_.dom.buildPolygonPlacemark([[40, -79], [45, -78], [40, -77]]),
     testext_.dom.buildPointPlacemark([25, -80])
   ]);
   
@@ -90,7 +93,7 @@ function test_view_boundsView(successCallback, errorCallback) {
   testhelpers_.setViewAndContinue(boundsView, function() {
     // Step 2.
     testhelpers_.confirm(
-        'Is the view conformed to 3 placemarks?',
+        'Is the view fit to all 3 features?',
         function() {
           testext_.dom.clearFeatures();
           var folder = testext_.dom.addFolder([
