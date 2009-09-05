@@ -80,21 +80,13 @@ GEarthExtensions.prototype.dom.walk = function() {
     throw new Error('walk takes at most 1 arguments');
   }
   
-  if (!('visitCallback' in options)) {
-    throw new Error('walk requires a visit callback function');
-  }
-  
-  if (!('features' in options)) {
-    options.features = true;
-  }
-  
-  if (!('geometries' in options)) {
-    options.geometries = false;
-  }
-  
-  if (!('rootObject' in options)) {
-    options.rootObject = this.pluginInstance;
-  }
+  options = GEarthExtensions.checkParameters(options, false, {
+    visitCallback: GEarthExtensions.REQUIRED,
+    features: true,
+    geometries: false,
+    rootObject: this.pluginInstance,
+    rootContext: GEarthExtensions.ALLOWED
+  });
   
   var recurse_ = function(object, currentContext) {
     var contextArgument = {
@@ -251,10 +243,9 @@ GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
  * @param {KmlObject} object The object to remove.
  */
 GEarthExtensions.prototype.dom.removeObject = function(object) {
-  // TODO: make sure this removes the feature from its parent, which may not
-  // necessarily be the root feature container
-  if (!object)
+  if (!object) {
     return;
+  }
 
   var parent = object.getParentNode();
   if (!parent) {
@@ -436,6 +427,7 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
               bounds.extend(new geo.Point(llb.getNorth(), llb.getWest(), alt));
               bounds.extend(new geo.Point(llb.getSouth(), llb.getEast(), alt));
               bounds.extend(new geo.Point(llb.getSouth(), llb.getWest(), alt));
+              // TODO: factor in rotation
             }
             break;
           
