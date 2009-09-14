@@ -30,8 +30,7 @@ GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
  * in a plugin instance.
  * @private
  */
-GEarthExtensions.prototype.fx.AnimationManager_ = GEarthExtensions.createClass_(
-function() {
+GEarthExtensions.prototype.fx.AnimationManager_ = createClass_(function() {
   this.extInstance = arguments.callee.extInstance_;
   this.animations_ = [];
 
@@ -152,8 +151,8 @@ function() {
  *     literal argument that will contain a 'cancelled' boolean value that will
  *     be true if the effect was cancelled.
  */
-GEarthExtensions.prototype.fx.Animation =
-GEarthExtensions.createClass_(function(renderFn, completionFn) {
+GEarthExtensions.prototype.fx.Animation = createClass_(function(renderFn,
+                                                                completionFn) {
   this.extInstance = arguments.callee.extInstance_;
   this.renderFn = renderFn;
   this.completionFn = completionFn || function(){};
@@ -208,8 +207,7 @@ GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
  *     be true if the effect was cancelled.
  * @extends GEarthExtensions#fx.Animation
  */
-GEarthExtensions.prototype.fx.TimedAnimation =
-GEarthExtensions.createClass_(
+GEarthExtensions.prototype.fx.TimedAnimation = createClass_(
   [GEarthExtensions.prototype.fx.Animation],
 function(duration, renderFn, completionFn) {
   this.extInstance = arguments.callee.extInstance_;

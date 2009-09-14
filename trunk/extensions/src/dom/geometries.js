@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /** @ignore */
-GEarthExtensions.prototype.dom.buildExtrudableGeometry_ =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildExtrudableGeometry_ = domBuilder_({
   propertySpec: {
-    altitudeMode: GEarthExtensions.AUTO,
-    extrude: GEarthExtensions.AUTO,
-    tessellate: GEarthExtensions.AUTO
+    altitudeMode: AUTO_,
+    extrude: AUTO_,
+    tessellate: AUTO_
   }
 });
 
@@ -37,13 +36,13 @@ GEarthExtensions.domBuilder_({
  *     extrude down to the Earth's surface.
  * @type KmlPoint
  */
-GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPoint = domBuilder_({
   apiInterface: 'KmlPoint',
   base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPoint',
   defaultProperty: 'point',
   propertySpec: {
-    point: GEarthExtensions.REQUIRED
+    point: REQUIRED_
   },
   constructor: function(pointObj, options) {
     var point = new geo.Point(options.point);
@@ -75,13 +74,13 @@ GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLineString
  */
-GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLineString = domBuilder_({
   apiInterface: 'KmlLineString',
   base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createLineString',
   defaultProperty: 'path',
   propertySpec: {
-    path: GEarthExtensions.REQUIRED
+    path: REQUIRED_
   },
   constructor: function(lineStringObj, options) {
     // TODO: maybe use parseKml instead of pushLatLngAlt for performance
@@ -116,7 +115,7 @@ GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLinearRing
  */
-GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLinearRing = domBuilder_({
   apiInterface: 'KmlLinearRing',
   base: GEarthExtensions.prototype.dom.buildLineString,
   apiFactoryFn: 'createLinearRing',
@@ -147,13 +146,13 @@ GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlPolygon
  */
-GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPolygon = domBuilder_({
   apiInterface: 'KmlPolygon',
   base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPolygon',
   defaultProperty: 'polygon',
   propertySpec: {
-    polygon: GEarthExtensions.REQUIRED
+    polygon: REQUIRED_
   },
   constructor: function(polygonObj, options) {
     var polygon = new geo.Polygon(options.polygon);
@@ -189,17 +188,17 @@ GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
  * @param {Number} [options.orientation.roll] The model roll.
  * @type KmlModel
  */
-GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildModel = domBuilder_({
   apiInterface: 'KmlModel',
   apiFactoryFn: 'createModel',
   defaultProperty: 'link',
   propertySpec: {
-    altitudeMode: GEarthExtensions.AUTO,
+    altitudeMode: AUTO_,
     
-    link: GEarthExtensions.ALLOWED,
-    location: GEarthExtensions.ALLOWED,
-    scale: GEarthExtensions.ALLOWED,
-    orientation: GEarthExtensions.ALLOWED
+    link: ALLOWED_,
+    location: ALLOWED_,
+    scale: ALLOWED_,
+    orientation: ALLOWED_
   },
   constructor: function(modelObj, options) {
     if (options.link) {
@@ -240,7 +239,7 @@ GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
     }
   }
 });
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_buildModel() {
   var model = testext_.dom.buildModel({
     link: 'http://earth-api-samples.googlecode.com/svn/trunk/examples/' +
@@ -274,7 +273,7 @@ function test_dom_buildModel() {
   assertEquals(15, model.getOrientation().getTilt());
   assertEquals(15, model.getOrientation().getRoll());
 }
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Creates a new multi-geometry with the given parameters.
@@ -284,13 +283,12 @@ function test_dom_buildModel() {
  * @param {KmlGeometry[]} [options.geometries] The child geometries.
  * @type KmlMultiGeometry
  */
-GEarthExtensions.prototype.dom.buildMultiGeometry =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildMultiGeometry = domBuilder_({
   apiInterface: 'KmlMultiGeometry',
   apiFactoryFn: 'createMultiGeometry',
   defaultProperty: 'geometries',
   propertySpec: {
-    geometries: GEarthExtensions.ALLOWED
+    geometries: ALLOWED_
   },
   constructor: function(multiGeometryObj, options) {
     var geometriesObj = multiGeometryObj.getGeometries();

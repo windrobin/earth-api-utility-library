@@ -29,7 +29,7 @@ GEarthExtensions.prototype.dom = {isnamespace_:true};
  * and checking if the parameter is an instance of the object we're constructing
  * @private
  */
-GEarthExtensions.domBuilder_ = function(params) {
+function domBuilder_(params) {
   if (params.apiInterface && !geo.util.isArray(params.apiInterface)) {
     params.apiInterface = [params.apiInterface];
   }
@@ -124,7 +124,7 @@ GEarthExtensions.domBuilder_ = function(params) {
     }
     
     // check passed in options against property spec
-    options = GEarthExtensions.checkParameters(options,
+    options = checkParameters_(options,
         false, params.propertySpec);
     
     // call Earth API factory function, i.e. createXX(...)
@@ -150,7 +150,7 @@ GEarthExtensions.domBuilder_ = function(params) {
     // run automatic property setters as defined in property spec
     for (var property in params.propertySpec) {
       // TODO: abstract away into isAuto()
-      if (params.propertySpec[property] === GEarthExtensions.AUTO &&
+      if (params.propertySpec[property] === AUTO_ &&
           property in options) {
         // auto setters calls newObj.setXx(options[xx]) if xx is in options
         this.util.callMethod(newObj,
@@ -164,4 +164,4 @@ GEarthExtensions.domBuilder_ = function(params) {
   
   builderFn.builderParams = params;
   return builderFn;
-};
+}

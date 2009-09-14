@@ -27,16 +27,16 @@ limitations under the License.
  *     lookat point).
  * @type KmlLookAt
  */
-GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLookAt = domBuilder_({
   apiInterface: 'KmlLookAt',
   apiFactoryFn: 'createLookAt',
   defaultProperty: 'point',
   propertySpec: {
-    copy: GEarthExtensions.ALLOWED,
-    point: GEarthExtensions.REQUIRED,
-    heading: GEarthExtensions.ALLOWED,
-    tilt: GEarthExtensions.ALLOWED,
-    range: GEarthExtensions.ALLOWED
+    copy: ALLOWED_,
+    point: REQUIRED_,
+    heading: ALLOWED_,
+    tilt: ALLOWED_,
+    range: ALLOWED_
   },
   constructor: function(lookAtObj, options) {
     var point = new geo.Point(options.point);
@@ -54,7 +54,7 @@ GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
       defaults.range = currentLookAt.getRange();
     }
   
-    options = GEarthExtensions.checkParameters(options, true, defaults);
+    options = checkParameters_(options, true, defaults);
   
     lookAtObj.set(
         point.lat(),
@@ -81,16 +81,16 @@ GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
  * @param {Number} [options.range] The camera roll.
  * @type KmlCamera
  */
-GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildCamera = domBuilder_({
   apiInterface: 'KmlCamera',
   apiFactoryFn: 'createCamera',
   defaultProperty: 'point',
   propertySpec: {
-    copy: GEarthExtensions.ALLOWED,
-    point: GEarthExtensions.REQUIRED,
-    heading: GEarthExtensions.ALLOWED,
-    tilt: GEarthExtensions.ALLOWED,
-    roll: GEarthExtensions.ALLOWED
+    copy: ALLOWED_,
+    point: REQUIRED_,
+    heading: ALLOWED_,
+    tilt: ALLOWED_,
+    roll: ALLOWED_
   },
   constructor: function(cameraObj, options) {
     var point = new geo.Point(options.point);
@@ -108,7 +108,7 @@ GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
       defaults.roll = currentCamera.getRoll();
     }
   
-    options = GEarthExtensions.checkParameters(options, true, defaults);
+    options = checkParameters_(options, true, defaults);
   
     cameraObj.set(
         point.lat(),

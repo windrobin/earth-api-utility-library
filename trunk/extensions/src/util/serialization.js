@@ -13,63 +13,64 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-(function() {
-  // modified base64 for url
-  // http://en.wikipedia.org/wiki/Base64
-  var ALPHABET_ =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  
-  /**
-   * Encodes an array of signed numbers into a string.
-   * @param {Number[]} arr An array of signed numbers.
-   * @type String
-   * @return An encoded string representing the array of numbers.
-   */
-  GEarthExtensions.prototype.util.encodeArray = function(arr) {
-    var s = '';
-    for (var i = 0; i < arr.length; i++) {
-      var sgn_num = arr[i] << 1;
-      sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+// modified base64 for url
+// http://en.wikipedia.org/wiki/Base64
+var ALPHABET_ =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
-      while (sgn_num >= 0x20) {
-        s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
-        sgn_num >>= 5;
-      }
+// These algorithms are based on the Maps aPI polyline encoding algorithm:
+// http://code.google.com/apis/maps/documentation/include/polyline.js
 
-      s += ALPHABET_.charAt(sgn_num);
+/**
+ * Encodes an array of signed numbers into a string.
+ * @param {Number[]} arr An array of signed numbers.
+ * @type String
+ * @return An encoded string representing the array of numbers.
+ */
+GEarthExtensions.prototype.util.encodeArray = function(arr) {
+  var s = '';
+  for (var i = 0; i < arr.length; i++) {
+    var sgn_num = arr[i] << 1;
+    sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+
+    while (sgn_num >= 0x20) {
+      s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
+      sgn_num >>= 5;
     }
 
-    return s;
-  };
-  
-  /**
-   * Decodes a string representing an array of signed numbers encoded with
-   * GEarthExtensions#util.encodeArray.
-   * @param {String} str The encoded string.
-   * @type Number[]
-   */
-  GEarthExtensions.prototype.util.decodeArray = function(str) {
-    var len = str.length;
-    var index = 0;
-    var array = [];
+    s += ALPHABET_.charAt(sgn_num);
+  }
 
-    while (index < len) {
-      var b;
-      var shift = 0;
-      var result = 0;
-      do {
-        b = ALPHABET_.indexOf(str.charAt(index++));
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
+  return s;
+};
 
-      array.push(((result & 1) ? ~(result >> 1) : (result >> 1)));
-    }
+/**
+ * Decodes a string representing an array of signed numbers encoded with
+ * GEarthExtensions#util.encodeArray.
+ * @param {String} str The encoded string.
+ * @type Number[]
+ */
+GEarthExtensions.prototype.util.decodeArray = function(str) {
+  var len = str.length;
+  var index = 0;
+  var array = [];
 
-    return array;
-  };
-}());
-/***IGNORE_BEGIN***/
+  while (index < len) {
+    var b;
+    var shift = 0;
+    var result = 0;
+    do {
+      b = ALPHABET_.indexOf(str.charAt(index++));
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+
+    array.push(((result & 1) ? ~(result >> 1) : (result >> 1)));
+  }
+
+  return array;
+};
+//#BEGIN_TEST
 function test_util_encodeArray() {
   var arr = [1, 5, 15, -10, 0, 5e20, -5e20];
   
@@ -84,4 +85,4 @@ function test_util_encodeArray() {
   assertEquals(arr.tilt, arr2.tilt);
   assertEquals(arr.roll, arr2.roll);
 }
-/***IGNORE_END***/
+//#END_TEST

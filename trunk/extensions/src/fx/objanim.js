@@ -68,14 +68,14 @@ GEarthExtensions.prototype.fx.rewind = function(feature) {
  */
 GEarthExtensions.prototype.fx.animateProperty =
 function(obj, property, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     duration: 500,
-    start: GEarthExtensions.ALLOWED,
-    end: GEarthExtensions.ALLOWED,
-    delta: GEarthExtensions.ALLOWED,
+    start: ALLOWED_,
+    end: ALLOWED_,
+    delta: ALLOWED_,
     easing: 'none',
-    callback: GEarthExtensions.ALLOWED,
-    featureProxy: GEarthExtensions.ALLOWED
+    callback: ALLOWED_,
+    featureProxy: ALLOWED_
   });
   
   // http://www.timotheegroleau.com/Flash/experiments/easing_function_generator.htm

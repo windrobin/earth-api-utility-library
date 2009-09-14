@@ -66,7 +66,7 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
  *     view, this should be the current aspect ratio of the plugin window.
  */
 GEarthExtensions.prototype.util.flyToObject = function(obj, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     boundsFallback: true,
     aspectRatio: 1.0
   });
@@ -97,13 +97,12 @@ GEarthExtensions.prototype.util.flyToObject = function(obj, options) {
  *     function.
  */
 GEarthExtensions.prototype.util.batchExecute = function(batchFn, context) {
-  // TODO: find a cleaner method besides fetchKml
   var me = this;
-  google.earth.fetchKml(this.pluginInstance, '', function() {
+  google.earth.executeBatch(this.pluginInstance, function() {
     batchFn.call(me, context);
   });
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_util_batchExecute(successCallback, errorCallback) {
   var pm = testplugin_.createPlacemark('');
   testext_.util.batchExecute(function() {
@@ -121,7 +120,7 @@ function test_util_batchExecute(successCallback, errorCallback) {
   }, 2000);
 }
 test_util_batchExecute.async = true;
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Calls method on object with optional arguments. Arguments to pass to the
@@ -148,10 +147,11 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
       reprArgs.push('args[' + i + ']');
     }
 
-    return eval('object.' + method + '(' + reprArgs.join(',') + ')');
+    // Don't use eval directly due to a YUI Compressor bug/feature.
+    return window['eval']('object.' + method + '(' + reprArgs.join(',') + ')');
   }
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_util_callMethod() {
   function Adder(a) {
     this.a = a;
@@ -170,7 +170,7 @@ function test_util_callMethod() {
   assertTrue(geo.util.isEarthAPIObject_(placemark));
   assertEquals('KmlPlacemark', placemark.getType());
 }
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Enables or disables full camera ownership mode, which sets fly to speed
