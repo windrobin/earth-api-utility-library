@@ -17,11 +17,11 @@ limitations under the License.
  * Bounce a placemark once.
  */
 GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     duration: 300,
-    startAltitude: GEarthExtensions.ALLOWED,
+    startAltitude: ALLOWED_,
     altitude: this.util.getCamera().getAltitude() / 5,
-    phase: GEarthExtensions.ALLOWED,
+    phase: ALLOWED_,
     repeat: 0,
     dampen: 0.3,
     callback: function(){}
@@ -115,7 +115,7 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
     phase1.call();
   }
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_fx_bounce(successCallback, errorCallback) {
   testext_.dom.clearFeatures();
   
@@ -150,4 +150,4 @@ function test_fx_bounce(successCallback, errorCallback) {
   });
 }
 test_fx_bounce.interactive = true;
-/***IGNORE_END***/
+//#END_TEST

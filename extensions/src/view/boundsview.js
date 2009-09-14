@@ -26,8 +26,8 @@ limitations under the License.
  * @type KmlAbstractView
  */
 GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
-    aspectRatio: GEarthExtensions.REQUIRED,
+  options = checkParameters_(options, false, {
+    aspectRatio: REQUIRED_,
     
     defaultRange: 1000,
     scaleRange: 1.5
@@ -73,7 +73,7 @@ GEarthExtensions.prototype.view.setToBoundsView = function() {
   this.pluginInstance.getView().setAbstractView(
       this.view.createBoundsView.apply(this, arguments));
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_view_boundsView(successCallback, errorCallback) {
   testext_.dom.clearFeatures();
   
@@ -114,4 +114,4 @@ function test_view_boundsView(successCallback, errorCallback) {
   });
 }
 test_view_boundsView.interactive = true;
-/***IGNORE_END***/
+//#END_TEST

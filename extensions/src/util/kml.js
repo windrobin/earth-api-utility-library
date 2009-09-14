@@ -29,7 +29,7 @@ limitations under the License.
  *     calculate and fly to a bounds view.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     cacheBuster: false,
     flyToView: false,
     flyToBoundsFallback: true,
@@ -72,7 +72,7 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * @return Returns the parsed object on success, or null if there was an error.
  */
 GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     flyToView: false,
     flyToBoundsFallback: true,
     aspectRatio: 1.0
@@ -92,7 +92,7 @@ GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
   
   return kmlObject;
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_util_displayKml(successCallback, errorCallback) {
   // Step 1.
   testext_.dom.clearFeatures();
@@ -131,4 +131,4 @@ function test_util_displayKml(successCallback, errorCallback) {
   }, errorCallback);
 }
 test_util_displayKml.interactive = true;
-/***IGNORE_END***/
+//#END_TEST

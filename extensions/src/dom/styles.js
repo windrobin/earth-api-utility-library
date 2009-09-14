@@ -68,15 +68,15 @@ limitations under the License.
 
  * @type KmlStyle
  */
-GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildStyle = domBuilder_({
   apiInterface: ['KmlStyle', 'KmlStyleMap'],
   apiFactoryFn: 'createStyle',
   propertySpec: {
-    icon: GEarthExtensions.ALLOWED,
-    label: GEarthExtensions.ALLOWED,
-    line: GEarthExtensions.ALLOWED,
-    poly: GEarthExtensions.ALLOWED,
-    balloon: GEarthExtensions.ALLOWED,
+    icon: ALLOWED_,
+    label: ALLOWED_,
+    line: ALLOWED_,
+    poly: ALLOWED_,
+    balloon: ALLOWED_,
   },
   constructor: function(styleObj, options) {
     // set icon style

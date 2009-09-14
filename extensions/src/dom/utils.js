@@ -23,14 +23,14 @@ GEarthExtensions.prototype.dom.clearFeatures = function() {
     featureContainer.removeChild(c);
   }
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_clearFeatures() {
   var placemark = testplugin_.createPlacemark('');
   testplugin_.getFeatures().appendChild(placemark);
   testext_.dom.clearFeatures();
   assertEquals(0, testplugin_.getFeatures().getChildNodes().getLength());
 }
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Walks a KML object, calling a given visit function for each object in
@@ -80,12 +80,12 @@ GEarthExtensions.prototype.dom.walk = function() {
     throw new Error('walk takes at most 1 arguments');
   }
   
-  options = GEarthExtensions.checkParameters(options, false, {
-    visitCallback: GEarthExtensions.REQUIRED,
+  options = checkParameters_(options, false, {
+    visitCallback: REQUIRED_,
     features: true,
     geometries: false,
     rootObject: this.pluginInstance,
-    rootContext: GEarthExtensions.ALLOWED
+    rootContext: ALLOWED_
   });
   
   var recurse_ = function(object, currentContext) {
@@ -151,7 +151,7 @@ GEarthExtensions.prototype.dom.walk = function() {
     recurse_(options.rootObject, options.rootContext);
   }
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_walk() {
   var obj = testext_.dom.buildFolder([ // test walking feature container
     testext_.dom.buildPlacemark({ // test walking multi-geometry
@@ -202,7 +202,7 @@ function test_dom_walk() {
     }
   }
 }
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Gets the object in the Earth DOM with the given id.
@@ -210,7 +210,7 @@ function test_dom_walk() {
  * @return Returns the object with the given id, or null if it was not found.
  */
 GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     recursive: true,
     root: this.pluginInstance
   });
@@ -293,13 +293,13 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     return;
   }
   
-  options = GEarthExtensions.checkParameters(options, false, {
-    left: GEarthExtensions.ALLOWED,
-    top: GEarthExtensions.ALLOWED,
-    right: GEarthExtensions.ALLOWED,
-    bottom: GEarthExtensions.ALLOWED,
-    width: GEarthExtensions.ALLOWED, // for screen overlay size
-    height: GEarthExtensions.ALLOWED // for screen overlay size
+  options = checkParameters_(options, false, {
+    left: ALLOWED_,
+    top: ALLOWED_,
+    right: ALLOWED_,
+    bottom: ALLOWED_,
+    width: ALLOWED_, // for screen overlay size
+    height: ALLOWED_ // for screen overlay size
   });
   
   if ('width' in options) {
@@ -369,7 +369,7 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
   
   vec2.set(x, xUnits, y, yUnits);
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_setVec2() {
   var style = testplugin_.createStyle('');
   var vec2 = style.getIconStyle().getHotSpot();
@@ -396,7 +396,7 @@ function test_dom_setVec2() {
   
   // TODO: check for failures such as invalid percentage string
 }
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Computes the latitude/longitude bounding box for the given object.

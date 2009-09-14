@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /** @private */
-GEarthExtensions.AUTO = Infinity; // for dom builder (auto property setters)
+var AUTO_ = Infinity; // for dom builder (auto property setters)
 
 /** @private */
-GEarthExtensions.ALLOWED = null;
+var ALLOWED_ = null;
 
 /** @private */
-GEarthExtensions.REQUIRED = undefined;
+var REQUIRED_ = undefined;
 
 /**
  * Checks a given parameters object against an parameter spec,
@@ -31,14 +31,13 @@ GEarthExtensions.REQUIRED = undefined;
  *     allowed parameters to those listed in the parameter spec.
  * @param {Object} paramSpec The parameter spec, which should be an object whose
  *     properties are the properties expected in the given parameters object and
- *     whose property values are GEarthExtensions.REQUIRED if the property is
+ *     whose property values are REQUIRED_ if the property is
  *     required or some other value to set a default value.
  * @return Returns a shallow copy of the given parameters object, cleaned up
  *     according to the parameters spec and with default values filled in.
  * @ignore
  */
-GEarthExtensions.checkParameters = function(explicitParams,
-                                            allowAll, paramSpec) {
+function checkParameters_(explicitParams, allowAll, paramSpec) {
   // shallow copy explicitParameters
   var finalParams = {};
   
@@ -65,14 +64,14 @@ GEarthExtensions.checkParameters = function(explicitParams,
   for (member in paramSpec) {
     if (!(member in finalParams)) {
       // if member was required, throw an exception
-      if (paramSpec[member] === GEarthExtensions.REQUIRED) {
+      if (paramSpec[member] === REQUIRED_) {
         throw new Error(
             'Required parameter \'' + member + '\' was not passed.');
       }
       
-      if (paramSpec[member] != GEarthExtensions.ALLOWED &&
-          paramSpec[member] != GEarthExtensions.AUTO) {
-        // GEarthExtensions.ALLOWED and GEarthExtensions.AUTO are placeholders,
+      if (paramSpec[member] != ALLOWED_ &&
+          paramSpec[member] != AUTO_) {
+        // ALLOWED_ and AUTO_ are placeholders,
         // not default values
         finalParams[member] = paramSpec[member];
       }
@@ -80,14 +79,14 @@ GEarthExtensions.checkParameters = function(explicitParams,
   }
   
   return finalParams;
-};
+}
 
 /**
  * Creates a new 'class' from the provided constructor function and mixes in
  * members of provided mixin classes.
  * @private
  */
-GEarthExtensions.createClass_ = function() {
+function createClass_() {
   var mixins = [];
   var constructorFn = null;
   
@@ -107,17 +106,17 @@ GEarthExtensions.createClass_ = function() {
   }
   
   return constructorFn;
-};
+}
 
 /**
  * Determines whether or not the object is a GEarthExtensions namespace.
  * @param {Object} object The object to test.
  * @private
  */
-GEarthExtensions.isExtensionsNamespace_ = function(object) {
+function isExtensionsNamespace_(object) {
   return object !== null && typeof object == 'object' &&
       'isnamespace_' in object && object.isnamespace_;
-};
+}
 
 /**
  * Determines whether or not the given object is directly an instance

@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+(function() {
 /**
  * The geo namespace contains generic classes and namespaces for processing
  * geographic data in JavaScript. Where possible, an effort was made to keep
@@ -43,324 +44,15 @@ if (!('map' in Array.prototype)) {
   };
 }
 //#JSCOVERAGE_ENDIF
-/**
- * Create a new bounds object from the given parameters.
- * @param {geo.Bounds|geo.Point} [swOrBounds] Either an existing bounds object
- *     to copy, or the southwest, bottom coordinate of the new bounds object.
- * @param {geo.Point} [ne] The northeast, top coordinate of the new bounds
- *     object.
- * @constructor
- */
-geo.Bounds = function() {
-  // TODO: accept instances of GLatLngBounds
-
-  // 1 argument constructor
-  if (arguments.length == 1) {
-    // copy constructor
-    if (arguments[0].constructor === geo.Bounds) {
-      var bounds = arguments[0];
-      this.sw_ = new geo.Point(bounds.southWestBottom());
-      this.ne_ = new geo.Point(bounds.northEastTop());
-
-    // anything else, treated as the lone coordinate
-    // TODO: accept array of points, a Path, or a Polygon
-    } else {
-      this.sw_ = this.ne_ = new geo.Point(arguments[0]);
-
-    }
-
-  // Two argument constructor -- a northwest and southeast coordinate
-  } else if (arguments.length == 2) {
-    var sw = new geo.Point(arguments[0]);
-    var ne = new geo.Point(arguments[1]);
-
-    // handle degenerate cases
-    if (!sw && !ne) {
-      return;
-    } else if (!sw) {
-      sw = ne;
-    } else if (!ne) {
-      ne = sw;
-    }
-
-    if (sw.lat() > ne.lat()) {
-      throw new RangeError('Bounds southwest coordinate cannot be north of ' +
-                           'the northeast coordinate');
-    }
-
-    if (sw.altitude() > ne.altitude()) {
-      throw new RangeError('Bounds southwest coordinate cannot be north of ' +
-                           'the northeast coordinate');
-    }
-
-    // TODO: check for incompatible altitude modes
-
-    this.sw_ = sw;
-    this.ne_ = ne;
-  }
-};
-
-/**
- * The bounds' southwest, bottom coordinate.
- * @type geo.Point
- */
-geo.Bounds.prototype.southWestBottom = function() {
-  return this.sw_;
-};
-geo.Bounds.prototype.sw_ = null;
-
-/**
- * The bounds' south coordinate.
- * @type Number
- */
-geo.Bounds.prototype.south = function() {
-  return !this.isEmpty() ? this.sw_.lat() : null;
-};
-
-/**
- * The bounds' west coordinate.
- * @type Number
- */
-geo.Bounds.prototype.west = function() {
-  return !this.isEmpty() ? this.sw_.lng() : null;
-};
-
-/**
- * The bounds' minimum altitude.
- * @type Number
- */
-geo.Bounds.prototype.bottom = function() {
-  return !this.isEmpty() ? this.sw_.altitude() : null;
-};
-
-/**
- * The bounds' northeast, top coordinate.
- * @type geo.Point
- */
-geo.Bounds.prototype.northEastTop = function() {
-  return this.ne_;
-};
-geo.Bounds.prototype.ne_ = null;
-
-/**
- * The bounds' north coordinate.
- * @type Number
- */
-geo.Bounds.prototype.north = function() {
-  return !this.isEmpty() ? this.ne_.lat() : null;
-};
-
-/**
- * The bounds' east coordinate.
- * @type Number
- */
-geo.Bounds.prototype.east = function() {
-  return !this.isEmpty() ? this.ne_.lng() : null;
-};
-
-/**
- * The bounds' maximum altitude.
- * @type Number
- */
-geo.Bounds.prototype.top = function() {
-  return !this.isEmpty() ? this.ne_.altitude() : null;
-};
-
-/**
- * Returns whether or not the bounds intersect the antimeridian.
- * @type Boolean
- */
-geo.Bounds.prototype.crossesAntimeridian = function() {
-  return !this.isEmpty() && (this.sw_.lng() > this.ne_.lng());
-};
-
-/**
- * Returns whether or not the bounds have an altitude component.
- * @type Boolean
- */
-geo.Bounds.prototype.is3D = function() {
-  return !this.isEmpty() && (this.sw_.is3D() || this.ne_.is3D());
-};
-
-/**
- * Returns whether or not the given point is inside the bounds.
- * @param {geo.Point} point The point to test.
- * @type Boolean
- */
-geo.Bounds.prototype.containsPoint = function(point) {
-  point = new geo.Point(point);
-  
-  if (this.isEmpty()) {
-    return false;
-  }
-
-  // check latitude
-  if (!(this.south() <= point.lat() && point.lat() <= this.north())) {
-    return false;
-  }
-
-  // check altitude
-  if (this.is3D() && !(this.bottom() <= point.altitude() &&
-                       point.altitude() <= this.top())) {
-    return false;
-  }
-
-  // check longitude
-  return this.containsLng_(point.lng());
-};
-
-/**
- * Returns whether or not the given line of longitude is inside the bounds.
- * @private
- * @param {Number} lng The longitude to test.
- * @type Boolean
- */
-geo.Bounds.prototype.containsLng_ = function(lng) {
-  if (this.crossesAntimeridian()) {
-    return (lng <= this.east() || lng >= this.west());
-  } else {
-    return (this.west() <= lng && lng <= this.east());
-  }
-};
-
-/**
- * Gets the longitudinal span of the given west and east coordinates.
- * @private
- * @param {Number} west
- * @param {Number} east
- */
-geo.Bounds.lngSpan_ = function(west, east) {
-  return (west > east) ? (east + 360 - west) : (east - west);
-};
-
-/**
- * Extends the bounds object by the given point, if the bounds don't already
- * contain the point. Longitudinally, the bounds will be extended either east
- * or west, whichever results in a smaller longitudinal span.
- * @param {geo.Point} point The point to extend the bounds by.
- */
-geo.Bounds.prototype.extend = function(point) {
-  point = new geo.Point(point);
-  
-  if (this.containsPoint(point)) {
-    return;
-  }
-
-  if (this.isEmpty()) {
-    this.sw_ = this.ne_ = point;
-    return;
-  }
-
-  // extend up or down
-  var newBottom = this.bottom();
-  var newTop = this.top();
-
-  if (this.is3D()) {
-    newBottom = Math.min(newBottom, point.altitude());
-    newTop = Math.max(newTop, point.altitude());
-  }
-
-  // extend north or south
-  var newSouth = Math.min(this.south(), point.lat());
-  var newNorth = Math.max(this.north(), point.lat());
-
-  var newWest = this.west();
-  var newEast = this.east();
-
-  if (!this.containsLng_(point.lng())) {
-    // try extending east and try extending west, and use the one that
-    // has the smaller longitudinal span
-    var extendEastLngSpan = geo.Bounds.lngSpan_(newWest, point.lng());
-    var extendWestLngSpan = geo.Bounds.lngSpan_(point.lng(), newEast);
-
-    if (extendEastLngSpan <= extendWestLngSpan) {
-      newEast = point.lng();
-    } else {
-      newWest = point.lng();
-    }
-  }
-
-  // update the bounds' coordinates
-  this.sw_ = new geo.Point(newSouth, newWest, newBottom);
-  this.ne_ = new geo.Point(newNorth, newEast, newTop);
-};
-
-/**
- * Returns the bounds' latitude, longitude, and altitude span as an object
- * literal.
- * @return {Object} Returns an object literal containing `lat`, `lng`, and
- *     `altitude` properties. Altitude will be null in the case that the bounds
- *     aren't 3D.
- */
-geo.Bounds.prototype.span = function() {
-  if (this.isEmpty()) {
-    return {lat: 0, lng: 0, altitude: 0};
-  }
-  
-  return {
-    lat: (this.ne_.lat() - this.sw_.lat()),
-    lng: geo.Bounds.lngSpan_(this.sw_.lng(), this.ne_.lng()),
-    altitude: this.is3D() ? (this.ne_.altitude() - this.sw_.altitude()) : null
-  };
-};
-
-/**
- * Determines whether or not the bounds object is empty, i.e. whether or not it
- * has no known associated points.
- * @type Boolean
- */
-geo.Bounds.prototype.isEmpty = function() {
-  return (this.sw_ === null && this.sw_ === null);
-};
-
-/**
- * Gets the center of the bounds.
- * @type geo.Point
- */
-geo.Bounds.prototype.center = function() {
-  if (this.isEmpty()) {
-    return null;
-  }
-
-  return new geo.Point(
-    (this.sw_.lat() + this.ne_.lat()) / 2,
-    this.crossesAntimeridian() ?
-        geo.math.normalizeLng(
-            this.sw_.lng() +
-            geo.Bounds.lngSpan_(this.sw_.lng(), this.ne_.lng()) / 2) :
-        (this.sw_.lng() + this.ne_.lng()) / 2,
-    (this.sw_.altitude() + this.ne_.altitude()) / 2);
-};
-
-// backwards compat
-geo.Bounds.prototype.getCenter = geo.Bounds.prototype.center;
-
-/**
- * Determines whether or not the bounds occupy the entire latitudinal range.
- * @type Boolean
- */
-geo.Bounds.prototype.isFullLat = function() {
-  return !this.isEmpty() && (this.south() == -90 && this.north() == 90);
-};
-
-/**
- * Determines whether or not the bounds occupy the entire longitudinal range.
- * @type Boolean
- */
-geo.Bounds.prototype.isFullLng = function() {
-  return !this.isEmpty() && (this.west() == -180 && this.east() == 180);
-};
-
-// TODO: equals(other)
-// TODO: intersects(other)
-// TODO: containsBounds(other)
 // TODO: geo.ALTITUDE_NONE to differentiate 2D/3D coordinates
 geo.ALTITUDE_CLAMP_TO_GROUND = 0;
 geo.ALTITUDE_RELATIVE_TO_GROUND = 1;
 geo.ALTITUDE_ABSOLUTE = 2;
 geo.ALTITUDE_CLAMP_TO_SEA_FLOOR = 4;
 geo.ALTITUDE_RELATIVE_TO_SEA_FLOOR = 5;
-(function(){
+/*
+ * This is an excerpt from the Sylvester linear algebra library, MIT-licensed.
+ */
 // This file is required in order for any other classes to work. Some Vector methods work with the
 // other Sylvester classes and are useless unless they are included. Other classes such as Line and
 // Plane will not function at all without Vector being loaded first.
@@ -667,8 +359,7 @@ Vector.Zero = function(n) {
   var elements = [];
   while (n--) { elements.push(0); }
   return Vector.create(elements);
-};
-// Matrix class - depends on Vector.
+};// Matrix class - depends on Vector.
 
 function Matrix() {}
 Matrix.prototype = {
@@ -1149,8 +840,7 @@ Matrix.Zero = function(n, m) {
     }
   }
   return Matrix.create(els);
-};
-// Line class - depends on Vector, and some methods require Matrix and Plane.
+};// Line class - depends on Vector, and some methods require Matrix and Plane.
 
 function Line() {}
 Line.prototype = {
@@ -1373,8 +1063,9 @@ var $L = Line.create;
 // Axes
 Line.X = Line.create(Vector.Zero(3), Vector.i);
 Line.Y = Line.create(Vector.Zero(3), Vector.j);
-Line.Z = Line.create(Vector.Zero(3), Vector.k);
-
+Line.Z = Line.create(Vector.Zero(3), Vector.k);/**
+ * @namespace
+ */
 geo.linalg = {};
 
 geo.linalg.Vector = function() {
@@ -1406,8 +1097,6 @@ geo.linalg.Line.create = Line.create;
 geo.linalg.Line.X = Line.X;
 geo.linalg.Line.Y = Line.Y;
 geo.linalg.Line.Z = Line.Z;
-
-}());
 /**
  * @namespace
  */
@@ -1480,6 +1169,56 @@ geo.math.normalizeLng = function(lng) {
 geo.math.reverseAngle = function(angleRad) {
   return geo.math.normalizeAngle(angleRad + Math.PI);
 };
+
+/**
+ * Wraps the given number to the given range. If the wrapped value is exactly
+ * equal to min or max, favors max, unless favorMin is true.
+ * @param {Number} value The value to wrap.
+ * @param {Number[]} range An array of two numbers, specifying the minimum and
+ *     maximum bounds of the range, respectively.
+ * @param {Boolean} [favorMin=false] Whether or not to favor min over
+ *     max in the case of ambiguity.
+ * @return {Number} Returns the value wrapped to the given range.
+ */
+geo.math.wrapValue = function(value, range, favorMin) {
+  if (!range || !geo.util.isArray(range) || range.length != 2) {
+    throw new TypeError('The range parameter must be an array of 2 numbers.');
+  }
+  
+  // Don't wrap min as max.
+  if (value === range[0]) {
+    return range[0];
+  }
+  
+  // Normalize to min = 0.
+  value -= range[0];
+  
+  value = value % (range[1] - range[0]);
+  if (value < 0) {
+    value += (range[1] - range[0]);
+  }
+  
+  // Reverse normalization.
+  value += range[0];
+  
+  // When ambiguous (min or max), return max unless favorMin is true.
+  return (value === range[0]) ? (favorMin ? range[0] : range[1]) : value;
+}
+
+/**
+ * Constrains the given number to the given range.
+ * @param {Number} value The value to constrain.
+ * @param {Number[]} range An array of two numbers, specifying the minimum and
+ *     maximum bounds of the range, respectively.
+ * @return {Number} Returns the value constrained to the given range.
+ */
+geo.math.constrainValue = function(value, range) {
+  if (!range || !geo.util.isArray(range) || range.length != 2) {
+    throw new TypeError('The range parameter must be an array of 2 numbers.');
+  }
+  
+  return Math.max(range[0], Math.min(range[1], value));
+}
 /**
  * The radius of the Earth, in meters, assuming the Earth is a perfect sphere.
  * @see http://en.wikipedia.org/wiki/Earth_radius
@@ -1686,6 +1425,576 @@ geo.math.destination = function(start, options) {
         start.lng());
 };
 /**
+ * Creates a new point from the given parameters.
+ * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation|GLatLng}
+ *     src The point data.
+ * @constructor
+ */
+geo.Point = function() {
+  var pointArraySrc = null;
+  
+  // 1 argument constructor
+  if (arguments.length == 1) {
+    var point = arguments[0];
+    
+    // copy constructor
+    if (point.constructor === geo.Point) {
+      this.lat_ = point.lat();
+      this.lng_ = point.lng();
+      this.altitude_ = point.altitude();
+      this.altitudeMode_ = point.altitudeMode();
+      
+    // array constructor
+    } else if (geo.util.isArray(point)) {
+      pointArraySrc = point;
+    
+    // constructor from an Earth API object
+    } else if (isEarthAPIObject_(point)) {
+      var type = point.getType();
+      
+      // KmlPoint and KmlLookAt constructor
+      if (type == 'KmlPoint' ||
+          type == 'KmlLookAt') {
+        this.lat_ = point.getLatitude();
+        this.lng_ = point.getLongitude();
+        this.altitude_ = point.getAltitude();
+        this.altitudeMode_ = point.getAltitudeMode();
+      
+      // KmlCoord and KmlLocation constructor
+      } else if (type == 'KmlCoord' ||
+                 type == 'KmlLocation') {
+        this.lat_ = point.getLatitude();
+        this.lng_ = point.getLongitude();
+        this.altitude_ = point.getAltitude();
+      
+      // Error, can't create a Point from any other Earth object
+      } else {
+        throw new TypeError(
+            'Could not create a point from the given Earth object');
+      }
+    
+    // GLatLng constructor
+    } else if (geo.util.isGLatLng_(point)) {
+      this.lat_ = point.lat();
+      this.lng_ = point.lng();
+
+    // Error, can't create a Point from the single argument
+    } else {
+      throw new TypeError('Could not create a point from the given arguments');
+    }
+  
+  // Assume each argument is a point coordinate, i.e.
+  // new Point(0, 1, 2) ==> new Point([0, 1, 2])
+  } else {
+    pointArraySrc = arguments;
+  }
+  
+  // construct from an array
+  if (pointArraySrc) {
+    // TODO: type check
+    this.lat_ = pointArraySrc[0];
+    this.lng_ = pointArraySrc[1];
+    if (pointArraySrc.length >= 3) {
+      this.altitude_ = pointArraySrc[2];
+      if (pointArraySrc.length >= 4) {
+        this.altitudeMode_ = pointArraySrc[3];
+      }
+    }
+  }
+
+  // normalize
+  this.lat_ = geo.math.normalizeLat(this.lat_);
+  this.lng_ = geo.math.normalizeLng(this.lng_);
+};
+
+/**
+ * The point's latitude, in degrees.
+ * @type Number
+ */
+geo.Point.prototype.lat = function() {
+  return this.lat_;
+};
+geo.Point.prototype.lat_ = 0;
+
+/**
+ * The point's longitude, in degrees.
+ * @type Number
+ */
+geo.Point.prototype.lng = function() {
+  return this.lng_;
+};
+geo.Point.prototype.lng_ = 0;
+
+/**
+ * The point's altitude, in meters.
+ * @type Number
+ */
+geo.Point.prototype.altitude = function() {
+  return this.altitude_;
+};
+geo.Point.prototype.altitude_ = 0;
+
+/**
+ * The point's altitude mode.
+ * @type KmlAltitudeModeEnum
+ */
+geo.Point.prototype.altitudeMode = function() {
+  return this.altitudeMode_;
+};
+geo.Point.prototype.altitudeMode_ = geo.ALTITUDE_RELATIVE_TO_GROUND;
+
+/**
+ * Returns the string representation of the point.
+ * @type String
+ */
+geo.Point.prototype.toString = function() {
+  return '(' + this.lat().toString() + ', ' + this.lng().toString() + ', ' +
+      this.altitude().toString() + ')';
+};
+
+/**
+ * Returns the 2D (no altitude) version of this point.
+ * @type geo.Point
+ */
+geo.Point.prototype.flatten = function() {
+  return new geo.Point(this.lat(), this.lng());
+};
+
+/**
+ * Determines whether or not this point has an altitude component.
+ * @type Boolean
+ */
+geo.Point.prototype.is3D = function() {
+  return this.altitude_ !== 0;
+};
+
+/**
+ * Determines whether or not the given point is the same as this one.
+ * @param {geo.Point} otherPoint The other point.
+ * @type Boolean
+ */
+geo.Point.prototype.equals = function(p2) {
+  return this.lat() == p2.lat() &&
+         this.lng() == p2.lng() &&
+         this.altitude() == p2.altitude() &&
+         this.altitudeMode() == p2.altitudeMode();
+};
+
+/**
+ * Returns the angular distance between this point and the destination point.
+ * @param {geo.Point} dest The destination point.
+ * @see geo.math.angularDistance
+ * @ignore
+ */
+geo.Point.prototype.angularDistance = function(dest) {
+  return geo.math.angularDistance(this, dest);
+};
+
+/**
+ * Returns the approximate sea level great circle (Earth) distance between
+ * this point and the destination point using the Haversine formula and
+ * assuming an Earth radius of geo.math.EARTH_RADIUS.
+ * @param {geo.Point} dest The destination point.
+ * @return {Number} The distance, in meters, to the destination point.
+ * @see geo.math.distance
+ */
+geo.Point.prototype.distance = function(dest) {
+  return geo.math.distance(this, dest);
+};
+
+/**
+ * Calculates the initial heading/bearing at which an object at the start
+ * point will need to travel to get to the destination point.
+ * @param {geo.Point} dest The destination point.
+ * @return {Number} The initial heading required to get to the destination
+ *     point, in the [0,360) degree range.
+ * @see geo.math.heading
+ */
+geo.Point.prototype.heading = function(dest) {
+  return geo.math.heading(this, dest);
+};
+
+/**
+ * Calculates an intermediate point on the geodesic between this point and the
+ * given destination point.
+ * @param {geo.Point} dest The destination point.
+ * @param {Number} [fraction] The fraction of distance between the first
+ *     and second points.
+ * @return {geo.Point}
+ * @see geo.math.midpoint
+ */
+geo.Point.prototype.midpoint = function(dest, fraction) {
+  return geo.math.midpoint(this, dest, fraction);
+};
+
+/**
+ * Calculates the destination point along a geodesic, given an initial heading
+ * and distance, starting at this point.
+ * @param {Object} options The heading and distance object literal.
+ * @param {Number} options.heading The initial heading, in degrees.
+ * @param {Number} options.distance The distance along the geodesic, in meters.
+ * @return {geo.Point}
+ * @see geo.math.destination
+ */
+geo.Point.prototype.destination = function(options) {
+  return geo.math.destination(this, options);
+};
+
+/**
+ * Returns the cartesian representation of the point, as a 3-vector,
+ * assuming a spherical Earth of radius geo.math.EARTH_RADIUS.
+ * @return {geo.linalg.Vector}
+ */
+geo.Point.prototype.toCartesian = function() {
+  var sin_phi = Math.sin(this.lng().toRadians());
+  var cos_phi = Math.cos(this.lng().toRadians());
+  var sin_lmd = Math.sin(this.lat().toRadians());
+  var cos_lmd = Math.cos(this.lat().toRadians());
+
+  var r = geo.math.EARTH_RADIUS + this.altitude();
+  return new geo.linalg.Vector([r * cos_phi * cos_lmd,
+                                r * sin_lmd,
+                                r * -sin_phi * cos_lmd]);
+};
+
+/**
+ * A static method to create a point from a 3-vector representing the cartesian
+ * coordinates of a point on the Earth, assuming a spherical Earth of radius
+ * geo.math.EARTH_RADIUS.
+ * @param {geo.linalg.Vector} cartesianVector The cartesian representation of
+ *     the point to create.
+ * @return {geo.Point} The point, or null if the point doesn't exist.
+ */
+geo.Point.fromCartesian = function(cartesianVector) {
+  var r = cartesianVector.distanceFrom(geo.linalg.Vector.Zero(3));
+  var unitVector = cartesianVector.toUnitVector();
+  
+  var altitude = r - geo.math.EARTH_RADIUS;
+  
+  var lat = Math.asin(unitVector.e(2)).toDegrees();
+  if (lat > 90) {
+    lat -= 180;
+  }
+  
+  var lng = 0;
+  if (Math.abs(lat) < 90) {
+    lng = -Math.atan2(unitVector.e(3), unitVector.e(1)).toDegrees();
+  }
+  
+  return new geo.Point(lat, lng, altitude);
+};
+/**
+ * Create a new bounds object from the given parameters.
+ * @param {geo.Bounds|geo.Point} [swOrBounds] Either an existing bounds object
+ *     to copy, or the southwest, bottom coordinate of the new bounds object.
+ * @param {geo.Point} [ne] The northeast, top coordinate of the new bounds
+ *     object.
+ * @constructor
+ */
+geo.Bounds = function() {
+  // TODO: accept instances of GLatLngBounds
+
+  // 1 argument constructor
+  if (arguments.length == 1) {
+    // copy constructor
+    if (arguments[0].constructor === geo.Bounds) {
+      var bounds = arguments[0];
+      this.sw_ = new geo.Point(bounds.southWestBottom());
+      this.ne_ = new geo.Point(bounds.northEastTop());
+
+    // anything else, treated as the lone coordinate
+    // TODO: accept array of points, a Path, or a Polygon
+    } else {
+      this.sw_ = this.ne_ = new geo.Point(arguments[0]);
+
+    }
+
+  // Two argument constructor -- a northwest and southeast coordinate
+  } else if (arguments.length == 2) {
+    var sw = new geo.Point(arguments[0]);
+    var ne = new geo.Point(arguments[1]);
+
+    // handle degenerate cases
+    if (!sw && !ne) {
+      return;
+    } else if (!sw) {
+      sw = ne;
+    } else if (!ne) {
+      ne = sw;
+    }
+
+    if (sw.lat() > ne.lat()) {
+      throw new RangeError('Bounds southwest coordinate cannot be north of ' +
+                           'the northeast coordinate');
+    }
+
+    if (sw.altitude() > ne.altitude()) {
+      throw new RangeError('Bounds southwest coordinate cannot be north of ' +
+                           'the northeast coordinate');
+    }
+
+    // TODO: check for incompatible altitude modes
+
+    this.sw_ = sw;
+    this.ne_ = ne;
+  }
+};
+
+/**
+ * The bounds' southwest, bottom coordinate.
+ * @type geo.Point
+ */
+geo.Bounds.prototype.southWestBottom = function() {
+  return this.sw_;
+};
+geo.Bounds.prototype.sw_ = null;
+
+/**
+ * The bounds' south coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.south = function() {
+  return !this.isEmpty() ? this.sw_.lat() : null;
+};
+
+/**
+ * The bounds' west coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.west = function() {
+  return !this.isEmpty() ? this.sw_.lng() : null;
+};
+
+/**
+ * The bounds' minimum altitude.
+ * @type Number
+ */
+geo.Bounds.prototype.bottom = function() {
+  return !this.isEmpty() ? this.sw_.altitude() : null;
+};
+
+/**
+ * The bounds' northeast, top coordinate.
+ * @type geo.Point
+ */
+geo.Bounds.prototype.northEastTop = function() {
+  return this.ne_;
+};
+geo.Bounds.prototype.ne_ = null;
+
+/**
+ * The bounds' north coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.north = function() {
+  return !this.isEmpty() ? this.ne_.lat() : null;
+};
+
+/**
+ * The bounds' east coordinate.
+ * @type Number
+ */
+geo.Bounds.prototype.east = function() {
+  return !this.isEmpty() ? this.ne_.lng() : null;
+};
+
+/**
+ * The bounds' maximum altitude.
+ * @type Number
+ */
+geo.Bounds.prototype.top = function() {
+  return !this.isEmpty() ? this.ne_.altitude() : null;
+};
+
+/**
+ * Returns whether or not the bounds intersect the antimeridian.
+ * @type Boolean
+ */
+geo.Bounds.prototype.crossesAntimeridian = function() {
+  return !this.isEmpty() && (this.sw_.lng() > this.ne_.lng());
+};
+
+/**
+ * Returns whether or not the bounds have an altitude component.
+ * @type Boolean
+ */
+geo.Bounds.prototype.is3D = function() {
+  return !this.isEmpty() && (this.sw_.is3D() || this.ne_.is3D());
+};
+
+/**
+ * Returns whether or not the given point is inside the bounds.
+ * @param {geo.Point} point The point to test.
+ * @type Boolean
+ */
+geo.Bounds.prototype.containsPoint = function(point) {
+  point = new geo.Point(point);
+  
+  if (this.isEmpty()) {
+    return false;
+  }
+
+  // check latitude
+  if (!(this.south() <= point.lat() && point.lat() <= this.north())) {
+    return false;
+  }
+
+  // check altitude
+  if (this.is3D() && !(this.bottom() <= point.altitude() &&
+                       point.altitude() <= this.top())) {
+    return false;
+  }
+
+  // check longitude
+  return this.containsLng_(point.lng());
+};
+
+/**
+ * Returns whether or not the given line of longitude is inside the bounds.
+ * @private
+ * @param {Number} lng The longitude to test.
+ * @type Boolean
+ */
+geo.Bounds.prototype.containsLng_ = function(lng) {
+  if (this.crossesAntimeridian()) {
+    return (lng <= this.east() || lng >= this.west());
+  } else {
+    return (this.west() <= lng && lng <= this.east());
+  }
+};
+
+/**
+ * Gets the longitudinal span of the given west and east coordinates.
+ * @private
+ * @param {Number} west
+ * @param {Number} east
+ */
+function lngSpan_(west, east) {
+  return (west > east) ? (east + 360 - west) : (east - west);
+}
+
+/**
+ * Extends the bounds object by the given point, if the bounds don't already
+ * contain the point. Longitudinally, the bounds will be extended either east
+ * or west, whichever results in a smaller longitudinal span.
+ * @param {geo.Point} point The point to extend the bounds by.
+ */
+geo.Bounds.prototype.extend = function(point) {
+  point = new geo.Point(point);
+  
+  if (this.containsPoint(point)) {
+    return;
+  }
+
+  if (this.isEmpty()) {
+    this.sw_ = this.ne_ = point;
+    return;
+  }
+
+  // extend up or down
+  var newBottom = this.bottom();
+  var newTop = this.top();
+
+  if (this.is3D()) {
+    newBottom = Math.min(newBottom, point.altitude());
+    newTop = Math.max(newTop, point.altitude());
+  }
+
+  // extend north or south
+  var newSouth = Math.min(this.south(), point.lat());
+  var newNorth = Math.max(this.north(), point.lat());
+
+  var newWest = this.west();
+  var newEast = this.east();
+
+  if (!this.containsLng_(point.lng())) {
+    // try extending east and try extending west, and use the one that
+    // has the smaller longitudinal span
+    var extendEastLngSpan = lngSpan_(newWest, point.lng());
+    var extendWestLngSpan = lngSpan_(point.lng(), newEast);
+
+    if (extendEastLngSpan <= extendWestLngSpan) {
+      newEast = point.lng();
+    } else {
+      newWest = point.lng();
+    }
+  }
+
+  // update the bounds' coordinates
+  this.sw_ = new geo.Point(newSouth, newWest, newBottom);
+  this.ne_ = new geo.Point(newNorth, newEast, newTop);
+};
+
+/**
+ * Returns the bounds' latitude, longitude, and altitude span as an object
+ * literal.
+ * @return {Object} Returns an object literal containing `lat`, `lng`, and
+ *     `altitude` properties. Altitude will be null in the case that the bounds
+ *     aren't 3D.
+ */
+geo.Bounds.prototype.span = function() {
+  if (this.isEmpty()) {
+    return {lat: 0, lng: 0, altitude: 0};
+  }
+  
+  return {
+    lat: (this.ne_.lat() - this.sw_.lat()),
+    lng: lngSpan_(this.sw_.lng(), this.ne_.lng()),
+    altitude: this.is3D() ? (this.ne_.altitude() - this.sw_.altitude()) : null
+  };
+};
+
+/**
+ * Determines whether or not the bounds object is empty, i.e. whether or not it
+ * has no known associated points.
+ * @type Boolean
+ */
+geo.Bounds.prototype.isEmpty = function() {
+  return (this.sw_ === null && this.sw_ === null);
+};
+
+/**
+ * Gets the center of the bounds.
+ * @type geo.Point
+ */
+geo.Bounds.prototype.center = function() {
+  if (this.isEmpty()) {
+    return null;
+  }
+
+  return new geo.Point(
+    (this.sw_.lat() + this.ne_.lat()) / 2,
+    this.crossesAntimeridian() ?
+        geo.math.normalizeLng(
+            this.sw_.lng() +
+            lngSpan_(this.sw_.lng(), this.ne_.lng()) / 2) :
+        (this.sw_.lng() + this.ne_.lng()) / 2,
+    (this.sw_.altitude() + this.ne_.altitude()) / 2);
+};
+
+// backwards compat
+geo.Bounds.prototype.getCenter = geo.Bounds.prototype.center;
+
+/**
+ * Determines whether or not the bounds occupy the entire latitudinal range.
+ * @type Boolean
+ */
+geo.Bounds.prototype.isFullLat = function() {
+  return !this.isEmpty() && (this.south() == -90 && this.north() == 90);
+};
+
+/**
+ * Determines whether or not the bounds occupy the entire longitudinal range.
+ * @type Boolean
+ */
+geo.Bounds.prototype.isFullLng = function() {
+  return !this.isEmpty() && (this.west() == -180 && this.east() == 180);
+};
+
+// TODO: equals(other)
+// TODO: intersects(other)
+// TODO: containsBounds(other)
+/**
  * Creates a new path from the given parameters.
  * @param {geo.Path|geo.Point[]|PointSrc[]|KmlLineString|GPolyline|GPolygon}
  *     path The path data.
@@ -1711,7 +2020,7 @@ geo.Path = function() {
       coordArraySrc = path;
     
     // construct from Earth API object
-    } else if (geo.util.isEarthAPIObject_(path)) {
+    } else if (isEarthAPIObject_(path)) {
       var type = path.getType();
       
       // contruct from KmlLineString
@@ -1956,7 +2265,7 @@ geo.Path.prototype.signedArea_ = function() {
  *     curvature is not accounted for.
  */
 geo.Path.prototype.area = function() {
-  return Math.abs(self.signedArea_());
+  return Math.abs(this.signedArea_());
 };
 // TODO: unit test
 
@@ -1967,265 +2276,6 @@ geo.Path.prototype.area = function() {
  */
 geo.Path.prototype.isCounterClockwise_ = function() {
   return Boolean(this.signedArea_() >= 0);
-};
-/**
- * Creates a new point from the given parameters.
- * @param {geo.Point|Number[]|KmlPoint|KmlLookAt|KmlCoord|KmlLocation|GLatLng}
- *     src The point data.
- * @constructor
- */
-geo.Point = function() {
-  var pointArraySrc = null;
-  
-  // 1 argument constructor
-  if (arguments.length == 1) {
-    var point = arguments[0];
-    
-    // copy constructor
-    if (point.constructor === geo.Point) {
-      this.lat_ = point.lat();
-      this.lng_ = point.lng();
-      this.altitude_ = point.altitude();
-      this.altitudeMode_ = point.altitudeMode();
-      
-    // array constructor
-    } else if (geo.util.isArray(point)) {
-      pointArraySrc = point;
-    
-    // constructor from an Earth API object
-    } else if (geo.util.isEarthAPIObject_(point)) {
-      var type = point.getType();
-      
-      // KmlPoint and KmlLookAt constructor
-      if (type == 'KmlPoint' ||
-          type == 'KmlLookAt') {
-        this.lat_ = point.getLatitude();
-        this.lng_ = point.getLongitude();
-        this.altitude_ = point.getAltitude();
-        this.altitudeMode_ = point.getAltitudeMode();
-      
-      // KmlCoord and KmlLocation constructor
-      } else if (type == 'KmlCoord' ||
-                 type == 'KmlLocation') {
-        this.lat_ = point.getLatitude();
-        this.lng_ = point.getLongitude();
-        this.altitude_ = point.getAltitude();
-      
-      // Error, can't create a Point from any other Earth object
-      } else {
-        throw new TypeError(
-            'Could not create a point from the given Earth object');
-      }
-    
-    // GLatLng constructor
-    } else if (geo.util.isGLatLng_(point)) {
-      this.lat_ = point.lat();
-      this.lng_ = point.lng();
-
-    // Error, can't create a Point from the single argument
-    } else {
-      throw new TypeError('Could not create a point from the given arguments');
-    }
-  
-  // Assume each argument is a point coordinate, i.e.
-  // new Point(0, 1, 2) ==> new Point([0, 1, 2])
-  } else {
-    pointArraySrc = arguments;
-  }
-  
-  // construct from an array
-  if (pointArraySrc) {
-    // TODO: type check
-    this.lat_ = pointArraySrc[0];
-    this.lng_ = pointArraySrc[1];
-    if (pointArraySrc.length >= 3) {
-      this.altitude_ = pointArraySrc[2];
-      if (pointArraySrc.length >= 4) {
-        this.altitudeMode_ = pointArraySrc[3];
-      }
-    }
-  }
-
-  // normalize
-  this.lat_ = geo.math.normalizeLat(this.lat_);
-  this.lng_ = geo.math.normalizeLng(this.lng_);
-};
-
-/**
- * The point's latitude, in degrees.
- * @type Number
- */
-geo.Point.prototype.lat = function() {
-  return this.lat_;
-};
-geo.Point.prototype.lat_ = 0;
-
-/**
- * The point's longitude, in degrees.
- * @type Number
- */
-geo.Point.prototype.lng = function() {
-  return this.lng_;
-};
-geo.Point.prototype.lng_ = 0;
-
-/**
- * The point's altitude, in meters.
- * @type Number
- */
-geo.Point.prototype.altitude = function() {
-  return this.altitude_;
-};
-geo.Point.prototype.altitude_ = 0;
-
-/**
- * The point's altitude mode.
- * @type KmlAltitudeModeEnum
- */
-geo.Point.prototype.altitudeMode = function() {
-  return this.altitudeMode_;
-};
-geo.Point.prototype.altitudeMode_ = geo.ALTITUDE_RELATIVE_TO_GROUND;
-
-/**
- * Returns the string representation of the point.
- * @type String
- */
-geo.Point.prototype.toString = function() {
-  return '(' + this.lat().toString() + ', ' + this.lng().toString() + ', ' +
-      this.altitude().toString() + ')';
-};
-
-/**
- * Returns the 2D (no altitude) version of this point.
- * @type geo.Point
- */
-geo.Point.prototype.flatten = function() {
-  return new geo.Point(this.lat(), this.lng());
-};
-
-/**
- * Determines whether or not this point has an altitude component.
- * @type Boolean
- */
-geo.Point.prototype.is3D = function() {
-  return this.altitude_ !== 0;
-};
-
-/**
- * Determines whether or not the given point is the same as this one.
- * @param {geo.Point} otherPoint The other point.
- * @type Boolean
- */
-geo.Point.prototype.equals = function(p2) {
-  return this.lat() == p2.lat() &&
-         this.lng() == p2.lng() &&
-         this.altitude() == p2.altitude() &&
-         this.altitudeMode() == p2.altitudeMode();
-};
-
-/**
- * Returns the angular distance between this point and the destination point.
- * @param {geo.Point} dest The destination point.
- * @see geo.math.angularDistance
- * @ignore
- */
-geo.Point.prototype.angularDistance = function(dest) {
-  return geo.math.angularDistance(this, dest);
-};
-
-/**
- * Returns the approximate sea level great circle (Earth) distance between
- * this point and the destination point using the Haversine formula and
- * assuming an Earth radius of geo.math.EARTH_RADIUS.
- * @param {geo.Point} dest The destination point.
- * @return {Number} The distance, in meters, to the destination point.
- * @see geo.math.distance
- */
-geo.Point.prototype.distance = function(dest) {
-  return geo.math.distance(this, dest);
-};
-
-/**
- * Calculates the initial heading/bearing at which an object at the start
- * point will need to travel to get to the destination point.
- * @param {geo.Point} dest The destination point.
- * @return {Number} The initial heading required to get to the destination
- *     point, in the [0,360) degree range.
- * @see geo.math.heading
- */
-geo.Point.prototype.heading = function(dest) {
-  return geo.math.heading(this, dest);
-};
-
-/**
- * Calculates an intermediate point on the geodesic between this point and the
- * given destination point.
- * @param {geo.Point} dest The destination point.
- * @param {Number} [fraction] The fraction of distance between the first
- *     and second points.
- * @return {geo.Point}
- * @see geo.math.midpoint
- */
-geo.Point.prototype.midpoint = function(dest, fraction) {
-  return geo.math.midpoint(this, dest, fraction);
-};
-
-/**
- * Calculates the destination point along a geodesic, given an initial heading
- * and distance, starting at this point.
- * @param {Object} options The heading and distance object literal.
- * @param {Number} options.heading The initial heading, in degrees.
- * @param {Number} options.distance The distance along the geodesic, in meters.
- * @return {geo.Point}
- * @see geo.math.destination
- */
-geo.Point.prototype.destination = function(options) {
-  return geo.math.destination(this, options);
-};
-
-/**
- * Returns the cartesian representation of the point, as a 3-vector,
- * assuming a spherical Earth of radius geo.math.EARTH_RADIUS.
- * @return {geo.linalg.Vector}
- */
-geo.Point.prototype.toCartesian = function() {
-  var sin_phi = Math.sin(this.lng().toRadians());
-  var cos_phi = Math.cos(this.lng().toRadians());
-  var sin_lmd = Math.sin(this.lat().toRadians());
-  var cos_lmd = Math.cos(this.lat().toRadians());
-
-  var r = geo.math.EARTH_RADIUS + this.altitude();
-  return new geo.linalg.Vector([r * cos_phi * cos_lmd,
-                                r * sin_lmd,
-                                r * -sin_phi * cos_lmd]);
-};
-
-/**
- * A static method to create a point from a 3-vector representing the cartesian
- * coordinates of a point on the Earth, assuming a spherical Earth of radius
- * geo.math.EARTH_RADIUS.
- * @param {geo.linalg.Vector} cartesianVector The cartesian representation of
- *     the point to create.
- * @return {geo.Point} The point, or null if the point doesn't exist.
- */
-geo.Point.fromCartesian = function(cartesianVector) {
-  var r = cartesianVector.distanceFrom(geo.linalg.Vector.Zero(3));
-  var unitVector = cartesianVector.toUnitVector();
-  
-  var altitude = r - geo.math.EARTH_RADIUS;
-  
-  var lat = Math.asin(unitVector.e(2)).toDegrees();
-  if (lat > 90) {
-    lat -= 180;
-  }
-  
-  var lng = 0;
-  if (Math.abs(lat) < 90) {
-    lng = -Math.atan2(unitVector.e(3), unitVector.e(1)).toDegrees();
-  }
-  
-  return new geo.Point(lat, lng, altitude);
 };
 /**
  * Creates a new polygon from the given parameters.
@@ -2255,7 +2305,7 @@ geo.Polygon = function() {
       }
     
     // construct from Earth API object
-    } else if (geo.util.isEarthAPIObject_(poly)) {
+    } else if (isEarthAPIObject_(poly)) {
       var type = poly.getType();
 
       // construct from KmlLineString
@@ -2467,8 +2517,7 @@ geo.util.isFunction = function(object) {
  */
 geo.util.isObjectLiteral = function(object) {
   return object !== null && typeof object == 'object' &&
-      object.constructor === Object &&
-      !geo.util.isEarthAPIObject_(object);
+      object.constructor === Object && !isEarthAPIObject_(object);
 };
 
 /**
@@ -2476,23 +2525,24 @@ geo.util.isObjectLiteral = function(object) {
  * @param {Object} object The object to test.
  * @private
  */
-geo.util.isEarthAPIObject_ = function(object) {
+function isEarthAPIObject_(object) {
   return object !== null &&
       (typeof object == 'function' || typeof object == 'object') &&
       'getType' in object;
-};
+}
 
 /**
  * Determins whether or not the given object is a google.maps.LatLng object
  * (GLatLng).
  */
-geo.util.isGLatLng_ = function(object) {
+function isGLatLng_(object) {
   return (window.google &&
           window.google.maps &&
           window.google.maps.LatLng &&
           object.constructor === window.google.maps.LatLng);
-};
-
+}
+window.geo = geo;
+})();
 /*
 Copyright 2009 Google Inc.
 
@@ -2508,6 +2558,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+(function() {
 /**
  * @class The root class/namespace hybrid for the Earth API extensions library.
  * This class groups functionality into namespaces such as
@@ -2553,7 +2604,7 @@ var GEarthExtensions = function(pluginInstance) {
       
       // duplicate sub-namespace objects (required for multiple instances to
       // work) and bind functions of all sub-namespaces
-      if (GEarthExtensions.isExtensionsNamespace_(member)) {
+      if (isExtensionsNamespace_(member)) {
         var nsDuplicate = {};
         for (var subMstr in member)
           nsDuplicate[subMstr] = member[subMstr];
@@ -2568,13 +2619,13 @@ var GEarthExtensions = function(pluginInstance) {
   bindNamespaceMembers_(this);
 };
 /** @private */
-GEarthExtensions.AUTO = Infinity; // for dom builder (auto property setters)
+var AUTO_ = Infinity; // for dom builder (auto property setters)
 
 /** @private */
-GEarthExtensions.ALLOWED = null;
+var ALLOWED_ = null;
 
 /** @private */
-GEarthExtensions.REQUIRED = undefined;
+var REQUIRED_ = undefined;
 
 /**
  * Checks a given parameters object against an parameter spec,
@@ -2585,14 +2636,13 @@ GEarthExtensions.REQUIRED = undefined;
  *     allowed parameters to those listed in the parameter spec.
  * @param {Object} paramSpec The parameter spec, which should be an object whose
  *     properties are the properties expected in the given parameters object and
- *     whose property values are GEarthExtensions.REQUIRED if the property is
+ *     whose property values are REQUIRED_ if the property is
  *     required or some other value to set a default value.
  * @return Returns a shallow copy of the given parameters object, cleaned up
  *     according to the parameters spec and with default values filled in.
  * @ignore
  */
-GEarthExtensions.checkParameters = function(explicitParams,
-                                            allowAll, paramSpec) {
+function checkParameters_(explicitParams, allowAll, paramSpec) {
   // shallow copy explicitParameters
   var finalParams = {};
   
@@ -2619,14 +2669,14 @@ GEarthExtensions.checkParameters = function(explicitParams,
   for (member in paramSpec) {
     if (!(member in finalParams)) {
       // if member was required, throw an exception
-      if (paramSpec[member] === GEarthExtensions.REQUIRED) {
+      if (paramSpec[member] === REQUIRED_) {
         throw new Error(
             'Required parameter \'' + member + '\' was not passed.');
       }
       
-      if (paramSpec[member] != GEarthExtensions.ALLOWED &&
-          paramSpec[member] != GEarthExtensions.AUTO) {
-        // GEarthExtensions.ALLOWED and GEarthExtensions.AUTO are placeholders,
+      if (paramSpec[member] != ALLOWED_ &&
+          paramSpec[member] != AUTO_) {
+        // ALLOWED_ and AUTO_ are placeholders,
         // not default values
         finalParams[member] = paramSpec[member];
       }
@@ -2634,14 +2684,14 @@ GEarthExtensions.checkParameters = function(explicitParams,
   }
   
   return finalParams;
-};
+}
 
 /**
  * Creates a new 'class' from the provided constructor function and mixes in
  * members of provided mixin classes.
  * @private
  */
-GEarthExtensions.createClass_ = function() {
+function createClass_() {
   var mixins = [];
   var constructorFn = null;
   
@@ -2661,17 +2711,17 @@ GEarthExtensions.createClass_ = function() {
   }
   
   return constructorFn;
-};
+}
 
 /**
  * Determines whether or not the object is a GEarthExtensions namespace.
  * @param {Object} object The object to test.
  * @private
  */
-GEarthExtensions.isExtensionsNamespace_ = function(object) {
+function isExtensionsNamespace_(object) {
   return object !== null && typeof object == 'object' &&
       'isnamespace_' in object && object.isnamespace_;
-};
+}
 
 /**
  * Determines whether or not the given object is directly an instance
@@ -2701,7 +2751,7 @@ GEarthExtensions.prototype.dom = {isnamespace_:true};
  * and checking if the parameter is an instance of the object we're constructing
  * @private
  */
-GEarthExtensions.domBuilder_ = function(params) {
+function domBuilder_(params) {
   if (params.apiInterface && !geo.util.isArray(params.apiInterface)) {
     params.apiInterface = [params.apiInterface];
   }
@@ -2796,7 +2846,7 @@ GEarthExtensions.domBuilder_ = function(params) {
     }
     
     // check passed in options against property spec
-    options = GEarthExtensions.checkParameters(options,
+    options = checkParameters_(options,
         false, params.propertySpec);
     
     // call Earth API factory function, i.e. createXX(...)
@@ -2822,7 +2872,7 @@ GEarthExtensions.domBuilder_ = function(params) {
     // run automatic property setters as defined in property spec
     for (var property in params.propertySpec) {
       // TODO: abstract away into isAuto()
-      if (params.propertySpec[property] === GEarthExtensions.AUTO &&
+      if (params.propertySpec[property] === AUTO_ &&
           property in options) {
         // auto setters calls newObj.setXx(options[xx]) if xx is in options
         this.util.callMethod(newObj,
@@ -2836,17 +2886,17 @@ GEarthExtensions.domBuilder_ = function(params) {
   
   builderFn.builderParams = params;
   return builderFn;
-};
+}
 /** @ignore */
-GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildFeature_ = domBuilder_({
   propertySpec: {
-    name: GEarthExtensions.AUTO,
-    visibility: GEarthExtensions.AUTO,
-    description: GEarthExtensions.AUTO,
-    snippet: GEarthExtensions.AUTO,
+    name: AUTO_,
+    visibility: AUTO_,
+    description: AUTO_,
+    snippet: AUTO_,
     
     // allowed properties
-    region: GEarthExtensions.ALLOWED
+    region: ALLOWED_
   },
   constructor: function(featureObj, options) {
     if (options.region) {
@@ -2895,27 +2945,27 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
  *     Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
  * @type KmlPlacemark
  */
-GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPlacemark = domBuilder_({
   apiInterface: 'KmlPlacemark',
   base: GEarthExtensions.prototype.dom.buildFeature_,
   apiFactoryFn: 'createPlacemark',
   propertySpec: {
     // allowed geometries
-    point: GEarthExtensions.ALLOWED,
-    lineString: GEarthExtensions.ALLOWED,
-    linearRing: GEarthExtensions.ALLOWED,
-    polygon: GEarthExtensions.ALLOWED,
-    model: GEarthExtensions.ALLOWED,
-    geometries: GEarthExtensions.ALLOWED,
+    point: ALLOWED_,
+    lineString: ALLOWED_,
+    linearRing: ALLOWED_,
+    polygon: ALLOWED_,
+    model: ALLOWED_,
+    geometries: ALLOWED_,
     
     // convenience (pass through to geometry)
-    altitudeMode: GEarthExtensions.ALLOWED,
+    altitudeMode: ALLOWED_,
     
     // styling
-    stockIcon: GEarthExtensions.ALLOWED,
-    icon: GEarthExtensions.ALLOWED,
-    style: GEarthExtensions.ALLOWED,
-    highlightStyle: GEarthExtensions.ALLOWED
+    stockIcon: ALLOWED_,
+    icon: ALLOWED_,
+    style: ALLOWED_,
+    highlightStyle: ALLOWED_
   },
   constructor: function(placemarkObj, options) {
     // geometries
@@ -3010,8 +3060,7 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
  * @see GEarthExtensions#dom.buildPlacemark
  * @function
  */
-GEarthExtensions.prototype.dom.buildPointPlacemark =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPointPlacemark = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'point'
 });
@@ -3023,8 +3072,7 @@ GEarthExtensions.domBuilder_({
  * @see GEarthExtensions#dom.buildPlacemark
  * @function
  */
-GEarthExtensions.prototype.dom.buildLineStringPlacemark =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLineStringPlacemark = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'lineString'
 });
@@ -3036,8 +3084,7 @@ GEarthExtensions.domBuilder_({
  * @see GEarthExtensions#dom.buildPlacemark
  * @function
  */
-GEarthExtensions.prototype.dom.buildPolygonPlacemark =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPolygonPlacemark = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'polygon'
 });
@@ -3057,18 +3104,17 @@ GEarthExtensions.domBuilder_({
  * @param {LinkOptions} [options.link] The link to use.
  * @type KmlNetworkLink
  */
-GEarthExtensions.prototype.dom.buildNetworkLink =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildNetworkLink = domBuilder_({
   apiInterface: 'KmlNetworkLink',
   base: GEarthExtensions.prototype.dom.buildFeature_,
   apiFactoryFn: 'createNetworkLink',
   defaultProperty: 'link',
   propertySpec: {
-    link: GEarthExtensions.ALLOWED,
+    link: ALLOWED_,
     
     // auto properties
-    flyToView: GEarthExtensions.AUTO,
-    refreshVisibility: GEarthExtensions.AUTO
+    flyToView: AUTO_,
+    refreshVisibility: AUTO_
   },
   constructor: function(networkLinkObj, options) {
     if (options.link) {
@@ -3079,10 +3125,10 @@ GEarthExtensions.domBuilder_({
 // TODO: unit tests
 
 /** @ignore */
-GEarthExtensions.prototype.dom.buildContainer_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildContainer_ = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildFeature_,
   propertySpec: {
-    children: GEarthExtensions.ALLOWED
+    children: ALLOWED_
   },
   constructor: function(containerObj, options) {
     // children
@@ -3107,7 +3153,7 @@ GEarthExtensions.prototype.dom.buildContainer_ = GEarthExtensions.domBuilder_({
  * @param {KmlFeature[]} [options.children] The children of this folder.
  * @type KmlFolder
  */
-GEarthExtensions.prototype.dom.buildFolder = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildFolder = domBuilder_({
   apiInterface: 'KmlFolder',
   base: GEarthExtensions.prototype.dom.buildContainer_,
   apiFactoryFn: 'createFolder',
@@ -3128,7 +3174,7 @@ GEarthExtensions.prototype.dom.buildFolder = GEarthExtensions.domBuilder_({
  * @param {KmlFeature[]} [options.children] The children of this document.
  * @type KmlDocument
  */
-GEarthExtensions.prototype.dom.buildDocument = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildDocument = domBuilder_({
   apiInterface: 'KmlDocument',
   base: GEarthExtensions.prototype.dom.buildContainer_,
   apiFactoryFn: 'createDocument',
@@ -3137,14 +3183,14 @@ GEarthExtensions.prototype.dom.buildDocument = GEarthExtensions.domBuilder_({
 // TODO: unit tests
 
 /** @ignore */
-GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildOverlay_ = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildFeature_,
   propertySpec: {
-    color: GEarthExtensions.ALLOWED,
-    icon: GEarthExtensions.ALLOWED,
+    color: ALLOWED_,
+    icon: ALLOWED_,
     
     // auto properties
-    drawOrder: GEarthExtensions.AUTO
+    drawOrder: AUTO_
   },
   constructor: function(overlayObj, options) {
     // color
@@ -3192,19 +3238,18 @@ GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
  *     overlay.
  * @type KmlGroundOverlay
  */
-GEarthExtensions.prototype.dom.buildGroundOverlay =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildGroundOverlay = domBuilder_({
   apiInterface: 'KmlGroundOverlay',
   base: GEarthExtensions.prototype.dom.buildOverlay_,
   apiFactoryFn: 'createGroundOverlay',
   defaultProperty: 'icon',
   propertySpec: {
     // required properties
-    box: GEarthExtensions.REQUIRED,
+    box: REQUIRED_,
     
     // auto properties
-    altitude: GEarthExtensions.AUTO,
-    altitudeMode: GEarthExtensions.AUTO
+    altitude: AUTO_,
+    altitudeMode: AUTO_
   },
   constructor: function(groundOverlayObj, options) {
     if (options.box) {
@@ -3252,23 +3297,22 @@ GEarthExtensions.domBuilder_({
  * @param {Number} [options.rotation] The rotation of the overlay, in degrees.
  * @type KmlScreenOverlay
  */
-GEarthExtensions.prototype.dom.buildScreenOverlay =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildScreenOverlay = domBuilder_({
   apiInterface: 'KmlScreenOverlay',
   base: GEarthExtensions.prototype.dom.buildOverlay_,
   apiFactoryFn: 'createScreenOverlay',
   defaultProperty: 'icon',
   propertySpec: {
     // required properties
-    screenXY: GEarthExtensions.REQUIRED,
-    size: GEarthExtensions.REQUIRED,
+    screenXY: REQUIRED_,
+    size: REQUIRED_,
 
     // auto properties
-    rotation: GEarthExtensions.AUTO,
+    rotation: AUTO_,
 
     // optional properties
     overlayXY: { left: 0, top: 0 },
-    rotationXY: GEarthExtensions.ALLOWED
+    rotationXY: ALLOWED_
   },
   constructor: function(screenOverlayObj, options) {
     // NOTE: un-swapped overlayXY and screenXY.
@@ -3283,39 +3327,31 @@ GEarthExtensions.domBuilder_({
 });
 // TODO: unit tests
 
-//////////////////////////////
-// GEarthExtensions#dom shortcut functions
-
 /**
  * @name GEarthExtensions#dom.addPlacemark
  * Convenience method that calls GEarthExtensions#dom.buildPlacemark and adds
  * the created placemark to the Google Earth Plugin DOM.
  * @function
  */
-(function(){
-  var autoShortcut = ['Placemark',
-                      'PointPlacemark', 'LineStringPlacemark',
-                      'PolygonPlacemark',
-                      'Folder', 'NetworkLink', 'GroundOverlay', 'ScreenOverlay',
-                      'Style'];
-  for (var i = 0; i < autoShortcut.length; i++) {
-    GEarthExtensions.prototype.dom['add' + autoShortcut[i]] =
-      function(shortcutBase) {
-        return function() {
-          var obj = this.dom['build' + shortcutBase].apply(null, arguments);
-          this.pluginInstance.getFeatures().appendChild(obj);
-          return obj;
-        };
-    }(autoShortcut[i]); // escape closure
-  }
-})();
+var autoDomAdd_ = ['Placemark', 'PointPlacemark', 'LineStringPlacemark',
+                   'PolygonPlacemark', 'Folder', 'NetworkLink',
+                   'GroundOverlay', 'ScreenOverlay', 'Style'];
+for (var i = 0; i < autoDomAdd_.length; i++) {
+  GEarthExtensions.prototype.dom['add' + autoDomAdd_[i]] =
+    function(shortcutBase) {
+      return function() {
+        var obj = this.dom['build' + shortcutBase].apply(null, arguments);
+        this.pluginInstance.getFeatures().appendChild(obj);
+        return obj;
+      };
+  }(autoDomAdd_[i]); // escape closure
+}
 /** @ignore */
-GEarthExtensions.prototype.dom.buildExtrudableGeometry_ =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildExtrudableGeometry_ = domBuilder_({
   propertySpec: {
-    altitudeMode: GEarthExtensions.AUTO,
-    extrude: GEarthExtensions.AUTO,
-    tessellate: GEarthExtensions.AUTO
+    altitudeMode: AUTO_,
+    extrude: AUTO_,
+    tessellate: AUTO_
   }
 });
 
@@ -3333,13 +3369,13 @@ GEarthExtensions.domBuilder_({
  *     extrude down to the Earth's surface.
  * @type KmlPoint
  */
-GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPoint = domBuilder_({
   apiInterface: 'KmlPoint',
   base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPoint',
   defaultProperty: 'point',
   propertySpec: {
-    point: GEarthExtensions.REQUIRED
+    point: REQUIRED_
   },
   constructor: function(pointObj, options) {
     var point = new geo.Point(options.point);
@@ -3371,13 +3407,13 @@ GEarthExtensions.prototype.dom.buildPoint = GEarthExtensions.domBuilder_({
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLineString
  */
-GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLineString = domBuilder_({
   apiInterface: 'KmlLineString',
   base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createLineString',
   defaultProperty: 'path',
   propertySpec: {
-    path: GEarthExtensions.REQUIRED
+    path: REQUIRED_
   },
   constructor: function(lineStringObj, options) {
     // TODO: maybe use parseKml instead of pushLatLngAlt for performance
@@ -3412,7 +3448,7 @@ GEarthExtensions.prototype.dom.buildLineString = GEarthExtensions.domBuilder_({
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlLinearRing
  */
-GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLinearRing = domBuilder_({
   apiInterface: 'KmlLinearRing',
   base: GEarthExtensions.prototype.dom.buildLineString,
   apiFactoryFn: 'createLinearRing',
@@ -3443,13 +3479,13 @@ GEarthExtensions.prototype.dom.buildLinearRing = GEarthExtensions.domBuilder_({
  *     be tessellated (i.e. contour to the terrain).
  * @type KmlPolygon
  */
-GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPolygon = domBuilder_({
   apiInterface: 'KmlPolygon',
   base: GEarthExtensions.prototype.dom.buildExtrudableGeometry_,
   apiFactoryFn: 'createPolygon',
   defaultProperty: 'polygon',
   propertySpec: {
-    polygon: GEarthExtensions.REQUIRED
+    polygon: REQUIRED_
   },
   constructor: function(polygonObj, options) {
     var polygon = new geo.Polygon(options.polygon);
@@ -3485,17 +3521,17 @@ GEarthExtensions.prototype.dom.buildPolygon = GEarthExtensions.domBuilder_({
  * @param {Number} [options.orientation.roll] The model roll.
  * @type KmlModel
  */
-GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildModel = domBuilder_({
   apiInterface: 'KmlModel',
   apiFactoryFn: 'createModel',
   defaultProperty: 'link',
   propertySpec: {
-    altitudeMode: GEarthExtensions.AUTO,
+    altitudeMode: AUTO_,
     
-    link: GEarthExtensions.ALLOWED,
-    location: GEarthExtensions.ALLOWED,
-    scale: GEarthExtensions.ALLOWED,
-    orientation: GEarthExtensions.ALLOWED
+    link: ALLOWED_,
+    location: ALLOWED_,
+    scale: ALLOWED_,
+    orientation: ALLOWED_
   },
   constructor: function(modelObj, options) {
     if (options.link) {
@@ -3545,13 +3581,12 @@ GEarthExtensions.prototype.dom.buildModel = GEarthExtensions.domBuilder_({
  * @param {KmlGeometry[]} [options.geometries] The child geometries.
  * @type KmlMultiGeometry
  */
-GEarthExtensions.prototype.dom.buildMultiGeometry =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildMultiGeometry = domBuilder_({
   apiInterface: 'KmlMultiGeometry',
   apiFactoryFn: 'createMultiGeometry',
   defaultProperty: 'geometries',
   propertySpec: {
-    geometries: GEarthExtensions.ALLOWED
+    geometries: ALLOWED_
   },
   constructor: function(multiGeometryObj, options) {
     var geometriesObj = multiGeometryObj.getGeometries();
@@ -3577,17 +3612,17 @@ GEarthExtensions.domBuilder_({
  *     refresh mode.
  * @type KmlLink
  */
-GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLink = domBuilder_({
   apiInterface: 'KmlLink',
   apiFactoryFn: 'createLink',
   defaultProperty: 'href',
   propertySpec: {
     // auto properties
-    href: GEarthExtensions.AUTO,
-    refreshMode: GEarthExtensions.AUTO,
-    refreshInterval: GEarthExtensions.AUTO,
-    viewRefreshMode: GEarthExtensions.AUTO,
-    viewBoundScale: GEarthExtensions.AUTO
+    href: AUTO_,
+    refreshMode: AUTO_,
+    refreshInterval: AUTO_,
+    viewRefreshMode: AUTO_,
+    viewBoundScale: AUTO_
   }
 });
 
@@ -3616,16 +3651,15 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
  *     [minLodPixels, minFadeExtent, maxFadeExtent, maxLodPixels].
  * @type KmlRegion
  */
-GEarthExtensions.prototype.dom.buildRegion =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildRegion = domBuilder_({
   apiInterface: 'KmlRegion',
   apiFactoryFn: 'createRegion',
   propertySpec: {
     // required properties
-    box: GEarthExtensions.REQUIRED,
+    box: REQUIRED_,
     
     // allowed properties
-    lod: GEarthExtensions.ALLOWED
+    lod: ALLOWED_
   },
   constructor: function(regionObj, options) {
     // TODO: exception if any of the options are missing
@@ -3732,15 +3766,15 @@ GEarthExtensions.domBuilder_({
 
  * @type KmlStyle
  */
-GEarthExtensions.prototype.dom.buildStyle = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildStyle = domBuilder_({
   apiInterface: ['KmlStyle', 'KmlStyleMap'],
   apiFactoryFn: 'createStyle',
   propertySpec: {
-    icon: GEarthExtensions.ALLOWED,
-    label: GEarthExtensions.ALLOWED,
-    line: GEarthExtensions.ALLOWED,
-    poly: GEarthExtensions.ALLOWED,
-    balloon: GEarthExtensions.ALLOWED,
+    icon: ALLOWED_,
+    label: ALLOWED_,
+    line: ALLOWED_,
+    poly: ALLOWED_,
+    balloon: ALLOWED_,
   },
   constructor: function(styleObj, options) {
     // set icon style
@@ -3954,12 +3988,12 @@ GEarthExtensions.prototype.dom.walk = function() {
     throw new Error('walk takes at most 1 arguments');
   }
   
-  options = GEarthExtensions.checkParameters(options, false, {
-    visitCallback: GEarthExtensions.REQUIRED,
+  options = checkParameters_(options, false, {
+    visitCallback: REQUIRED_,
     features: true,
     geometries: false,
     rootObject: this.pluginInstance,
-    rootContext: GEarthExtensions.ALLOWED
+    rootContext: ALLOWED_
   });
   
   var recurse_ = function(object, currentContext) {
@@ -4032,7 +4066,7 @@ GEarthExtensions.prototype.dom.walk = function() {
  * @return Returns the object with the given id, or null if it was not found.
  */
 GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     recursive: true,
     root: this.pluginInstance
   });
@@ -4115,13 +4149,13 @@ GEarthExtensions.prototype.dom.setVec2 = function(vec2, options) {
     return;
   }
   
-  options = GEarthExtensions.checkParameters(options, false, {
-    left: GEarthExtensions.ALLOWED,
-    top: GEarthExtensions.ALLOWED,
-    right: GEarthExtensions.ALLOWED,
-    bottom: GEarthExtensions.ALLOWED,
-    width: GEarthExtensions.ALLOWED, // for screen overlay size
-    height: GEarthExtensions.ALLOWED // for screen overlay size
+  options = checkParameters_(options, false, {
+    left: ALLOWED_,
+    top: ALLOWED_,
+    right: ALLOWED_,
+    bottom: ALLOWED_,
+    width: ALLOWED_, // for screen overlay size
+    height: ALLOWED_ // for screen overlay size
   });
   
   if ('width' in options) {
@@ -4265,16 +4299,16 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
  *     lookat point).
  * @type KmlLookAt
  */
-GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLookAt = domBuilder_({
   apiInterface: 'KmlLookAt',
   apiFactoryFn: 'createLookAt',
   defaultProperty: 'point',
   propertySpec: {
-    copy: GEarthExtensions.ALLOWED,
-    point: GEarthExtensions.REQUIRED,
-    heading: GEarthExtensions.ALLOWED,
-    tilt: GEarthExtensions.ALLOWED,
-    range: GEarthExtensions.ALLOWED
+    copy: ALLOWED_,
+    point: REQUIRED_,
+    heading: ALLOWED_,
+    tilt: ALLOWED_,
+    range: ALLOWED_
   },
   constructor: function(lookAtObj, options) {
     var point = new geo.Point(options.point);
@@ -4292,7 +4326,7 @@ GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
       defaults.range = currentLookAt.getRange();
     }
   
-    options = GEarthExtensions.checkParameters(options, true, defaults);
+    options = checkParameters_(options, true, defaults);
   
     lookAtObj.set(
         point.lat(),
@@ -4319,16 +4353,16 @@ GEarthExtensions.prototype.dom.buildLookAt = GEarthExtensions.domBuilder_({
  * @param {Number} [options.range] The camera roll.
  * @type KmlCamera
  */
-GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildCamera = domBuilder_({
   apiInterface: 'KmlCamera',
   apiFactoryFn: 'createCamera',
   defaultProperty: 'point',
   propertySpec: {
-    copy: GEarthExtensions.ALLOWED,
-    point: GEarthExtensions.REQUIRED,
-    heading: GEarthExtensions.ALLOWED,
-    tilt: GEarthExtensions.ALLOWED,
-    roll: GEarthExtensions.ALLOWED
+    copy: ALLOWED_,
+    point: REQUIRED_,
+    heading: ALLOWED_,
+    tilt: ALLOWED_,
+    roll: ALLOWED_
   },
   constructor: function(cameraObj, options) {
     var point = new geo.Point(options.point);
@@ -4346,7 +4380,7 @@ GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
       defaults.roll = currentCamera.getRoll();
     }
   
-    options = GEarthExtensions.checkParameters(options, true, defaults);
+    options = checkParameters_(options, true, defaults);
   
     cameraObj.set(
         point.lat(),
@@ -4365,169 +4399,203 @@ GEarthExtensions.prototype.dom.buildCamera = GEarthExtensions.domBuilder_({
  * @namespace
  */
 GEarthExtensions.prototype.edit = {isnamespace_:true};
-/**
- * Make a placemark draggable.
- * TODO: make this work with multi-geometries
- */
-(function() {
-  // NOTE: this is shared across all GEarthExtensions instances
-  var currentDragContext_ = null;
+var DRAGDATA_JSDATA_KEY = '_GEarthExtensions_dragData';
 
-  var DRAGDATA_JSDATA_KEY = '_GEarthExtensions_dragData';
+// NOTE: this is shared across all GEarthExtensions instances
+var currentDragContext_ = null;
 
-  function beginDragging_(extInstance, placemark) {
-    // get placemark's drag data
-    var placemarkDragData = extInstance.util.getJsDataValue(
-        placemark, DRAGDATA_JSDATA_KEY) || {};
+function beginDragging_(extInstance, placemark) {
+  // get placemark's drag data
+  var placemarkDragData = extInstance.util.getJsDataValue(
+      placemark, DRAGDATA_JSDATA_KEY) || {};
 
-    currentDragContext_ = {
-      placemark: placemark,
-      startAltitude: placemark.getGeometry().getAltitude(),
-      draggableOptions: placemarkDragData.draggableOptions,
-      dragged: false
-    };
-  }
+  currentDragContext_ = {
+    placemark: placemark,
+    startAltitude: placemark.getGeometry().getAltitude(),
+    draggableOptions: placemarkDragData.draggableOptions,
+    dragged: false
+  };
+}
 
-  function makeMouseMoveListener_(extInstance) {
-    return function(event) {
-      if (currentDragContext_) {
-        event.preventDefault();
-
-        if (!event.getDidHitGlobe()) {
-          return;
-        }
-        
-        if (!currentDragContext_.dragged) {
-          currentDragContext_.dragged = true;
-
-          // set dragging style
-          if (currentDragContext_.draggableOptions.draggingStyle) {
-            currentDragContext_.oldStyle =
-                currentDragContext_.placemark.getStyleSelector();
-            currentDragContext_.placemark.setStyleSelector(
-                extInstance.dom.buildStyle(
-                currentDragContext_.draggableOptions.draggingStyle));
-          }
-
-          // animate
-          if (currentDragContext_.draggableOptions.bounce) {
-            extInstance.fx.cancel(currentDragContext_.placemark);
-            extInstance.fx.bounce(currentDragContext_.placemark, {
-              phase: 1
-            });
-          }
-
-          // show 'target' screen overlay (will be correctly positioned
-          // later)
-          if (currentDragContext_.draggableOptions.targetScreenOverlay) {
-            var overlay = extInstance.dom.buildScreenOverlay(
-                currentDragContext_.draggableOptions.targetScreenOverlay);
-            extInstance.pluginInstance.getFeatures().appendChild(overlay);
-            currentDragContext_.activeTargetScreenOverlay = overlay;
-          }
-        }
-
-        // move 'target' screen overlay
-        if (currentDragContext_.activeTargetScreenOverlay) {
-          // NOTE: overlayXY but we really are setting the screenXY due to
-          // the two being swapped in the Earth API
-          extInstance.dom.setVec2(
-              currentDragContext_.activeTargetScreenOverlay.getOverlayXY(),
-              { left: event.getClientX(), top: event.getClientY() });
-        }
-
-        // TODO: allow for non-point dragging (models?)
-        var point = currentDragContext_.placemark.getGeometry();
-        point.setLatitude(event.getLatitude());
-        point.setLongitude(event.getLongitude());
-        
-        // show the placemark
-        currentDragContext_.placemark.setVisibility(true);
-
-        if (currentDragContext_.draggableOptions.dragCallback) {
-          currentDragContext_.draggableOptions.dragCallback.call(
-              currentDragContext_.placemark);
-        }
-      }
-    };
-  }
-
-  function stopDragging_(extInstance, abort) {
+function makeMouseMoveListener_(extInstance) {
+  return function(event) {
     if (currentDragContext_) {
-      if (currentDragContext_.dragged) {
-        // unset dragging style
-        if (currentDragContext_.oldStyle) {
-          currentDragContext_.placemark.setStyleSelector(
-              currentDragContext_.oldStyle);
-          delete currentDragContext_.oldStyle;
-        }
+      event.preventDefault();
 
-        // remove 'target' screen overlay
-        if (currentDragContext_.activeTargetScreenOverlay) {
-          extInstance.pluginInstance.getFeatures().removeChild(
-              currentDragContext_.activeTargetScreenOverlay);
-          delete currentDragContext_.activeTargetScreenOverlay;
+      if (!event.getDidHitGlobe()) {
+        return;
+      }
+      
+      if (!currentDragContext_.dragged) {
+        currentDragContext_.dragged = true;
+
+        // set dragging style
+        if (currentDragContext_.draggableOptions.draggingStyle) {
+          currentDragContext_.oldStyle =
+              currentDragContext_.placemark.getStyleSelector();
+          currentDragContext_.placemark.setStyleSelector(
+              extInstance.dom.buildStyle(
+              currentDragContext_.draggableOptions.draggingStyle));
         }
 
         // animate
         if (currentDragContext_.draggableOptions.bounce) {
           extInstance.fx.cancel(currentDragContext_.placemark);
           extInstance.fx.bounce(currentDragContext_.placemark, {
-            startAltitude: currentDragContext_.startAltitude,
-            phase: 2,
-            repeat: 1,
-            dampen: 0.3
+            phase: 1
           });
+        }
+
+        // show 'target' screen overlay (will be correctly positioned
+        // later)
+        if (currentDragContext_.draggableOptions.targetScreenOverlay) {
+          var overlay = extInstance.dom.buildScreenOverlay(
+              currentDragContext_.draggableOptions.targetScreenOverlay);
+          extInstance.pluginInstance.getFeatures().appendChild(overlay);
+          currentDragContext_.activeTargetScreenOverlay = overlay;
         }
       }
 
-      if (currentDragContext_.dragged &&
-          currentDragContext_.draggableOptions.dropCallback && !abort) {
-        currentDragContext_.draggableOptions.dropCallback.call(
-            currentDragContext_.placemark);
+      // move 'target' screen overlay
+      if (currentDragContext_.activeTargetScreenOverlay) {
+        // NOTE: overlayXY but we really are setting the screenXY due to
+        // the two being swapped in the Earth API
+        extInstance.dom.setVec2(
+            currentDragContext_.activeTargetScreenOverlay.getOverlayXY(),
+            { left: event.getClientX(), top: event.getClientY() });
       }
 
-      currentDragContext_ = null;
+      // TODO: allow for non-point dragging (models?)
+      var point = currentDragContext_.placemark.getGeometry();
+      point.setLatitude(event.getLatitude());
+      point.setLongitude(event.getLongitude());
+      
+      // show the placemark
+      currentDragContext_.placemark.setVisibility(true);
+
+      if (currentDragContext_.draggableOptions.dragCallback) {
+        currentDragContext_.draggableOptions.dragCallback.call(
+            currentDragContext_.placemark);
+      }
     }
+  };
+}
+
+function stopDragging_(extInstance, abort) {
+  if (currentDragContext_) {
+    if (currentDragContext_.dragged) {
+      // unset dragging style
+      if (currentDragContext_.oldStyle) {
+        currentDragContext_.placemark.setStyleSelector(
+            currentDragContext_.oldStyle);
+        delete currentDragContext_.oldStyle;
+      }
+
+      // remove 'target' screen overlay
+      if (currentDragContext_.activeTargetScreenOverlay) {
+        extInstance.pluginInstance.getFeatures().removeChild(
+            currentDragContext_.activeTargetScreenOverlay);
+        delete currentDragContext_.activeTargetScreenOverlay;
+      }
+
+      // animate
+      if (currentDragContext_.draggableOptions.bounce) {
+        extInstance.fx.cancel(currentDragContext_.placemark);
+        extInstance.fx.bounce(currentDragContext_.placemark, {
+          startAltitude: currentDragContext_.startAltitude,
+          phase: 2,
+          repeat: 1,
+          dampen: 0.3
+        });
+      }
+    }
+
+    if (currentDragContext_.dragged &&
+        currentDragContext_.draggableOptions.dropCallback && !abort) {
+      currentDragContext_.draggableOptions.dropCallback.call(
+          currentDragContext_.placemark);
+    }
+
+    currentDragContext_ = null;
   }
+}
 
-  /**
-   * Turns on draggability for the given point placemark.
-   * @param {KmlPlacemark} placemark The point placemark to enable dragging on.
-   * @param {Object} [options] The draggable options.
-   * @param {Boolean} [options.bounce] Whether or not to bounce up upon dragging
-   *     and bounce back down upon dropping.
-   * @param {Function} [options.dragCallback] A callback function to fire
-   *     continuously while dragging occurs.
-   * @param {Function} [options.dropCallback] A callback function to fire
-   *     once the placemark is successfully dropped.
-   * @param {StyleOptions|KmlStyle} [options.draggingStyle] The style options
-   *     to apply to the placemark while dragging.
-   * @param {ScreenOverlayOptions|KmlScreenOverlay} [options.targetScreenOverlay]
-   *     A screen overlay to use as a drop target indicator (i.e. a bullseye)
-   *     while dragging.
-   */
-  GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
-    this.edit.endDraggable(placemark);
+/**
+ * Turns on draggability for the given point placemark.
+ * @param {KmlPlacemark} placemark The point placemark to enable dragging on.
+ * @param {Object} [options] The draggable options.
+ * @param {Boolean} [options.bounce] Whether or not to bounce up upon dragging
+ *     and bounce back down upon dropping.
+ * @param {Function} [options.dragCallback] A callback function to fire
+ *     continuously while dragging occurs.
+ * @param {Function} [options.dropCallback] A callback function to fire
+ *     once the placemark is successfully dropped.
+ * @param {StyleOptions|KmlStyle} [options.draggingStyle] The style options
+ *     to apply to the placemark while dragging.
+ * @param {ScreenOverlayOptions|KmlScreenOverlay} [options.targetScreenOverlay]
+ *     A screen overlay to use as a drop target indicator (i.e. a bullseye)
+ *     while dragging.
+ */
+GEarthExtensions.prototype.edit.makeDraggable = function(placemark, options) {
+  this.edit.endDraggable(placemark);
 
-    // TODO: assert this is a point placemark
-    options = GEarthExtensions.checkParameters(options, false, {
-      bounce: true,
-      dragCallback: GEarthExtensions.ALLOWED,
-      dropCallback: GEarthExtensions.ALLOWED,
-      draggingStyle: GEarthExtensions.ALLOWED,
-      targetScreenOverlay: GEarthExtensions.ALLOWED
-    });
+  // TODO: assert this is a point placemark
+  options = checkParameters_(options, false, {
+    bounce: true,
+    dragCallback: ALLOWED_,
+    dropCallback: ALLOWED_,
+    draggingStyle: ALLOWED_,
+    targetScreenOverlay: ALLOWED_
+  });
 
-    var me = this;
+  var me = this;
 
-    // create a mouse move listener for use once dragging has begun
-    var mouseMoveListener = makeMouseMoveListener_(me);
+  // create a mouse move listener for use once dragging has begun
+  var mouseMoveListener = makeMouseMoveListener_(me);
 
-    // create a mouse up listener for use once dragging has begun
-    var mouseUpListener;
-    mouseUpListener = function(event) {
-      if (currentDragContext_ && event.getButton() === 0) {
+  // create a mouse up listener for use once dragging has begun
+  var mouseUpListener;
+  mouseUpListener = function(event) {
+    if (currentDragContext_ && event.getButton() === 0) {
+      // remove listener for mousemove on the globe
+      google.earth.removeEventListener(me.pluginInstance.getWindow(),
+          'mousemove', mouseMoveListener);
+
+      // remove listener for mouseup on the window
+      google.earth.removeEventListener(me.pluginInstance.getWindow(),
+          'mouseup', mouseUpListener);
+
+      if (currentDragContext_.dragged) {
+        // if the placemark was dragged, prevent balloons from popping up
+        event.preventDefault();
+      }
+
+      stopDragging_(me);
+    }
+  };
+
+  // create a mouse down listener
+  var mouseDownListener = function(event) {
+    if (event.getButton() === 0) {
+      // TODO: check if getTarget() is draggable and is a placemark
+      beginDragging_(me, event.getTarget());
+
+      // listen for mousemove on the globe
+      google.earth.addEventListener(me.pluginInstance.getWindow(),
+          'mousemove', mouseMoveListener);
+
+      // listen for mouseup on the window
+      google.earth.addEventListener(me.pluginInstance.getWindow(),
+          'mouseup', mouseUpListener);
+    }
+  };
+
+  // persist drag options for use in listeners
+  this.util.setJsDataValue(placemark, DRAGDATA_JSDATA_KEY, {
+    draggableOptions: options,
+    abortAndEndFn: function() {
+      if (currentDragContext_ &&
+          currentDragContext_.placemark.equals(placemark)) {
         // remove listener for mousemove on the globe
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousemove', mouseMoveListener);
@@ -4536,109 +4604,88 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mouseup', mouseUpListener);
 
-        if (currentDragContext_.dragged) {
-          // if the placemark was dragged, prevent balloons from popping up
-          event.preventDefault();
-        }
-
-        stopDragging_(me);
+        stopDragging_(me, true); // abort
       }
-    };
 
-    // create a mouse down listener
-    var mouseDownListener = function(event) {
-      if (event.getButton() === 0) {
-        // TODO: check if getTarget() is draggable and is a placemark
-        beginDragging_(me, event.getTarget());
+      google.earth.removeEventListener(placemark, 'mousedown',
+          mouseDownListener);
+    }
+  });
 
-        // listen for mousemove on the globe
-        google.earth.addEventListener(me.pluginInstance.getWindow(),
-            'mousemove', mouseMoveListener);
+  // listen for mousedown on the placemark
+  google.earth.addEventListener(placemark, 'mousedown', mouseDownListener);
+};
 
-        // listen for mouseup on the window
-        google.earth.addEventListener(me.pluginInstance.getWindow(),
-            'mouseup', mouseUpListener);
-      }
-    };
+/**
+ * Ceases the draggability of the given placemark. If the placemark is in the
+ * process of being placed via GEarthExtensions#edit.place, the placement
+ * is cancelled.
+ */
+GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
+  // get placemark's drag data
+  var placemarkDragData = this.util.getJsDataValue(
+      placemark, DRAGDATA_JSDATA_KEY);
 
-    // persist drag options for use in listeners
-    this.util.setJsDataValue(placemark, DRAGDATA_JSDATA_KEY, {
-      draggableOptions: options,
-      abortAndEndFn: function() {
-        if (currentDragContext_ &&
-            currentDragContext_.placemark.equals(placemark)) {
-          // remove listener for mousemove on the globe
-          google.earth.removeEventListener(me.pluginInstance.getWindow(),
-              'mousemove', mouseMoveListener);
+  // stop listening for mousedown on the window
+  if (placemarkDragData) {
+    placemarkDragData.abortAndEndFn.call(null);
 
-          // remove listener for mouseup on the window
-          google.earth.removeEventListener(me.pluginInstance.getWindow(),
-              'mouseup', mouseUpListener);
+    this.util.clearJsDataValue(placemark, DRAGDATA_JSDATA_KEY);
+  }
+};
 
-          stopDragging_(me, true); // abort
-        }
+/**
+ * Enters a mode in which the user can place the given point placemark onto
+ * the globe by clicking on the globe. To cancel the placement, use
+ * GEarthExtensions#edit.endDraggable.
+ * @param {KmlPlacemark} placemark The point placemark for the user to place
+ *     onto the globe.
+ * @param {Object} [options] The draggable options. See
+ *     GEarthExtensions#edit.makeDraggable.
+ */
+GEarthExtensions.prototype.edit.place = function(placemark, options) {
+  // TODO: assert this is a point placemark
+  options = checkParameters_(options, false, {
+    bounce: true,
+    dragCallback: ALLOWED_,
+    dropCallback: ALLOWED_,
+    draggingStyle: ALLOWED_,
+    targetScreenOverlay: ALLOWED_
+  });
 
-        google.earth.removeEventListener(placemark, 'mousedown',
-            mouseDownListener);
-      }
-    });
+  var me = this;
 
-    // listen for mousedown on the placemark
-    google.earth.addEventListener(placemark, 'mousedown', mouseDownListener);
-  };
+  // create a mouse move listener
+  var mouseMoveListener = makeMouseMoveListener_(me);
+  
+  // hide the placemark initially
+  placemark.setVisibility(false);
 
-  /**
-   * Ceases the draggability of the given placemark. If the placemark is in the
-   * process of being placed via GEarthExtensions#edit.place, the placement
-   * is cancelled.
-   */
-  GEarthExtensions.prototype.edit.endDraggable = function(placemark) {
-    // get placemark's drag data
-    var placemarkDragData = this.util.getJsDataValue(
-        placemark, DRAGDATA_JSDATA_KEY);
+  // create a mouse down listener
+  var mouseDownListener;
+  mouseDownListener = function(event) {
+    if (currentDragContext_ && event.getButton() === 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // remove listener for mousemove on the globe
+      google.earth.removeEventListener(me.pluginInstance.getWindow(),
+          'mousemove', mouseMoveListener);
 
-    // stop listening for mousedown on the window
-    if (placemarkDragData) {
-      placemarkDragData.abortAndEndFn.call(null);
+      // remove listener for mousedown on the window
+      google.earth.removeEventListener(me.pluginInstance.getWindow(),
+          'mousedown', mouseDownListener);
 
-      this.util.clearJsDataValue(placemark, DRAGDATA_JSDATA_KEY);
+      stopDragging_(me);
     }
   };
 
-  /**
-   * Enters a mode in which the user can place the given point placemark onto
-   * the globe by clicking on the globe. To cancel the placement, use
-   * GEarthExtensions#edit.endDraggable.
-   * @param {KmlPlacemark} placemark The point placemark for the user to place
-   *     onto the globe.
-   * @param {Object} [options] The draggable options. See
-   *     GEarthExtensions#edit.makeDraggable.
-   */
-  GEarthExtensions.prototype.edit.place = function(placemark, options) {
-    // TODO: assert this is a point placemark
-    options = GEarthExtensions.checkParameters(options, false, {
-      bounce: true,
-      dragCallback: GEarthExtensions.ALLOWED,
-      dropCallback: GEarthExtensions.ALLOWED,
-      draggingStyle: GEarthExtensions.ALLOWED,
-      targetScreenOverlay: GEarthExtensions.ALLOWED
-    });
-
-    var me = this;
-
-    // create a mouse move listener
-    var mouseMoveListener = makeMouseMoveListener_(me);
-    
-    // hide the placemark initially
-    placemark.setVisibility(false);
-
-    // create a mouse down listener
-    var mouseDownListener;
-    mouseDownListener = function(event) {
-      if (currentDragContext_ && event.getButton() === 0) {
-        event.preventDefault();
-        event.stopPropagation();
-        
+  // persist drag options for use in listeners
+  this.util.setJsDataValue(placemark, DRAGDATA_JSDATA_KEY, {
+    draggableOptions: options,
+    abortAndEndFn: function() {
+      if (currentDragContext_ &&
+          currentDragContext_.placemark.equals(placemark)) {
         // remove listener for mousemove on the globe
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousemove', mouseMoveListener);
@@ -4647,268 +4694,108 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         google.earth.removeEventListener(me.pluginInstance.getWindow(),
             'mousedown', mouseDownListener);
 
-        stopDragging_(me);
+        stopDragging_(me, true); // abort
       }
-    };
+    }
+  });
 
-    // persist drag options for use in listeners
-    this.util.setJsDataValue(placemark, DRAGDATA_JSDATA_KEY, {
-      draggableOptions: options,
-      abortAndEndFn: function() {
-        if (currentDragContext_ &&
-            currentDragContext_.placemark.equals(placemark)) {
-          // remove listener for mousemove on the globe
-          google.earth.removeEventListener(me.pluginInstance.getWindow(),
-              'mousemove', mouseMoveListener);
+  // enter dragging mode right away to 'place' the placemark on the globe
+  beginDragging_(me, placemark);
 
-          // remove listener for mousedown on the window
-          google.earth.removeEventListener(me.pluginInstance.getWindow(),
-              'mousedown', mouseDownListener);
+  // listen for mousemove on the window
+  google.earth.addEventListener(me.pluginInstance.getWindow(),
+      'mousemove', mouseMoveListener);
 
-          stopDragging_(me, true); // abort
-        }
-      }
-    });
+  // listen for mousedown on the window
+  google.earth.addEventListener(me.pluginInstance.getWindow(),
+      'mousedown', mouseDownListener);
+};
+var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
+var LINESTRING_COORD_ICON = 'http://maps.google.com/mapfiles/kml/' +
+                            'shapes/placemark_circle.png';
+var LINESTRING_COORD_ICON_SCALE = 0.85;
+var LINESTRING_MIDPOINT_ICON_SCALE = 0.6;
 
-    // enter dragging mode right away to 'place' the placemark on the globe
-    beginDragging_(me, placemark);
+function coordsEqual_(coord1, coord2) {
+  return coord1.getLatitude() ==  coord2.getLatitude() &&
+         coord1.getLongitude() == coord2.getLongitude() &&
+         coord1.getAltitude() == coord2.getAltitude();
+}
 
-    // listen for mousemove on the window
-    google.earth.addEventListener(me.pluginInstance.getWindow(),
-        'mousemove', mouseMoveListener);
-
-    // listen for mousedown on the window
-    google.earth.addEventListener(me.pluginInstance.getWindow(),
-        'mousedown', mouseDownListener);
-  };
-}());
-(function() {
-
-  var LINESTRINGEDITDATA_JSDATA_KEY = '_GEarthExtensions_lineStringEditData';
-  var LINESTRING_COORD_ICON = 'http://maps.google.com/mapfiles/kml/' +
-                              'shapes/placemark_circle.png';
-  var LINESTRING_COORD_ICON_SCALE = 0.85;
-  var LINESTRING_MIDPOINT_ICON_SCALE = 0.6;
-
-  function coordsEqual_(coord1, coord2) {
-    return coord1.getLatitude() ==  coord2.getLatitude() &&
-           coord1.getLongitude() == coord2.getLongitude() &&
-           coord1.getAltitude() == coord2.getAltitude();
+/**
+ * Enters a mode in which the user can draw the given line string geometry
+ * on the globe by clicking on the globe to create coordinates.
+ * To cancel the placement, use GEarthExtensions#edit.endEditLineString.
+ * This is similar in intended usage to GEarthExtensions#edit.place.
+ * @param {KmlLineString|KmlLinearRing} lineString The line string geometry
+ *     to allow the user to draw (or append points to).
+ * @param {Object} [options] The edit options.
+ * @param {Boolean} [options.bounce=true] Whether or not to enable bounce
+ *     effects while drawing coordinates.
+ * @param {Function} [options.drawCallback] A callback to fire when new
+ *     vertices are drawn. The only argument passed will be the index of the
+ *     new coordinate (it can either be prepended or appended, depending on
+ *     whether or not ensuring counter-clockwisedness).
+ * @param {Function} [options.finishCallback] A callback to fire when drawing
+ *     is successfully completed (via double click or by clicking on the first
+ *     coordinate again).
+ * @param {Boolean} [options.ensureCounterClockwise=true] Whether or not to
+ *     automatically keep polygon coordinates in counter clockwise order.
+ */
+GEarthExtensions.prototype.edit.drawLineString = function(lineString,
+                                                          options) {
+  options = checkParameters_(options, false, {
+    bounce: true,
+    drawCallback: ALLOWED_,
+    finishCallback: ALLOWED_,
+    ensureCounterClockwise: true
+  });
+  
+  var lineStringEditData = this.util.getJsDataValue(
+      lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
+  if (lineStringEditData) {
+    this.edit.endEditLineString(lineString);
   }
   
-  /**
-   * Enters a mode in which the user can draw the given line string geometry
-   * on the globe by clicking on the globe to create coordinates.
-   * To cancel the placement, use GEarthExtensions#edit.endEditLineString.
-   * This is similar in intended usage to GEarthExtensions#edit.place.
-   * @param {KmlLineString|KmlLinearRing} lineString The line string geometry
-   *     to allow the user to draw (or append points to).
-   * @param {Object} [options] The edit options.
-   * @param {Boolean} [options.bounce=true] Whether or not to enable bounce
-   *     effects while drawing coordinates.
-   * @param {Function} [options.drawCallback] A callback to fire when new
-   *     vertices are drawn. The only argument passed will be the index of the
-   *     new coordinate (it can either be prepended or appended, depending on
-   *     whether or not ensuring counter-clockwisedness).
-   * @param {Function} [options.finishCallback] A callback to fire when drawing
-   *     is successfully completed (via double click or by clicking on the first
-   *     coordinate again).
-   * @param {Boolean} [options.ensureCounterClockwise=true] Whether or not to
-   *     automatically keep polygon coordinates in counter clockwise order.
-   */
-  GEarthExtensions.prototype.edit.drawLineString = function(lineString,
-                                                            options) {
-    options = GEarthExtensions.checkParameters(options, false, {
-      bounce: true,
-      drawCallback: GEarthExtensions.ALLOWED,
-      finishCallback: GEarthExtensions.ALLOWED,
-      ensureCounterClockwise: true
-    });
-    
-    var lineStringEditData = this.util.getJsDataValue(
-        lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
-    if (lineStringEditData) {
-      this.edit.endEditLineString(lineString);
-    }
-    
-    var me = this;
+  var me = this;
 
-    // TODO: options: icon for placemarks
+  // TODO: options: icon for placemarks
 
-    // used to ensure counterclockwise-ness
-    var isReverse = false;
-    var tempPoly = new geo.Polygon();
-    
-    var done = false;
-    var placemarks = [];
-    var altitudeMode = lineString.getAltitudeMode();
-    var headPlacemark = null;
-    var isRing = (lineString.getType() == 'KmlLinearRing');
-    var coords = lineString.getCoordinates();
-    var innerDoc = this.pluginInstance.parseKml([
-        '<Document>',
-        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
-        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
-        '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
-        '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>',
-        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
-        '<scale>', LINESTRING_COORD_ICON_SCALE * 1.3, '</scale>',
-        '<color>ff00ff00</color></IconStyle></Style>',
-        '<StyleMap id="_GEarthExtensions_firstCoordinate">',
-        '<Pair><key>normal</key>',
-        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
-        '</Pair><Pair><key>highlight</key>',
-        '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>',
-        '</Pair></StyleMap>',
-        '</Document>'].join(''));
-
-    var finishListener;
-    
-    var endFunction = function(abort) {
-      google.earth.removeEventListener(me.pluginInstance.getWindow(),
-          'dblclick', finishListener);
-      
-      // duplicate the first coordinate to the end if necessary
-      var numCoords = coords.getLength();
-      if (numCoords && isRing) {
-        var firstCoord = coords.get(0);
-        var lastCoord = coords.get(numCoords - 1);
-        if (!coordsEqual_(firstCoord, lastCoord)) {
-          coords.pushLatLngAlt(firstCoord.getLatitude(),
-                               firstCoord.getLongitude(),
-                               firstCoord.getAltitude());
-        }
-      }
-
-      me.edit.endDraggable(headPlacemark);
-      me.dom.removeObject(innerDoc);
-      me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
-      placemarks = [];
-      done = true;
-
-      if (options.finishCallback && !abort) {
-        options.finishCallback.call(null);
-      }
-    };
-    
-    finishListener = function(event) {
-      event.preventDefault();
-      endFunction.call(null);
-    };
-    
-    var drawNext;
-    drawNext = function() {
-      headPlacemark = me.dom.buildPointPlacemark([0, 0], {
-        altitudeMode: altitudeMode,
-        style: '#_GEarthExtensions_regularCoordinate',
-        visibility: false  // start out invisible
-      });
-      innerDoc.getFeatures().appendChild(headPlacemark);
-      if (isReverse) {
-        placemarks.unshift(headPlacemark);
-      } else {
-        placemarks.push(headPlacemark);
-      }
-
-      me.edit.place(headPlacemark, {
-        bounce: options.bounce,
-        dropCallback: function() {
-          if (!done) {
-            var coord = [headPlacemark.getGeometry().getLatitude(),
-                         headPlacemark.getGeometry().getLongitude(),
-                         0]; // don't use altitude because of bounce
-            if (isReverse) {
-              coords.unshiftLatLngAlt(coord[0], coord[1], coord[2]);
-            } else {
-              coords.pushLatLngAlt(coord[0], coord[1], coord[2]);
-            }
-            
-            // ensure counterclockwise-ness
-            if (options.ensureCounterClockwise) {
-              if (isReverse) {
-                tempPoly.outerBoundary().prepend(coord);
-              } else {
-                tempPoly.outerBoundary().append(coord);
-              }
-              
-              if (!tempPoly.isCounterClockwise()) {
-                tempPoly.outerBoundary().reverse();
-                coords.reverse();
-                isReverse = !isReverse;
-              }
-            }
-                
-            if (options.drawCallback) {
-              options.drawCallback.call(null,
-                  isReverse ? 0 : coords.getLength() - 1);
-            }
-
-            if (placemarks.length == 1) {
-              // set up a click listener on the first placemark -- if it gets
-              // clicked, stop drawing the linestring
-              placemarks[0].setStyleUrl('#_GEarthExtensions_firstCoordinate');
-              google.earth.addEventListener(placemarks[0], 'mousedown',
-                  finishListener);
-            }
-
-            setTimeout(drawNext, 0);
-          }
-        }
-      });
-    };
-
-    drawNext.call(null);
-    
-    google.earth.addEventListener(me.pluginInstance.getWindow(), 'dblclick',
-        finishListener);
-
-    // display the editing UI
-    this.pluginInstance.getFeatures().appendChild(innerDoc);
-
-    // set up an abort function for use in endEditLineString
-    this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
-      abortAndEndFn: function() {
-        endFunction.call(null, true); // abort
-      }
-    });
-  };
-  // TODO: interactive test
+  // used to ensure counterclockwise-ness
+  var isReverse = false;
+  var tempPoly = new geo.Polygon();
   
-  /**
-   * Allows the user to edit the coordinates of the given line string by
-   * dragging existing points, splitting path segments/creating new points or
-   * deleting existing points.
-   * @param {KmlLineString|KmlLinearRing} lineString The line string or lienar
-   *     ring geometry to edit. For KmlPolygon geometries, pass in an outer
-   *     or inner boundary.
-   * @param {Object} [options] The line string edit options.
-   * @param {Function} [options.editCallback] A callback function to fire
-   *     when the line string coordinates have changed due to user interaction.
-   */
-  GEarthExtensions.prototype.edit.editLineString = function(lineString,
-                                                            options) {
-    options = GEarthExtensions.checkParameters(options, false, {
-      editCallback: GEarthExtensions.ALLOWED
-    });
-    
-    var lineStringEditData = this.util.getJsDataValue(
-        lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
-    if (lineStringEditData) {
-      this.edit.endEditLineString(lineString);
-    }
+  var done = false;
+  var placemarks = [];
+  var altitudeMode = lineString.getAltitudeMode();
+  var headPlacemark = null;
+  var isRing = (lineString.getType() == 'KmlLinearRing');
+  var coords = lineString.getCoordinates();
+  var innerDoc = this.pluginInstance.parseKml([
+      '<Document>',
+      '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
+      '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+      '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
+      '<Style id="_GEarthExtensions_firstCoordinateHighlight"><IconStyle>',
+      '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+      '<scale>', LINESTRING_COORD_ICON_SCALE * 1.3, '</scale>',
+      '<color>ff00ff00</color></IconStyle></Style>',
+      '<StyleMap id="_GEarthExtensions_firstCoordinate">',
+      '<Pair><key>normal</key>',
+      '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
+      '</Pair><Pair><key>highlight</key>',
+      '<styleUrl>#_GEarthExtensions_firstCoordinateHighlight</styleUrl>',
+      '</Pair></StyleMap>',
+      '</Document>'].join(''));
 
-    var me = this;
+  var finishListener;
+  
+  var endFunction = function(abort) {
+    google.earth.removeEventListener(me.pluginInstance.getWindow(),
+        'dblclick', finishListener);
     
-    var isRing = (lineString.getType() == 'KmlLinearRing');
-    var altitudeMode = lineString.getAltitudeMode();
-    var coords = lineString.getCoordinates();
-    
-    // number of total coords, including any repeat first coord in the case of
-    // linear rings
+    // duplicate the first coordinate to the end if necessary
     var numCoords = coords.getLength();
-    
-    // if the first coordinate isn't repeated at the end and we're editing
-    // a linear ring, repeat it
     if (numCoords && isRing) {
       var firstCoord = coords.get(0);
       var lastCoord = coords.get(numCoords - 1);
@@ -4916,398 +4803,536 @@ GEarthExtensions.prototype.edit = {isnamespace_:true};
         coords.pushLatLngAlt(firstCoord.getLatitude(),
                              firstCoord.getLongitude(),
                              firstCoord.getAltitude());
-        numCoords++;
       }
     }
-    
-    var innerDoc = this.pluginInstance.parseKml([
-        '<Document>',
-        '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
-        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
-        '<color>ffffffff</color>',
-        '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
-        '<StyleMap id="_GEarthExtensions_midCoordinate">',
-        '<Pair><key>normal</key>',
-        '<Style><IconStyle>',
-        '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
-        '<color>60ffffff</color><scale>', LINESTRING_MIDPOINT_ICON_SCALE,
-        '</scale></IconStyle></Style></Pair>',
-        '<Pair><key>highlight</key>',
-        '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
-        '</Pair></StyleMap>',
-        '</Document>'].join(''));
 
-    // TODO: options: icon for placemarks
-    // TODO: it may be easier to use a linked list for all this
+    me.edit.endDraggable(headPlacemark);
+    me.dom.removeObject(innerDoc);
+    me.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+    placemarks = [];
+    done = true;
 
-    var coordDataArr = [];
-    
-    var checkDupMidpoints_ = function() {
-      if (!isRing)
-        return;
-      
-      // handle special case for polygons w/ 2 coordinates
-      if (numCoords == 3) /* including duplicate first coord */ {
-        coordDataArr[1].rightMidPlacemark.setVisibility(false);
-      } else if (numCoords >= 4) {
-        coordDataArr[numCoords - 2].rightMidPlacemark.setVisibility(true);
-      }
-    };
+    if (options.finishCallback && !abort) {
+      options.finishCallback.call(null);
+    }
+  };
+  
+  finishListener = function(event) {
+    event.preventDefault();
+    endFunction.call(null);
+  };
+  
+  var drawNext;
+  drawNext = function() {
+    headPlacemark = me.dom.buildPointPlacemark([0, 0], {
+      altitudeMode: altitudeMode,
+      style: '#_GEarthExtensions_regularCoordinate',
+      visibility: false  // start out invisible
+    });
+    innerDoc.getFeatures().appendChild(headPlacemark);
+    if (isReverse) {
+      placemarks.unshift(headPlacemark);
+    } else {
+      placemarks.push(headPlacemark);
+    }
 
-    var makeRegularDeleteEventListener_ = function(coordData) {
-      return function(event) {
-        event.preventDefault();
-
-        // get the coord info of the left coordinate, as we'll need to
-        // update its midpoint placemark
-        var leftCoordData = null;
-        if (coordData.index > 0 || isRing) {
-          var leftIndex = coordData.index - 1;
-          if (leftIndex < 0) {
-            leftIndex += numCoords; // wrap
+    me.edit.place(headPlacemark, {
+      bounce: options.bounce,
+      dropCallback: function() {
+        if (!done) {
+          var coord = [headPlacemark.getGeometry().getLatitude(),
+                       headPlacemark.getGeometry().getLongitude(),
+                       0]; // don't use altitude because of bounce
+          if (isReverse) {
+            coords.unshiftLatLngAlt(coord[0], coord[1], coord[2]);
+          } else {
+            coords.pushLatLngAlt(coord[0], coord[1], coord[2]);
           }
           
-          if (isRing && coordData.index === 0) {
-            // skip repeated coord at the end
-            leftIndex--;
+          // ensure counterclockwise-ness
+          if (options.ensureCounterClockwise) {
+            if (isReverse) {
+              tempPoly.outerBoundary().prepend(coord);
+            } else {
+              tempPoly.outerBoundary().append(coord);
+            }
+            
+            if (!tempPoly.isCounterClockwise()) {
+              tempPoly.outerBoundary().reverse();
+              coords.reverse();
+              isReverse = !isReverse;
+            }
+          }
+              
+          if (options.drawCallback) {
+            options.drawCallback.call(null,
+                isReverse ? 0 : coords.getLength() - 1);
           }
 
-          leftCoordData = coordDataArr[leftIndex];
-        }
+          if (placemarks.length == 1) {
+            // set up a click listener on the first placemark -- if it gets
+            // clicked, stop drawing the linestring
+            placemarks[0].setStyleUrl('#_GEarthExtensions_firstCoordinate');
+            google.earth.addEventListener(placemarks[0], 'mousedown',
+                finishListener);
+          }
 
-        // shift coordinates in the KmlCoordArray up
-        // TODO: speed this up
-        for (i = coordData.index; i < numCoords - 1; i++) {
-          coords.set(i, coords.get(i + 1));
+          setTimeout(drawNext, 0);
+        }
+      }
+    });
+  };
+
+  drawNext.call(null);
+  
+  google.earth.addEventListener(me.pluginInstance.getWindow(), 'dblclick',
+      finishListener);
+
+  // display the editing UI
+  this.pluginInstance.getFeatures().appendChild(innerDoc);
+
+  // set up an abort function for use in endEditLineString
+  this.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
+    abortAndEndFn: function() {
+      endFunction.call(null, true); // abort
+    }
+  });
+};
+// TODO: interactive test
+
+/**
+ * Allows the user to edit the coordinates of the given line string by
+ * dragging existing points, splitting path segments/creating new points or
+ * deleting existing points.
+ * @param {KmlLineString|KmlLinearRing} lineString The line string or lienar
+ *     ring geometry to edit. For KmlPolygon geometries, pass in an outer
+ *     or inner boundary.
+ * @param {Object} [options] The line string edit options.
+ * @param {Function} [options.editCallback] A callback function to fire
+ *     when the line string coordinates have changed due to user interaction.
+ */
+GEarthExtensions.prototype.edit.editLineString = function(lineString,
+                                                          options) {
+  options = checkParameters_(options, false, {
+    editCallback: ALLOWED_
+  });
+  
+  var lineStringEditData = this.util.getJsDataValue(
+      lineString, LINESTRINGEDITDATA_JSDATA_KEY) || {};
+  if (lineStringEditData) {
+    this.edit.endEditLineString(lineString);
+  }
+
+  var me = this;
+  
+  var isRing = (lineString.getType() == 'KmlLinearRing');
+  var altitudeMode = lineString.getAltitudeMode();
+  var coords = lineString.getCoordinates();
+  
+  // number of total coords, including any repeat first coord in the case of
+  // linear rings
+  var numCoords = coords.getLength();
+  
+  // if the first coordinate isn't repeated at the end and we're editing
+  // a linear ring, repeat it
+  if (numCoords && isRing) {
+    var firstCoord = coords.get(0);
+    var lastCoord = coords.get(numCoords - 1);
+    if (!coordsEqual_(firstCoord, lastCoord)) {
+      coords.pushLatLngAlt(firstCoord.getLatitude(),
+                           firstCoord.getLongitude(),
+                           firstCoord.getAltitude());
+      numCoords++;
+    }
+  }
+  
+  var innerDoc = this.pluginInstance.parseKml([
+      '<Document>',
+      '<Style id="_GEarthExtensions_regularCoordinate"><IconStyle>',
+      '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+      '<color>ffffffff</color>',
+      '<scale>', LINESTRING_COORD_ICON_SCALE, '</scale></IconStyle></Style>',
+      '<StyleMap id="_GEarthExtensions_midCoordinate">',
+      '<Pair><key>normal</key>',
+      '<Style><IconStyle>',
+      '<Icon><href>', LINESTRING_COORD_ICON, '</href></Icon>',
+      '<color>60ffffff</color><scale>', LINESTRING_MIDPOINT_ICON_SCALE,
+      '</scale></IconStyle></Style></Pair>',
+      '<Pair><key>highlight</key>',
+      '<styleUrl>#_GEarthExtensions_regularCoordinate</styleUrl>',
+      '</Pair></StyleMap>',
+      '</Document>'].join(''));
+
+  // TODO: options: icon for placemarks
+  // TODO: it may be easier to use a linked list for all this
+
+  var coordDataArr = [];
+  
+  var checkDupMidpoints_ = function() {
+    if (!isRing)
+      return;
+    
+    // handle special case for polygons w/ 2 coordinates
+    if (numCoords == 3) /* including duplicate first coord */ {
+      coordDataArr[1].rightMidPlacemark.setVisibility(false);
+    } else if (numCoords >= 4) {
+      coordDataArr[numCoords - 2].rightMidPlacemark.setVisibility(true);
+    }
+  };
+
+  var makeRegularDeleteEventListener_ = function(coordData) {
+    return function(event) {
+      event.preventDefault();
+
+      // get the coord info of the left coordinate, as we'll need to
+      // update its midpoint placemark
+      var leftCoordData = null;
+      if (coordData.index > 0 || isRing) {
+        var leftIndex = coordData.index - 1;
+        if (leftIndex < 0) {
+          leftIndex += numCoords; // wrap
         }
         
-        coords.pop();
-
-        // user removed first coord, make the last coord equivalent
-        // to the new first coord (previously 2nd coord)
         if (isRing && coordData.index === 0) {
-          coords.set(numCoords - 2, coords.get(0));
+          // skip repeated coord at the end
+          leftIndex--;
+        }
+
+        leftCoordData = coordDataArr[leftIndex];
+      }
+
+      // shift coordinates in the KmlCoordArray up
+      // TODO: speed this up
+      for (i = coordData.index; i < numCoords - 1; i++) {
+        coords.set(i, coords.get(i + 1));
+      }
+      
+      coords.pop();
+
+      // user removed first coord, make the last coord equivalent
+      // to the new first coord (previously 2nd coord)
+      if (isRing && coordData.index === 0) {
+        coords.set(numCoords - 2, coords.get(0));
+      }
+      
+      numCoords--;
+
+      // at the end of the line and there's no right-mid placemark.
+      // the previous-to-last point's mid point should be removed too.
+      if (!coordData.rightMidPlacemark && leftCoordData) {
+        me.edit.endDraggable(leftCoordData.rightMidPlacemark);
+        me.dom.removeObject(leftCoordData.rightMidPlacemark);
+        leftCoordData.rightMidPlacemark = null;
+      }
+
+      // tear down mid placemark
+      if (coordData.rightMidPlacemark) {
+        me.edit.endDraggable(coordData.rightMidPlacemark);
+        me.dom.removeObject(coordData.rightMidPlacemark);
+      }
+
+      // tear down this placemark
+      me.edit.endDraggable(coordData.regularPlacemark);
+      google.earth.removeEventListener(coordData.regularPlacemark,
+          'dblclick', coordData.deleteEventListener);
+      me.dom.removeObject(coordData.regularPlacemark);
+
+      coordDataArr.splice(coordData.index, 1);
+
+      // update all coord data indices after this removed
+      // coordinate, because indices have changed
+      for (i = 0; i < numCoords; i++) {
+        coordDataArr[i].index = i;
+      }
+
+      // call the drag listener for the previous coordinate
+      // to update the midpoint location
+      if (leftCoordData) {
+        leftCoordData.regularDragCallback.call(
+            leftCoordData.regularPlacemark, leftCoordData);
+      }
+      
+      checkDupMidpoints_();
+      
+      if (options.editCallback) {
+        options.editCallback(null);
+      }
+    };
+  };
+
+  var makeRegularDragCallback_ = function(coordData) {
+    return function() {
+      // update this coordinate
+      coords.setLatLngAlt(coordData.index,
+          this.getGeometry().getLatitude(),
+          this.getGeometry().getLongitude(),
+          this.getGeometry().getAltitude());
+      
+      // if we're editing a ring and the first and last coords are the same,
+      // keep them in sync
+      if (isRing && numCoords >= 2 && coordData.index === 0) {
+        var firstCoord = coords.get(0);
+        var lastCoord = coords.get(numCoords - 1);
+        
+        // update both first and last coordinates
+        coords.setLatLngAlt(0,
+            this.getGeometry().getLatitude(),
+            this.getGeometry().getLongitude(),
+            this.getGeometry().getAltitude());
+        coords.setLatLngAlt(numCoords - 1,
+            this.getGeometry().getLatitude(),
+            this.getGeometry().getLongitude(),
+            this.getGeometry().getAltitude());
+      }
+
+      // update midpoint placemarks
+      var curCoord = coords.get(coordData.index);
+
+      if (coordData.index > 0 || isRing) {
+        var leftIndex = coordData.index - 1;
+        if (leftIndex < 0) {
+          leftIndex += numCoords; // wrap
         }
         
-        numCoords--;
+        if (isRing && coordData.index === 0) {
+          // skip repeated coord at the end
+          leftIndex--;
+        }
+        
+        var leftMidPt = new geo.Point(coords.get(leftIndex)).midpoint(
+            new geo.Point(curCoord));
+        coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLatitude(
+            leftMidPt.lat());
+        coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLongitude(
+            leftMidPt.lng());
+        coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setAltitude(
+            leftMidPt.altitude());
+      }
 
-        // at the end of the line and there's no right-mid placemark.
-        // the previous-to-last point's mid point should be removed too.
-        if (!coordData.rightMidPlacemark && leftCoordData) {
-          me.edit.endDraggable(leftCoordData.rightMidPlacemark);
-          me.dom.removeObject(leftCoordData.rightMidPlacemark);
-          leftCoordData.rightMidPlacemark = null;
+      if (coordData.index < numCoords - 1 || isRing) {
+        var rightCoord;
+        if ((isRing && coordData.index == numCoords - 2) ||
+            (!isRing && coordData.index == numCoords - 1)) {
+          rightCoord = coords.get(0);
+        } else {
+          rightCoord = coords.get(coordData.index + 1);
+        }
+        
+        var rightMidPt = new geo.Point(curCoord).midpoint(
+            new geo.Point(rightCoord));
+        coordData.rightMidPlacemark.getGeometry().setLatitude(
+            rightMidPt.lat());
+        coordData.rightMidPlacemark.getGeometry().setLongitude(
+            rightMidPt.lng());
+        coordData.rightMidPlacemark.getGeometry().setAltitude(
+            rightMidPt.altitude());
+      }
+      
+      checkDupMidpoints_();
+      
+      if (options.editCallback) {
+        options.editCallback(null);
+      }
+    };
+  };
+
+  var makeMidDragCallback_ = function(coordData) {
+    // vars for the closure
+    var convertedToRegular = false;
+    var newCoordData = null;
+
+    return function() {
+      if (!convertedToRegular) {
+        // first time drag... convert this midpoint into a regular point
+
+        convertedToRegular = true;
+        var i;
+
+        // change style to regular placemark style
+        this.setStyleUrl('#_GEarthExtensions_regularCoordinate');
+
+        // shift coordinates in the KmlCoordArray down
+        // TODO: speed this up
+        coords.push(coords.get(numCoords - 1));
+        for (i = numCoords - 1; i > coordData.index + 1; i--) {
+          coords.set(i, coords.get(i - 1));
         }
 
-        // tear down mid placemark
-        if (coordData.rightMidPlacemark) {
-          me.edit.endDraggable(coordData.rightMidPlacemark);
-          me.dom.removeObject(coordData.rightMidPlacemark);
-        }
+        numCoords++;
 
-        // tear down this placemark
-        me.edit.endDraggable(coordData.regularPlacemark);
-        google.earth.removeEventListener(coordData.regularPlacemark,
-            'dblclick', coordData.deleteEventListener);
-        me.dom.removeObject(coordData.regularPlacemark);
+        // create a new coordData object for the newly created
+        // coordinate
+        newCoordData = {};
+        newCoordData.index = coordData.index + 1;
+        newCoordData.regularPlacemark = this; // the converted midpoint
 
-        coordDataArr.splice(coordData.index, 1);
+        // replace this to-be-converted midpoint with a new midpoint
+        // placemark (will be to the left of the new coord)
+        coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+          point: coords.get(coordData.index),
+          altitudeMode: altitudeMode,
+          style: '#_GEarthExtensions_midCoordinate'
+        });
+        innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
 
-        // update all coord data indices after this removed
+        me.edit.makeDraggable(coordData.rightMidPlacemark, {
+          bounce: false,
+          dragCallback: makeMidDragCallback_(coordData) // previous coord
+        });
+
+        // create a new right midpoint
+        newCoordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+          point: coords.get(coordData.index),
+          altitudeMode: altitudeMode,
+          style: '#_GEarthExtensions_midCoordinate'
+        });
+        innerDoc.getFeatures().appendChild(newCoordData.rightMidPlacemark);
+
+        me.edit.makeDraggable(newCoordData.rightMidPlacemark, {
+          bounce: false,
+          dragCallback: makeMidDragCallback_(newCoordData)
+        });
+
+        // create a delete listener
+        newCoordData.deleteEventListener = makeRegularDeleteEventListener_(
+            newCoordData);
+        google.earth.addEventListener(this, 'dblclick',
+            newCoordData.deleteEventListener);
+
+        newCoordData.regularDragCallback =
+            makeRegularDragCallback_(newCoordData);
+
+        // insert the new coordData
+        coordDataArr.splice(newCoordData.index, 0, newCoordData);
+
+        // update all placemark indices after this newly inserted
         // coordinate, because indices have changed
         for (i = 0; i < numCoords; i++) {
           coordDataArr[i].index = i;
         }
+      }
 
-        // call the drag listener for the previous coordinate
-        // to update the midpoint location
-        if (leftCoordData) {
-          leftCoordData.regularDragCallback.call(
-              leftCoordData.regularPlacemark, leftCoordData);
-        }
-        
-        checkDupMidpoints_();
-        
-        if (options.editCallback) {
-          options.editCallback(null);
-        }
-      };
+      // do regular dragging stuff
+      newCoordData.regularDragCallback.call(this, newCoordData);
+      
+      // the regular drag callback calls options.editCallback
     };
+  };
 
-    var makeRegularDragCallback_ = function(coordData) {
-      return function() {
-        // update this coordinate
-        coords.setLatLngAlt(coordData.index,
-            this.getGeometry().getLatitude(),
-            this.getGeometry().getLongitude(),
-            this.getGeometry().getAltitude());
-        
-        // if we're editing a ring and the first and last coords are the same,
-        // keep them in sync
-        if (isRing && numCoords >= 2 && coordData.index === 0) {
-          var firstCoord = coords.get(0);
-          var lastCoord = coords.get(numCoords - 1);
-          
-          // update both first and last coordinates
-          coords.setLatLngAlt(0,
-              this.getGeometry().getLatitude(),
-              this.getGeometry().getLongitude(),
-              this.getGeometry().getAltitude());
-          coords.setLatLngAlt(numCoords - 1,
-              this.getGeometry().getLatitude(),
-              this.getGeometry().getLongitude(),
-              this.getGeometry().getAltitude());
-        }
+  // create the vertex editing (regular and midpoint) placemarks
+  me.util.batchExecute(function() {
+    for (var i = 0; i < numCoords; i++) {
+      var curCoord = coords.get(i);
+      var nextCoord = coords.get((i + 1) % numCoords);
 
-        // update midpoint placemarks
-        var curCoord = coords.get(coordData.index);
+      var coordData = {};
+      coordDataArr.push(coordData);
+      coordData.index = i;
 
-        if (coordData.index > 0 || isRing) {
-          var leftIndex = coordData.index - 1;
-          if (leftIndex < 0) {
-            leftIndex += numCoords; // wrap
-          }
-          
-          if (isRing && coordData.index === 0) {
-            // skip repeated coord at the end
-            leftIndex--;
-          }
-          
-          var leftMidPt = new geo.Point(coords.get(leftIndex)).midpoint(
-              new geo.Point(curCoord));
-          coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLatitude(
-              leftMidPt.lat());
-          coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setLongitude(
-              leftMidPt.lng());
-          coordDataArr[leftIndex].rightMidPlacemark.getGeometry().setAltitude(
-              leftMidPt.altitude());
-        }
-
-        if (coordData.index < numCoords - 1 || isRing) {
-          var rightCoord;
-          if ((isRing && coordData.index == numCoords - 2) ||
-              (!isRing && coordData.index == numCoords - 1)) {
-            rightCoord = coords.get(0);
-          } else {
-            rightCoord = coords.get(coordData.index + 1);
-          }
-          
-          var rightMidPt = new geo.Point(curCoord).midpoint(
-              new geo.Point(rightCoord));
-          coordData.rightMidPlacemark.getGeometry().setLatitude(
-              rightMidPt.lat());
-          coordData.rightMidPlacemark.getGeometry().setLongitude(
-              rightMidPt.lng());
-          coordData.rightMidPlacemark.getGeometry().setAltitude(
-              rightMidPt.altitude());
-        }
-        
-        checkDupMidpoints_();
-        
-        if (options.editCallback) {
-          options.editCallback(null);
-        }
-      };
-    };
-
-    var makeMidDragCallback_ = function(coordData) {
-      // vars for the closure
-      var convertedToRegular = false;
-      var newCoordData = null;
-
-      return function() {
-        if (!convertedToRegular) {
-          // first time drag... convert this midpoint into a regular point
-
-          convertedToRegular = true;
-          var i;
-
-          // change style to regular placemark style
-          this.setStyleUrl('#_GEarthExtensions_regularCoordinate');
-
-          // shift coordinates in the KmlCoordArray down
-          // TODO: speed this up
-          coords.push(coords.get(numCoords - 1));
-          for (i = numCoords - 1; i > coordData.index + 1; i--) {
-            coords.set(i, coords.get(i - 1));
-          }
-
-          numCoords++;
-
-          // create a new coordData object for the newly created
-          // coordinate
-          newCoordData = {};
-          newCoordData.index = coordData.index + 1;
-          newCoordData.regularPlacemark = this; // the converted midpoint
-
-          // replace this to-be-converted midpoint with a new midpoint
-          // placemark (will be to the left of the new coord)
-          coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
-            point: coords.get(coordData.index),
-            altitudeMode: altitudeMode,
-            style: '#_GEarthExtensions_midCoordinate'
-          });
-          innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
-
-          me.edit.makeDraggable(coordData.rightMidPlacemark, {
-            bounce: false,
-            dragCallback: makeMidDragCallback_(coordData) // previous coord
-          });
-
-          // create a new right midpoint
-          newCoordData.rightMidPlacemark = me.dom.buildPointPlacemark({
-            point: coords.get(coordData.index),
-            altitudeMode: altitudeMode,
-            style: '#_GEarthExtensions_midCoordinate'
-          });
-          innerDoc.getFeatures().appendChild(newCoordData.rightMidPlacemark);
-
-          me.edit.makeDraggable(newCoordData.rightMidPlacemark, {
-            bounce: false,
-            dragCallback: makeMidDragCallback_(newCoordData)
-          });
-
-          // create a delete listener
-          newCoordData.deleteEventListener = makeRegularDeleteEventListener_(
-              newCoordData);
-          google.earth.addEventListener(this, 'dblclick',
-              newCoordData.deleteEventListener);
-
-          newCoordData.regularDragCallback =
-              makeRegularDragCallback_(newCoordData);
-
-          // insert the new coordData
-          coordDataArr.splice(newCoordData.index, 0, newCoordData);
-
-          // update all placemark indices after this newly inserted
-          // coordinate, because indices have changed
-          for (i = 0; i < numCoords; i++) {
-            coordDataArr[i].index = i;
-          }
-        }
-
-        // do regular dragging stuff
-        newCoordData.regularDragCallback.call(this, newCoordData);
-        
-        // the regular drag callback calls options.editCallback
-      };
-    };
-
-    // create the vertex editing (regular and midpoint) placemarks
-    me.util.batchExecute(function() {
-      for (var i = 0; i < numCoords; i++) {
-        var curCoord = coords.get(i);
-        var nextCoord = coords.get((i + 1) % numCoords);
-
-        var coordData = {};
-        coordDataArr.push(coordData);
-        coordData.index = i;
-
-        if (isRing && i == numCoords - 1) {
-          // this is a repeat of the first coord, don't make placemarks for it
-          continue;
-        }
-        
-        // create the regular placemark on the point
-        coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
-          altitudeMode: altitudeMode,
-          style: '#_GEarthExtensions_regularCoordinate'
-        });
-        innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
-
-        coordData.regularDragCallback = makeRegularDragCallback_(coordData);
-
-        // set up drag handlers for main placemarks
-        me.edit.makeDraggable(coordData.regularPlacemark, {
-          bounce: false,
-          dragCallback: coordData.regularDragCallback
-        });
-
-        coordData.deleteEventListener =
-            makeRegularDeleteEventListener_(coordData);
-        google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
-            coordData.deleteEventListener);
-
-        // create the next midpoint placemark
-        if (i < numCoords - 1 || isRing) {
-          coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
-            point: new geo.Point(curCoord).midpoint(
-                new geo.Point(nextCoord)),
-            altitudeMode: altitudeMode,
-            style: '#_GEarthExtensions_midCoordinate'
-          });
-          innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
-
-          // set up drag handlers for mid placemarks
-          me.edit.makeDraggable(coordData.rightMidPlacemark, {
-            bounce: false,
-            dragCallback: makeMidDragCallback_(coordData)
-          });
-        }
+      if (isRing && i == numCoords - 1) {
+        // this is a repeat of the first coord, don't make placemarks for it
+        continue;
       }
       
-      checkDupMidpoints_();
+      // create the regular placemark on the point
+      coordData.regularPlacemark = me.dom.buildPointPlacemark(curCoord, {
+        altitudeMode: altitudeMode,
+        style: '#_GEarthExtensions_regularCoordinate'
+      });
+      innerDoc.getFeatures().appendChild(coordData.regularPlacemark);
 
-      // display the editing UI
-      me.pluginInstance.getFeatures().appendChild(innerDoc);
-    });
+      coordData.regularDragCallback = makeRegularDragCallback_(coordData);
 
-    // set up an abort function for use in endEditLineString
-    me.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
-      innerDoc: innerDoc,
-      abortAndEndFn: function() {
-        me.util.batchExecute(function() {
-          // duplicate the first coordinate to the end if necessary
-          var numCoords = coords.getLength();
-          if (numCoords && isRing) {
-            var firstCoord = coords.get(0);
-            var lastCoord = coords.get(numCoords - 1);
-            if (!coordsEqual_(firstCoord, lastCoord)) {
-              coords.pushLatLngAlt(firstCoord.getLatitude(),
-                                   firstCoord.getLongitude(),
-                                   firstCoord.getAltitude());
-            }
-          }
-          
-          for (var i = 0; i < coordDataArr.length; i++) {
-            if (!coordDataArr[i].regularPlacemark) {
-              continue;
-            }
-            
-            // teardown for regular placemark, its delete event listener
-            // and its right-mid placemark
-            google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
-                'dblclick', coordDataArr[i].deleteEventListener);
+      // set up drag handlers for main placemarks
+      me.edit.makeDraggable(coordData.regularPlacemark, {
+        bounce: false,
+        dragCallback: coordData.regularDragCallback
+      });
 
-            me.edit.endDraggable(coordDataArr[i].regularPlacemark);
-          
-            if (coordDataArr[i].rightMidPlacemark) {
-              me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
-            }
-          }
+      coordData.deleteEventListener =
+          makeRegularDeleteEventListener_(coordData);
+      google.earth.addEventListener(coordData.regularPlacemark, 'dblclick',
+          coordData.deleteEventListener);
 
-          me.dom.removeObject(innerDoc);
+      // create the next midpoint placemark
+      if (i < numCoords - 1 || isRing) {
+        coordData.rightMidPlacemark = me.dom.buildPointPlacemark({
+          point: new geo.Point(curCoord).midpoint(
+              new geo.Point(nextCoord)),
+          altitudeMode: altitudeMode,
+          style: '#_GEarthExtensions_midCoordinate'
+        });
+        innerDoc.getFeatures().appendChild(coordData.rightMidPlacemark);
+
+        // set up drag handlers for mid placemarks
+        me.edit.makeDraggable(coordData.rightMidPlacemark, {
+          bounce: false,
+          dragCallback: makeMidDragCallback_(coordData)
         });
       }
-    });
-  };
-
-  /**
-   * Ceases the ability for the user to edit or draw the given line string.
-   */
-  GEarthExtensions.prototype.edit.endEditLineString = function(lineString) {
-    // get placemark's drag data
-    var lineStringEditData = this.util.getJsDataValue(
-        lineString, LINESTRINGEDITDATA_JSDATA_KEY);
-
-    // stop listening for mousedown on the window
-    if (lineStringEditData) {
-      lineStringEditData.abortAndEndFn.call(null);
-
-      this.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
     }
-  };
-})();
+    
+    checkDupMidpoints_();
+
+    // display the editing UI
+    me.pluginInstance.getFeatures().appendChild(innerDoc);
+  });
+
+  // set up an abort function for use in endEditLineString
+  me.util.setJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY, {
+    innerDoc: innerDoc,
+    abortAndEndFn: function() {
+      me.util.batchExecute(function() {
+        // duplicate the first coordinate to the end if necessary
+        var numCoords = coords.getLength();
+        if (numCoords && isRing) {
+          var firstCoord = coords.get(0);
+          var lastCoord = coords.get(numCoords - 1);
+          if (!coordsEqual_(firstCoord, lastCoord)) {
+            coords.pushLatLngAlt(firstCoord.getLatitude(),
+                                 firstCoord.getLongitude(),
+                                 firstCoord.getAltitude());
+          }
+        }
+        
+        for (var i = 0; i < coordDataArr.length; i++) {
+          if (!coordDataArr[i].regularPlacemark) {
+            continue;
+          }
+          
+          // teardown for regular placemark, its delete event listener
+          // and its right-mid placemark
+          google.earth.removeEventListener(coordDataArr[i].regularPlacemark,
+              'dblclick', coordDataArr[i].deleteEventListener);
+
+          me.edit.endDraggable(coordDataArr[i].regularPlacemark);
+        
+          if (coordDataArr[i].rightMidPlacemark) {
+            me.edit.endDraggable(coordDataArr[i].rightMidPlacemark);
+          }
+        }
+
+        me.dom.removeObject(innerDoc);
+      });
+    }
+  });
+};
+
+/**
+ * Ceases the ability for the user to edit or draw the given line string.
+ */
+GEarthExtensions.prototype.edit.endEditLineString = function(lineString) {
+  // get placemark's drag data
+  var lineStringEditData = this.util.getJsDataValue(
+      lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+
+  // stop listening for mousedown on the window
+  if (lineStringEditData) {
+    lineStringEditData.abortAndEndFn.call(null);
+
+    this.util.clearJsDataValue(lineString, LINESTRINGEDITDATA_JSDATA_KEY);
+  }
+};
 /**
  * Contains various animation/effects tools for use in the Google Earth API.
  * @namespace
@@ -5330,8 +5355,7 @@ GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
  * in a plugin instance.
  * @private
  */
-GEarthExtensions.prototype.fx.AnimationManager_ = GEarthExtensions.createClass_(
-function() {
+GEarthExtensions.prototype.fx.AnimationManager_ = createClass_(function() {
   this.extInstance = arguments.callee.extInstance_;
   this.animations_ = [];
 
@@ -5452,8 +5476,8 @@ function() {
  *     literal argument that will contain a 'cancelled' boolean value that will
  *     be true if the effect was cancelled.
  */
-GEarthExtensions.prototype.fx.Animation =
-GEarthExtensions.createClass_(function(renderFn, completionFn) {
+GEarthExtensions.prototype.fx.Animation = createClass_(function(renderFn,
+                                                                completionFn) {
   this.extInstance = arguments.callee.extInstance_;
   this.renderFn = renderFn;
   this.completionFn = completionFn || function(){};
@@ -5508,8 +5532,7 @@ GEarthExtensions.prototype.fx.Animation.prototype.renderFrame = function(t) {
  *     be true if the effect was cancelled.
  * @extends GEarthExtensions#fx.Animation
  */
-GEarthExtensions.prototype.fx.TimedAnimation =
-GEarthExtensions.createClass_(
+GEarthExtensions.prototype.fx.TimedAnimation = createClass_(
   [GEarthExtensions.prototype.fx.Animation],
 function(duration, renderFn, completionFn) {
   this.extInstance = arguments.callee.extInstance_;
@@ -5541,11 +5564,11 @@ function(t) {
  * Bounce a placemark once.
  */
 GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     duration: 300,
-    startAltitude: GEarthExtensions.ALLOWED,
+    startAltitude: ALLOWED_,
     altitude: this.util.getCamera().getAltitude() / 5,
-    phase: GEarthExtensions.ALLOWED,
+    phase: ALLOWED_,
     repeat: 0,
     dampen: 0.3,
     callback: function(){}
@@ -5694,14 +5717,14 @@ GEarthExtensions.prototype.fx.rewind = function(feature) {
  */
 GEarthExtensions.prototype.fx.animateProperty =
 function(obj, property, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     duration: 500,
-    start: GEarthExtensions.ALLOWED,
-    end: GEarthExtensions.ALLOWED,
-    delta: GEarthExtensions.ALLOWED,
+    start: ALLOWED_,
+    end: ALLOWED_,
+    delta: ALLOWED_,
     easing: 'none',
-    callback: GEarthExtensions.ALLOWED,
-    featureProxy: GEarthExtensions.ALLOWED
+    callback: ALLOWED_,
+    featureProxy: ALLOWED_
   });
   
   // http://www.timotheegroleau.com/Flash/experiments/easing_function_generator.htm
@@ -5839,106 +5862,105 @@ function(obj, property, options) {
  * @namespace
  */
 GEarthExtensions.prototype.math3d = {isnamespace_:true};
-(function() {
-  /**
-   * Converts heading, tilt, and roll (HTR) to a local orientation matrix
-   * that transforms global direction vectors to local direction vectors.
-   * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
-   *     degrees.
-   * @return {geo.linalg.Matrix} A local orientation matrix.
-   */
-  GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
-    return eulerAnglesToMatrix_([
-        htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
-  };
+/**
+ * Converts heading, tilt, and roll (HTR) to a local orientation matrix
+ * that transforms global direction vectors to local direction vectors.
+ * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
+ *     degrees.
+ * @return {geo.linalg.Matrix} A local orientation matrix.
+ */
+GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
+  return eulerAnglesToMatrix_([
+      htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
+};
 
-  /**
-   * Converts a local orientation matrix (right, dir, up vectors) in local
-   * cartesian coordinates to heading, tilt, and roll.
-   * @param {geo.linalg.Matrix} matrix A local orientation matrix.
-   * @return {Number[]} A heading, tilt, roll array, where each angle is in
-   *     degrees.
-   */
-  GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
-    var htr = matrixToEulerAngles_(matrix);
-    return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
-  };
-  
-  /**
-   * Converts an array of 3 Euler angle rotations to matrix form.
-   * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
-   * "Euler Angle Conversion" by Ken Shoemake.
-   * @see http://vered.rose.utoronto.ca/people/spike/GEMS/GEMS.html
-   * @param {Number[]} eulerAngles An array of 3 frame-relative Euler rotation
-   *     angles, each in radians.
-   * @return {geo.linalg.Matrix} A matrix representing the transformation.
-   * @private
-   */
-  function eulerAnglesToMatrix_(eulerAngles) {
-    var I = 2; // used for roll, in radians
-    var J = 0; // heading, in radians
-    var K = 1; // tilt
-  
-    var m = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-  
-    var cos_ti = Math.cos(eulerAngles[0]);
-    var cos_tj = Math.cos(eulerAngles[1]);
-    var cos_th = Math.cos(eulerAngles[2]);
-  
-    var sin_ti = Math.sin(eulerAngles[0]);
-    var sin_tj = Math.sin(eulerAngles[1]);
-    var sin_th = Math.sin(eulerAngles[2]);
-  
-    var cos_c = cos_ti * cos_th;
-    var cos_s = cos_ti * sin_th;
-    var sin_c = sin_ti * cos_th;
-    var sin_s = sin_ti * sin_th;
-  
-    m[I][I] = cos_tj * cos_th;
-    m[I][J] = sin_tj * sin_c - cos_s;
-    m[I][K] = sin_tj * cos_c + sin_s;
-  
-    m[J][I] = cos_tj * sin_th;
-    m[J][J] = sin_tj * sin_s + cos_c;
-    m[J][K] = sin_tj * cos_s - sin_c;
-  
-    m[K][I] = -sin_tj;
-    m[K][J] = cos_tj * sin_ti;
-    m[K][K] = cos_tj * cos_ti;
-  
-    return new geo.linalg.Matrix(m);
-  }
+/**
+ * Converts a local orientation matrix (right, dir, up vectors) in local
+ * cartesian coordinates to heading, tilt, and roll.
+ * @param {geo.linalg.Matrix} matrix A local orientation matrix.
+ * @return {Number[]} A heading, tilt, roll array, where each angle is in
+ *     degrees.
+ */
+GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
+  var htr = matrixToEulerAngles_(matrix);
+  return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
+};
 
-  /**
-   * Converts a matrix to an array of 3 Euler angle rotations.
-   * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
-   * "Euler Angle Conversion" by Ken Shoemake.
-   * @see http://vered.rose.utoronto.ca/people/spike/GEMS/GEMS.html
-   * @param {geo.linalg.Matrix} matrix A homogenous matrix representing a
-   *     transformation.
-   * @return {Number[]} An array of 3 frame-relative Euler rotation angles
-   *     representing the transformation, each in radians.
-   */
-  function matrixToEulerAngles_(matrix) {
-    var I = 2 + 1; // + 1 because Sylvester uses 1-based indices.
-    var J = 0 + 1;
-    var K = 1 + 1;
-    var FLT_EPSILON = 1e-6;
-  
-    var cy = Math.sqrt(matrix.e(I, I) * matrix.e(I, I) +
-                       matrix.e(J, I) * matrix.e(J, I));
-  
-    if (cy <= 16 * FLT_EPSILON) {
-      return [Math.atan2(-matrix.e(J, K), matrix.e(J, J)),
-              Math.atan2(-matrix.e(K, I), cy),
-              0];
-    }
+/**
+ * Converts an array of 3 Euler angle rotations to matrix form.
+ * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
+ * "Euler Angle Conversion" by Ken Shoemake.
+ * @see http://vered.rose.utoronto.ca/people/spike/GEMS/GEMS.html
+ * @param {Number[]} eulerAngles An array of 3 frame-relative Euler rotation
+ *     angles, each in radians.
+ * @return {geo.linalg.Matrix} A matrix representing the transformation.
+ * @private
+ */
+function eulerAnglesToMatrix_(eulerAngles) {
+  var I = 2; // used for roll, in radians
+  var J = 0; // heading, in radians
+  var K = 1; // tilt
 
-    return [Math.atan2( matrix.e(K, J), matrix.e(K, K)),
+  var m = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+
+  var cos_ti = Math.cos(eulerAngles[0]);
+  var cos_tj = Math.cos(eulerAngles[1]);
+  var cos_th = Math.cos(eulerAngles[2]);
+
+  var sin_ti = Math.sin(eulerAngles[0]);
+  var sin_tj = Math.sin(eulerAngles[1]);
+  var sin_th = Math.sin(eulerAngles[2]);
+
+  var cos_c = cos_ti * cos_th;
+  var cos_s = cos_ti * sin_th;
+  var sin_c = sin_ti * cos_th;
+  var sin_s = sin_ti * sin_th;
+
+  m[I][I] = cos_tj * cos_th;
+  m[I][J] = sin_tj * sin_c - cos_s;
+  m[I][K] = sin_tj * cos_c + sin_s;
+
+  m[J][I] = cos_tj * sin_th;
+  m[J][J] = sin_tj * sin_s + cos_c;
+  m[J][K] = sin_tj * cos_s - sin_c;
+
+  m[K][I] = -sin_tj;
+  m[K][J] = cos_tj * sin_ti;
+  m[K][K] = cos_tj * cos_ti;
+
+  return new geo.linalg.Matrix(m);
+}
+
+/**
+ * Converts a matrix to an array of 3 Euler angle rotations.
+ * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
+ * "Euler Angle Conversion" by Ken Shoemake.
+ * @see http://vered.rose.utoronto.ca/people/spike/GEMS/GEMS.html
+ * @param {geo.linalg.Matrix} matrix A homogenous matrix representing a
+ *     transformation.
+ * @return {Number[]} An array of 3 frame-relative Euler rotation angles
+ *     representing the transformation, each in radians.
+ * @private
+ */
+function matrixToEulerAngles_(matrix) {
+  var I = 2 + 1; // + 1 because Sylvester uses 1-based indices.
+  var J = 0 + 1;
+  var K = 1 + 1;
+  var FLT_EPSILON = 1e-6;
+
+  var cy = Math.sqrt(matrix.e(I, I) * matrix.e(I, I) +
+                     matrix.e(J, I) * matrix.e(J, I));
+
+  if (cy <= 16 * FLT_EPSILON) {
+    return [Math.atan2(-matrix.e(J, K), matrix.e(J, J)),
             Math.atan2(-matrix.e(K, I), cy),
-            Math.atan2( matrix.e(J, I), matrix.e(I, I))];
+            0];
   }
-}());
+
+  return [Math.atan2( matrix.e(K, J), matrix.e(K, K)),
+          Math.atan2(-matrix.e(K, I), cy),
+          Math.atan2( matrix.e(J, I), matrix.e(I, I))];
+}
 /**
  * Creates an orthonormal orientation matrix for a given set of object direction
  * and up vectors. The matrix rows will each be unit length and orthogonal to
@@ -6104,152 +6126,149 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
          blendHexComponent_(color1.substr(6,2), color2.substr(6,2));
 };
 // TODO: unit test
-(function() {
-  // NOTE: this is shared across all GEarthExtensions instances
-  // dictionary mapping objects's jstag (uuid) to an object literal
-  // { object: <object>, data: <object's js data dictionary> }
-  var jsData_ = {};
+// NOTE: this is shared across all GEarthExtensions instances
+// dictionary mapping objects's jstag (uuid) to an object literal
+// { object: <object>, data: <object's js data dictionary> }
+var jsData_ = {};
 
-  /* randomUUID.js - Version 1.0
-  *
-  * Copyright 2008, Robert Kieffer
-  *
-  * This software is made available under the terms of the Open Software License
-  * v3.0 (available here: http://www.opensource.org/licenses/osl-3.0.php )
-  *
-  * The latest version of this file can be found at:
-  * http://www.broofa.com/Tools/randomUUID.js
-  *
-  * For more information, or to comment on this, please go to:
-  * http://www.broofa.com/blog/?p=151
-  */
+/* randomUUID.js - Version 1.0
+*
+* Copyright 2008, Robert Kieffer
+*
+* This software is made available under the terms of the Open Software License
+* v3.0 (available here: http://www.opensource.org/licenses/osl-3.0.php )
+*
+* The latest version of this file can be found at:
+* http://www.broofa.com/Tools/randomUUID.js
+*
+* For more information, or to comment on this, please go to:
+* http://www.broofa.com/blog/?p=151
+*/
 
-  /**
-  * Create and return a "version 4" RFC-4122 UUID string.
-  * @private
-  */
-  function randomUUID() {
-    var s = [], itoh = '0123456789ABCDEF', i = 0;
+/**
+* Create and return a "version 4" RFC-4122 UUID string.
+* @private
+*/
+function randomUUID_() {
+  var s = [], itoh = '0123456789ABCDEF', i = 0;
 
-    // Make array of random hex digits. The UUID only has 32 digits in it, but we
-    // allocate an extra items to make room for the '-'s we'll be inserting.
-    for (i = 0; i < 36; i++) {
-      s[i] = Math.floor(Math.random()*0x10);
-    }
-
-    // Conform to RFC-4122, section 4.4
-    s[14] = 4;  // Set 4 high bits of time_high field to version
-    s[19] = (s[19] & 0x3) | 0x8;  // Specify 2 high bits of clock sequence
-
-    // Convert to hex chars
-    for (i = 0; i < 36; i++) {
-      s[i] = itoh.charAt(s[i]);
-    }
-
-    // Insert '-'s
-    s[8] = s[13] = s[18] = s[23] = '-';
-
-    return s.join('');
+  // Make array of random hex digits. The UUID only has 32 digits in it, but we
+  // allocate an extra items to make room for the '-'s we'll be inserting.
+  for (i = 0; i < 36; i++) {
+    s[i] = Math.floor(Math.random()*0x10);
   }
 
-  /** @private */
-  function getJsTag_(object) {
-    // TODO: use unique id from Earth API
-    for (var tag in jsData_) {
-      if (jsData_[tag].object.equals(object)) {
-        return tag;
-      }
-    }
+  // Conform to RFC-4122, section 4.4
+  s[14] = 4;  // Set 4 high bits of time_high field to version
+  s[19] = (s[19] & 0x3) | 0x8;  // Specify 2 high bits of clock sequence
 
-    return null;
+  // Convert to hex chars
+  for (i = 0; i < 36; i++) {
+    s[i] = itoh.charAt(s[i]);
   }
 
-  /**
-   * Returns whether or not the KmlObject has any JS-side data.
-   * @param {KmlObject} object The plugin object to inquire about.
-   * @public
-   */
-  GEarthExtensions.prototype.util.hasJsData = function(object) {
-    return getJsTag_(object) ? true : false;
-  };
+  // Insert '-'s
+  s[8] = s[13] = s[18] = s[23] = '-';
 
-  /**
-   * Clears all JS-side data for the given KmlObject.
-   * @param {KmlObject} object The plugin object to clear data on.
-   */
-  GEarthExtensions.prototype.util.clearAllJsData = function(object) {
-    var jsTag = getJsTag_(object);
-    if (jsTag) {
-      delete jsData_[jsTag];
+  return s.join('');
+}
+
+/** @private */
+function getJsTag_(object) {
+  // TODO: use unique id from Earth API
+  for (var tag in jsData_) {
+    if (jsData_[tag].object.equals(object)) {
+      return tag;
     }
-  };
+  }
 
-  /**
-   * Gets the JS-side data for the given KmlObject associated with the given
-   * key.
-   * @param {KmlObject} object The plugin object to get data for.
-   * @param {String} key The JS data key to request.
-   * @public
-   */
-  GEarthExtensions.prototype.util.getJsDataValue = function(object, key) {
-    var jsTag = getJsTag_(object);
-    if (jsTag && key in jsData_[jsTag].data) {
-      return jsData_[jsTag].data[key];
+  return null;
+}
+
+/**
+ * Returns whether or not the KmlObject has any JS-side data.
+ * @param {KmlObject} object The plugin object to inquire about.
+ * @public
+ */
+GEarthExtensions.prototype.util.hasJsData = function(object) {
+  return getJsTag_(object) ? true : false;
+};
+
+/**
+ * Clears all JS-side data for the given KmlObject.
+ * @param {KmlObject} object The plugin object to clear data on.
+ */
+GEarthExtensions.prototype.util.clearAllJsData = function(object) {
+  var jsTag = getJsTag_(object);
+  if (jsTag) {
+    delete jsData_[jsTag];
+  }
+};
+
+/**
+ * Gets the JS-side data for the given KmlObject associated with the given
+ * key.
+ * @param {KmlObject} object The plugin object to get data for.
+ * @param {String} key The JS data key to request.
+ * @public
+ */
+GEarthExtensions.prototype.util.getJsDataValue = function(object, key) {
+  var jsTag = getJsTag_(object);
+  if (jsTag && key in jsData_[jsTag].data) {
+    return jsData_[jsTag].data[key];
+  }
+
+  // TODO: null or undefined?
+  return undefined;
+};
+
+/**
+ * Sets the JS-side data for the given KmlObject associated with the given
+ * key to the passed in value.
+ * @param {KmlObject} object The object to get data for.
+ * @param {String} key The JS data key to set.
+ * @param {*} value The value to store for this key.
+ * @public
+ */
+GEarthExtensions.prototype.util.setJsDataValue =
+function(object, key, value) {
+  var jsTag = getJsTag_(object);
+  if (!jsTag) {
+    // no current data dictionary, create a jstag for this object
+    jsTag = null;
+    while (!jsTag || jsTag in jsData_) {
+      jsTag = randomUUID_();
     }
 
-    // TODO: null or undefined?
-    return undefined;
-  };
+    // create an empty data dict
+    jsData_[jsTag] = { object: object, data: {} };
+  }
 
-  /**
-   * Sets the JS-side data for the given KmlObject associated with the given
-   * key to the passed in value.
-   * @param {KmlObject} object The object to get data for.
-   * @param {String} key The JS data key to set.
-   * @param {*} value The value to store for this key.
-   * @public
-   */
-  GEarthExtensions.prototype.util.setJsDataValue =
-  function(object, key, value) {
-    var jsTag = getJsTag_(object);
-    if (!jsTag) {
-      // no current data dictionary, create a jstag for this object
-      jsTag = null;
-      while (!jsTag || jsTag in jsData_) {
-        jsTag = randomUUID();
-      }
+  // set the data
+  jsData_[jsTag].data[key] = value;
+};
 
-      // create an empty data dict
-      jsData_[jsTag] = { object: object, data: {} };
+/**
+ * Clears the JS-side data for the given KmlObject associated with the given
+ * key.
+ * @param {KmlObject} object The plugin object to clear data on.
+ * @param {String} key The JS data key whose value should be cleared.
+ */
+GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
+  var jsTag = getJsTag_(object);
+  if (jsTag &&
+      key in jsData_[jsTag].data) {
+    delete jsData_[jsTag].data[key];
+
+    // check if the data dict is empty... if so, cleanly remove it
+    for (var k in jsData_[jsTag].data) {
+      return; // not empty
     }
 
-    // set the data
-    jsData_[jsTag].data[key] = value;
-  };
-
-  /**
-   * Clears the JS-side data for the given KmlObject associated with the given
-   * key.
-   * @param {KmlObject} object The plugin object to clear data on.
-   * @param {String} key The JS data key whose value should be cleared.
-   */
-  GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
-    var jsTag = getJsTag_(object);
-    if (jsTag &&
-        key in jsData_[jsTag].data) {
-      delete jsData_[jsTag].data[key];
-
-      // check if the data dict is empty... if so, cleanly remove it
-      for (var k in jsData_[jsTag].data) {
-        return; // not empty
-      }
-
-      // data dict is empty
-      this.util.clearAllJsData(object);
-    }
-  };
-
-}());
+    // data dict is empty
+    this.util.clearAllJsData(object);
+  }
+};
 /**
  * Loads and shows the given KML URL in the Google Earth Plugin instance.
  * @param {String} url The URL of the KML content to show.
@@ -6266,7 +6285,7 @@ GEarthExtensions.prototype.util.blendColors = function(color1, color2,
  *     calculate and fly to a bounds view.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     cacheBuster: false,
     flyToView: false,
     flyToBoundsFallback: true,
@@ -6309,7 +6328,7 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * @return Returns the parsed object on success, or null if there was an error.
  */
 GEarthExtensions.prototype.util.displayKmlString = function(str, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     flyToView: false,
     flyToBoundsFallback: true,
     aspectRatio: 1.0
@@ -6382,7 +6401,7 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
  *     view, this should be the current aspect ratio of the plugin window.
  */
 GEarthExtensions.prototype.util.flyToObject = function(obj, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
+  options = checkParameters_(options, false, {
     boundsFallback: true,
     aspectRatio: 1.0
   });
@@ -6413,9 +6432,8 @@ GEarthExtensions.prototype.util.flyToObject = function(obj, options) {
  *     function.
  */
 GEarthExtensions.prototype.util.batchExecute = function(batchFn, context) {
-  // TODO: find a cleaner method besides fetchKml
   var me = this;
-  google.earth.fetchKml(this.pluginInstance, '', function() {
+  google.earth.executeBatch(this.pluginInstance, function() {
     batchFn.call(me, context);
   });
 };
@@ -6445,7 +6463,8 @@ GEarthExtensions.prototype.util.callMethod = function(object, method) {
       reprArgs.push('args[' + i + ']');
     }
 
-    return eval('object.' + method + '(' + reprArgs.join(',') + ')');
+    // Don't use eval directly due to a YUI Compressor bug/feature.
+    return window['eval']('object.' + method + '(' + reprArgs.join(',') + ')');
   }
 };
 
@@ -6488,62 +6507,63 @@ GEarthExtensions.prototype.util.takeOverCamera = function(enable) {
     delete this.cameraControlOldProps_;
   }
 };
-(function() {
-  // modified base64 for url
-  // http://en.wikipedia.org/wiki/Base64
-  var ALPHABET_ =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  
-  /**
-   * Encodes an array of signed numbers into a string.
-   * @param {Number[]} arr An array of signed numbers.
-   * @type String
-   * @return An encoded string representing the array of numbers.
-   */
-  GEarthExtensions.prototype.util.encodeArray = function(arr) {
-    var s = '';
-    for (var i = 0; i < arr.length; i++) {
-      var sgn_num = arr[i] << 1;
-      sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+// modified base64 for url
+// http://en.wikipedia.org/wiki/Base64
+var ALPHABET_ =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
-      while (sgn_num >= 0x20) {
-        s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
-        sgn_num >>= 5;
-      }
+// These algorithms are based on the Maps aPI polyline encoding algorithm:
+// http://code.google.com/apis/maps/documentation/include/polyline.js
 
-      s += ALPHABET_.charAt(sgn_num);
+/**
+ * Encodes an array of signed numbers into a string.
+ * @param {Number[]} arr An array of signed numbers.
+ * @type String
+ * @return An encoded string representing the array of numbers.
+ */
+GEarthExtensions.prototype.util.encodeArray = function(arr) {
+  var s = '';
+  for (var i = 0; i < arr.length; i++) {
+    var sgn_num = arr[i] << 1;
+    sgn_num = (arr[i] < 0) ? ~sgn_num : sgn_num;
+
+    while (sgn_num >= 0x20) {
+      s += ALPHABET_.charAt(0x20 | (sgn_num & 0x1f));
+      sgn_num >>= 5;
     }
 
-    return s;
-  };
-  
-  /**
-   * Decodes a string representing an array of signed numbers encoded with
-   * GEarthExtensions#util.encodeArray.
-   * @param {String} str The encoded string.
-   * @type Number[]
-   */
-  GEarthExtensions.prototype.util.decodeArray = function(str) {
-    var len = str.length;
-    var index = 0;
-    var array = [];
+    s += ALPHABET_.charAt(sgn_num);
+  }
 
-    while (index < len) {
-      var b;
-      var shift = 0;
-      var result = 0;
-      do {
-        b = ALPHABET_.indexOf(str.charAt(index++));
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
+  return s;
+};
 
-      array.push(((result & 1) ? ~(result >> 1) : (result >> 1)));
-    }
+/**
+ * Decodes a string representing an array of signed numbers encoded with
+ * GEarthExtensions#util.encodeArray.
+ * @param {String} str The encoded string.
+ * @type Number[]
+ */
+GEarthExtensions.prototype.util.decodeArray = function(str) {
+  var len = str.length;
+  var index = 0;
+  var array = [];
 
-    return array;
-  };
-}());
+  while (index < len) {
+    var b;
+    var shift = 0;
+    var result = 0;
+    do {
+      b = ALPHABET_.indexOf(str.charAt(index++));
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+
+    array.push(((result & 1) ? ~(result >> 1) : (result >> 1)));
+  }
+
+  return array;
+};
 /**
  * This class/namespace hybrid contains various camera/view
  * related.
@@ -6563,8 +6583,8 @@ GEarthExtensions.prototype.view = {isnamespace_:true};
  * @type KmlAbstractView
  */
 GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
-  options = GEarthExtensions.checkParameters(options, false, {
-    aspectRatio: GEarthExtensions.REQUIRED,
+  options = checkParameters_(options, false, {
+    aspectRatio: REQUIRED_,
     
     defaultRange: 1000,
     scaleRange: 1.5
@@ -6610,110 +6630,82 @@ GEarthExtensions.prototype.view.setToBoundsView = function() {
   this.pluginInstance.getView().setAbstractView(
       this.view.createBoundsView.apply(this, arguments));
 };
-(function() {
-  /**
-   * Serializes the current plugin viewport into a modified base64 alphabet
-   * string. This method is platform and browser agnostic, and is safe to
-   * store and distribute to others.
-   * @return {String} A string representing the current viewport.
-   * @see http://code.google.com/apis/maps/documentation/include/polyline.js
-   *     for inspiration.
-   */
-  GEarthExtensions.prototype.view.serialize = function() {
-    var camera = this.pluginInstance.getView().copyAsCamera(
-        this.pluginInstance.ALTITUDE_ABSOLUTE);
-    return '0' + this.view.encodeCamera_({
-      lat: camera.getLatitude(),
-      lng: camera.getLongitude(),
-      altitude: camera.getAltitude(),
-      heading: camera.getHeading(),
-      tilt: camera.getTilt(),
-      roll: camera.getRoll() });
-  };
+/**
+ * Serializes the current plugin viewport into a modified base64 alphabet
+ * string. This method is platform and browser agnostic, and is safe to
+ * store and distribute to others.
+ * @return {String} A string representing the current viewport.
+ * @see http://code.google.com/apis/maps/documentation/include/polyline.js
+ *     for inspiration.
+ */
+GEarthExtensions.prototype.view.serialize = function() {
+  var camera = this.pluginInstance.getView().copyAsCamera(
+      this.pluginInstance.ALTITUDE_ABSOLUTE);
+  return '0' + encodeCamera_(this, {
+    lat: camera.getLatitude(),
+    lng: camera.getLongitude(),
+    altitude: camera.getAltitude(),
+    heading: camera.getHeading(),
+    tilt: camera.getTilt(),
+    roll: camera.getRoll()
+  });
+};
 
-  /**
-   * Sets the current plugin viewport to the view represented by the given
-   * string.
-   * @param {String} viewString The modified base64 alphabet string representing
-   *     the view to fly to. This string should've previously been calculated
-   *     using GEarthExtensions#view.serialize.
-   */
-  GEarthExtensions.prototype.view.deserialize = function(s) {
-    if (s.charAt(0) != '0') {  // Magic number.
-      throw new Error('Invalid serialized view string.');
-    }
-
-    var cameraProps = this.view.decodeCamera_(s.substr(1));
-    var camera = this.pluginInstance.createCamera('');
-    
-    // TODO: isFinite checks
-    camera.set(cameraProps.lat, cameraProps.lng, cameraProps.altitude,
-        this.pluginInstance.ALTITUDE_ABSOLUTE, cameraProps.heading,
-        cameraProps.tilt, cameraProps.roll);
-    this.pluginInstance.getView().setAbstractView(camera);
-  };
-  
-  // helper functions, most of which are from
-  // http://code.google.com/apis/maps/documentation/include/polyline.js
-  
-  function wrap_(minValue, maxValue, value) {
-    // Don't wrap minValue as maxValue.
-    if (value === minValue)
-      return minValue;
-    
-    // Normalize to min = 0.
-    value -= minValue;
-    
-    value = value % (maxValue - minValue);
-    if (value < 0)
-      value += (maxValue - minValue);
-    
-    // Reverse normalization.
-    value += minValue;
-    
-    // When ambiguous (min or max), return maxValue.
-    return (value === minValue) ? maxValue : value;
+/**
+ * Sets the current plugin viewport to the view represented by the given
+ * string.
+ * @param {String} viewString The modified base64 alphabet string representing
+ *     the view to fly to. This string should've previously been calculated
+ *     using GEarthExtensions#view.serialize.
+ */
+GEarthExtensions.prototype.view.deserialize = function(s) {
+  if (s.charAt(0) != '0') {  // Magic number.
+    throw new Error('Invalid serialized view string.');
   }
-  
 
-  function constrain_(minValue, maxValue, value) {
-    return Math.max(minValue, Math.min(maxValue, value));
-  }
+  var cameraProps = decodeCamera_(this, s.substr(1));
+  var camera = this.pluginInstance.createCamera('');
   
-  var ENC_OVERFLOW_ = 1073741824;
-  
-  GEarthExtensions.prototype.view.encodeCamera_ = function(cam) {
-    var alt = Math.floor(cam.altitude * 1e1);
-    return this.util.encodeArray([
-      Math.floor(constrain_(-90, 90, cam.lat) * 1e5),
-      Math.floor(wrap_(-180, 180, cam.lng) * 1e5),
-      Math.floor(alt / ENC_OVERFLOW_),
-      (alt >= 0) ? alt % ENC_OVERFLOW_ :
-                   (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
-      Math.floor(wrap_(0, 360, cam.heading) * 1e1),
-      Math.floor(wrap_(0, 180, cam.tilt) * 1e1),
-      Math.floor(wrap_(-180, 180, cam.roll) * 1e1)
-    ]);
-  };
+  // TODO: isFinite checks
+  camera.set(cameraProps.lat, cameraProps.lng, cameraProps.altitude,
+      this.pluginInstance.ALTITUDE_ABSOLUTE, cameraProps.heading,
+      cameraProps.tilt, cameraProps.roll);
+  this.pluginInstance.getView().setAbstractView(camera);
+};
 
-  GEarthExtensions.prototype.view.decodeCamera_ = function(str) {
-    var arr = this.util.decodeArray(str);
-    return {
-      lat: constrain_(-90, 90, arr[0] * 1e-5),
-      lng: wrap_(-180, 180, arr[1] * 1e-5),
-      altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
-      heading: wrap_(0, 360, arr[4] * 1e-1),
-      tilt: wrap_(0, 180, arr[5] * 1e-1),
-      roll: wrap_(-180, 180, arr[6] * 1e-1)
-    };
+var ENC_OVERFLOW_ = 1073741824;
+
+function encodeCamera_(extInstance, cam) {
+  var alt = Math.floor(cam.altitude * 1e1);
+  return extInstance.util.encodeArray([
+    Math.floor(geo.math.constrainValue(cam.lat, [-90, 90]) * 1e5),
+    Math.floor(geo.math.wrapValue(cam.lng, [-180, 180]) * 1e5),
+    Math.floor(alt / ENC_OVERFLOW_),
+    (alt >= 0) ? alt % ENC_OVERFLOW_
+               : (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
+    Math.floor(geo.math.wrapValue(cam.heading, [0, 360]) * 1e1),
+    Math.floor(geo.math.wrapValue(cam.tilt, [0, 180]) * 1e1),
+    Math.floor(geo.math.wrapValue(cam.roll, [-180, 180]) * 1e1)
+  ]);
+}
+
+function decodeCamera_(extInstance, str) {
+  var arr = extInstance.util.decodeArray(str);
+  return {
+    lat: geo.math.constrainValue(arr[0] * 1e-5, [-90, 90]),
+    lng: geo.math.wrapValue(arr[1] * 1e-5, [-180, 180]),
+    altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
+    heading: geo.math.wrapValue(arr[4] * 1e-1, [0, 360]),
+    tilt: geo.math.wrapValue(arr[5] * 1e-1, [0, 180]),
+    roll: geo.math.wrapValue(arr[6] * 1e-1, [-180, 180])
   };
-  
-  // Backwards compatibility.
-  GEarthExtensions.prototype.util.serializeView =
-      GEarthExtensions.prototype.view.serialize;
-  GEarthExtensions.prototype.util.deserializeView =
-      GEarthExtensions.prototype.view.deserialize;
-}());
+}
+
+// Backwards compatibility.
+GEarthExtensions.prototype.util.serializeView =
+    GEarthExtensions.prototype.view.serialize;
+GEarthExtensions.prototype.util.deserializeView =
+    GEarthExtensions.prototype.view.deserialize;
 /**
  * Creates an abstract view with the viewer at the given camera point, looking
  * towards the given look at point. For best results, use ALTITUDE_ABSOLUTE
@@ -6759,3 +6751,5 @@ GEarthExtensions.prototype.view.createVantageView = function(cameraPoint,
 
   return this.dom.buildCamera(cameraPoint, {heading: heading, tilt: tilt});
 };
+window.GEarthExtensions = GEarthExtensions;
+})();

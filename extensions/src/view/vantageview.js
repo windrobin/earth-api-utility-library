@@ -58,7 +58,7 @@ GEarthExtensions.prototype.view.createVantageView = function(cameraPoint,
 
   return this.dom.buildCamera(cameraPoint, {heading: heading, tilt: tilt});
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_view_vantageView(successCallback, errorCallback) {
   testext_.dom.clearFeatures();
   testplugin_.getLayerRoot().enableLayerById(
@@ -91,4 +91,4 @@ function test_view_vantageView(successCallback, errorCallback) {
   });
 }
 test_view_vantageView.interactive = true;
-/***IGNORE_END***/
+//#END_TEST

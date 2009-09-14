@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+(function() {
 /**
  * @class The root class/namespace hybrid for the Earth API extensions library.
  * This class groups functionality into namespaces such as
@@ -58,7 +59,7 @@ var GEarthExtensions = function(pluginInstance) {
       
       // duplicate sub-namespace objects (required for multiple instances to
       // work) and bind functions of all sub-namespaces
-      if (GEarthExtensions.isExtensionsNamespace_(member)) {
+      if (isExtensionsNamespace_(member)) {
         var nsDuplicate = {};
         for (var subMstr in member)
           nsDuplicate[subMstr] = member[subMstr];

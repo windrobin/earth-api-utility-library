@@ -26,17 +26,17 @@ limitations under the License.
  *     refresh mode.
  * @type KmlLink
  */
-GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLink = domBuilder_({
   apiInterface: 'KmlLink',
   apiFactoryFn: 'createLink',
   defaultProperty: 'href',
   propertySpec: {
     // auto properties
-    href: GEarthExtensions.AUTO,
-    refreshMode: GEarthExtensions.AUTO,
-    refreshInterval: GEarthExtensions.AUTO,
-    viewRefreshMode: GEarthExtensions.AUTO,
-    viewBoundScale: GEarthExtensions.AUTO
+    href: AUTO_,
+    refreshMode: AUTO_,
+    refreshInterval: AUTO_,
+    viewRefreshMode: AUTO_,
+    viewBoundScale: AUTO_
   }
 });
 
@@ -65,16 +65,15 @@ GEarthExtensions.prototype.dom.buildLink = GEarthExtensions.domBuilder_({
  *     [minLodPixels, minFadeExtent, maxFadeExtent, maxLodPixels].
  * @type KmlRegion
  */
-GEarthExtensions.prototype.dom.buildRegion =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildRegion = domBuilder_({
   apiInterface: 'KmlRegion',
   apiFactoryFn: 'createRegion',
   propertySpec: {
     // required properties
-    box: GEarthExtensions.REQUIRED,
+    box: REQUIRED_,
     
     // allowed properties
-    lod: GEarthExtensions.ALLOWED
+    lod: ALLOWED_
   },
   constructor: function(regionObj, options) {
     // TODO: exception if any of the options are missing
@@ -126,7 +125,7 @@ GEarthExtensions.domBuilder_({
     regionObj.setLod(lod);
   }
 });
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_buildRegion() {
   var region = testext_.dom.buildRegion({
     box: { center: [37, -122], span: [10, 10],
@@ -161,4 +160,4 @@ function test_dom_buildRegion() {
   assertEquals(256, region.getLod().getMinLodPixels());
   assertEquals(512, region.getLod().getMaxLodPixels());
 }
-/***IGNORE_END***/
+//#END_TEST

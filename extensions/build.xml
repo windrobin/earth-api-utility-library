@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="GEarthExtensions" default="dist" basedir=".">
+  <!--
+  Copyright 2009 Google Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+  <description>
+    The GEarthExtensions JavaScript library.
+  </description>
+  
+  <!-- global properties -->
+  <property name="dist.name" value="extensions"/>
+  
+  <property name="src.reldir" value="src"/> <!-- req'd for docs -->
+  <property name="src.dir" location="${src.reldir}"/>
+  <property name="lib.dir" location="lib"/>
+  <property name="geojs.dir" location="${lib.dir}/third-party/geojs"/>
+  <property name="tlib.dir" value="${geojs.dir}/lib"/>
+  <property name="dist.dir" location="dist"/>
+  <property name="docs.dir" location="docs"/>
+  <property name="test.dir" location="test"/>
+  <property name="build.dir" location="build"/>
+  
+  <property name="docs.template" value="googlecode_wiki"/>
+  <property name="docs.featuredpages" value="GEarthExtensions"/>
+  <property
+    name="docs.srcroot"
+    value="earth-api-utility-library/source/browse/trunk"/>
+  
+  <!-- init target -->
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${build.dir}"/>
+    <copy overwrite="true" todir="${build.dir}/src">
+      <fileset dir="${src.dir}"/>
+    </copy>
+    
+    <!-- set up custom JS build tasks -->
+    <ant
+      antfile="${tlib.dir}/jsbuildtasks/build.xml"
+      target="jar"
+      inheritAll="false"/>
+    <property
+      name="jsbuildtasks.jar"
+      location="${tlib.dir}/jsbuildtasks/JsBuildTasks.jar"/>
+    <taskdef
+      name="js.isolatetests"
+      classpath="${jsbuildtasks.jar}"
+      classname="IsolateTests"/>
+    <taskdef
+      name="js.resolveincludes"
+      classpath="${jsbuildtasks.jar}"
+      classname="ResolveIncludes"/>
+    <taskdef
+      name="js.smartconcat"
+      classpath="${jsbuildtasks.jar}"
+      classname="SmartConcat"/>
+  </target>
+
+  <!-- public targets -->
+  <target name="dist"
+          depends="concat"
+          description="Builds .js and .pack.js library distribution files.">
+    <fail
+      if="instrumented"
+      message="Cannot create dist files while creating instrumented tests."/>
+
+    <!-- generate uncompressed dist file -->
+    <concat destfile="${dist.dir}/${dist.name}.js">
+      <file file="${geojs.dir}/dist/geo.js"/>
+      <file file="${lib.dir}/license-header.js"/>
+      <file file="${build.dir}/concat.js"/>
+    </concat>
+    
+    <!-- generate compressed dist file -->
+    <java jar="${tlib.dir}/yuicompressor-2.4.2.jar" fork="true">
+      <arg value="-o"/>
+      <arg value="${build.dir}/concat.pack.js"/>
+      <arg value="${build.dir}/concat.js"/>
+    </java>
+    <!-- old Packer-based compression
+    <java classname="org.mozilla.javascript.tools.shell.Main">
+      <arg value="${tlib.dir}/packer.js"/>
+      <arg value="${build.dir}/concat.js"/>
+      <arg value="${build.dir}/concat.pack.js"/>
+      <classpath>
+        <pathelement path="${classpath}"/>
+        <pathelement location="${tlib.dir}/rhino.jar"/>
+      </classpath>
+    </java>
+    -->
+    <concat destfile="${dist.dir}/${dist.name}.pack.js">
+      <file file="${geojs.dir}/dist/geo.pack.js"/>
+      <string value="&#xA;"/> <!-- newline -->
+      <file file="${lib.dir}/license-header.js"/>
+      <file file="${build.dir}/concat.pack.js"/>
+    </concat>
+    
+    <echo>Distribution files are ready.</echo>
+  </target>
+  
+  <target name="tests"
+          depends="concat"
+          description="Builds the test suite.">
+    <copy overwrite="true" todir="${test.dir}">
+      <fileset dir="${tlib.dir}/test/"/>
+    </copy>
+    <copy overwrite="true" todir="${test.dir}">
+      <fileset dir="${lib.dir}/test/"/>
+    </copy>
+    <copy overwrite="true" file="${geojs.dir}/dist/geo.js" todir="${test.dir}"/>
+    <concat destfile="${test.dir}/${dist.name}.tests.js">
+      <fileset dir="${build.dir}/src" includes="**/*.tests.js"/>
+    </concat>
+    <copy
+      file="${build.dir}/concat.js"
+      tofile="${test.dir}/${dist.name}.js"
+      overwrite="true"/>
+    <echo>Tests are ready. Run test/test-runner.html</echo>
+  </target>
+  
+  <target name="coveragetests"
+          depends="isolatetests, resolveincludes, instrument, tests"
+          description="Builds an instrumented test suite ready for JSCoverage.">
+    <copy overwrite="true" todir="${test.dir}">
+      <fileset dir="${build.dir}/src/"/>
+    </copy>
+    <echo>
+      JSCoverage-instrumented tests are ready.
+      Open test/jscoverage.html?test-runner.html in a browser.
+    </echo>
+  </target>
+  
+  <target name="docs"
+          depends="concat"
+          description="Generates the documentation.">
+    <!-- see http://code.google.com/p/jsdoc-toolkit/wiki/CommandlineOptions -->
+    <java classname="org.mozilla.javascript.tools.shell.Main">
+      <arg value="${tlib.dir}/jsdoc-toolkit/app/run.js"/>
+      <arg value="-s"/>
+      <arg value="-r"/>
+      <arg value="-t=${tlib.dir}/jsdoc-toolkit/templates/${docs.template}/"/>
+      <arg value="-D=featuredPages:${docs.featuredpages}/"/>
+      <arg value="-D=srcRoot:${docs.srcroot}/"/>
+      <arg value="-d=${docs.dir}"/>
+      <arg value="${src.reldir}"/>
+      <arg value="-j=${tlib.dir}/jsdoc-toolkit/app/run.js"/>
+      <classpath>
+        <pathelement path="${classpath}"/>
+        <pathelement location="${tlib.dir}/rhino.jar"/>
+      </classpath>
+    </java>
+    <echo>Docs are ready. Copy to wiki/ folder in SVN repository.</echo>
+  </target>
+  
+  <target name="clean"
+          description="Clean up generated files.">
+    <delete dir="${build.dir}"/>
+    <delete dir="${docs.dir}"/>
+    <delete dir="${test.dir}"/>
+    <delete>
+      <fileset dir="${dist.dir}" includes="*.js"/>
+    </delete>
+  </target>
+  
+  <!-- private targets -->
+  <target name="concat"
+          depends="init, isolatetests, resolveincludes">
+    <!-- strip copyright headers -->
+    <replaceregexp flags="gs">
+      <regexp pattern="/\*\nCopyright 2009 Google(.*?)\*/\n"/>
+      <substitution expression=""/>
+      <fileset dir="${build.dir}/src" includes="**/*.js"/>
+    </replaceregexp>
+    
+    <!-- smart concat (i.e. factor in dependencies) -->
+    <js.smartconcat destfile="${build.dir}/concat.js">
+      <fileset dir="${build.dir}/src" includes="**/*.js">
+        <exclude name="**/*.tests.js"/>
+        <exclude name="**/*jscoverage.js"/>
+      </fileset>
+    </js.smartconcat>
+  </target>
+  
+  <target name="isolatetests"
+          depends="init">
+    <js.isolatetests>
+      <fileset
+        dir="${build.dir}/src"
+        includes="**/*.js"
+        excludes="**/*.tests.js"/>
+    </js.isolatetests>
+  </target>
+  
+  <target name="resolveincludes"
+          depends="init">
+    <js.resolveincludes origdir="${src.dir}">
+      <fileset
+        dir="${build.dir}/src"
+        includes="**/*.js"
+        excludes="**/*.tests.js"/>
+    </js.resolveincludes>
+  </target>
+  
+  <target name="instrument"
+          depends="init">
+    <fail message="JSCoverage binary not found in lib directory.">
+      <condition>
+        <not>
+          <available file="${lib.dir}/jscoverage"/>
+        </not>
+      </condition>
+    </fail>
+    
+    <property name="instrumented" value="yes"/>
+    
+    <!-- remove headers and footers first, since they may not be
+         not syntactically correct -->
+    <mkdir dir="${build.dir}/src.uninstrumented"/>
+    <mkdir dir="${build.dir}/src.instrumented"/>
+    <copy overwrite="true" todir="${build.dir}/src.uninstrumented">
+      <fileset dir="${build.dir}/src" includes="**/*.js">
+        <exclude name="**/_header.js"/>
+        <exclude name="**/_footer.js"/>
+        <exclude name="**/*.tests.js"/>
+      </fileset>
+    </copy>
+    
+    <exec executable="${lib.dir}/jscoverage">
+      <arg value="${build.dir}/src.uninstrumented"/>
+      <arg value="${build.dir}/src.instrumented"/>
+    </exec>
+    
+    <!-- add back the headers and footers -->
+    <copy overwrite="true" todir="${build.dir}/src">
+      <fileset dir="${build.dir}/src.instrumented"/>
+    </copy>
+  </target>
+</project>

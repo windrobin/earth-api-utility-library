@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /** @ignore */
-GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildFeature_ = domBuilder_({
   propertySpec: {
-    name: GEarthExtensions.AUTO,
-    visibility: GEarthExtensions.AUTO,
-    description: GEarthExtensions.AUTO,
-    snippet: GEarthExtensions.AUTO,
+    name: AUTO_,
+    visibility: AUTO_,
+    description: AUTO_,
+    snippet: AUTO_,
     
     // allowed properties
-    region: GEarthExtensions.ALLOWED
+    region: ALLOWED_
   },
   constructor: function(featureObj, options) {
     if (options.region) {
@@ -71,27 +71,27 @@ GEarthExtensions.prototype.dom.buildFeature_ = GEarthExtensions.domBuilder_({
  *     Stock icons reside under 'http://maps.google.com/mapfiles/kml/...'.
  * @type KmlPlacemark
  */
-GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPlacemark = domBuilder_({
   apiInterface: 'KmlPlacemark',
   base: GEarthExtensions.prototype.dom.buildFeature_,
   apiFactoryFn: 'createPlacemark',
   propertySpec: {
     // allowed geometries
-    point: GEarthExtensions.ALLOWED,
-    lineString: GEarthExtensions.ALLOWED,
-    linearRing: GEarthExtensions.ALLOWED,
-    polygon: GEarthExtensions.ALLOWED,
-    model: GEarthExtensions.ALLOWED,
-    geometries: GEarthExtensions.ALLOWED,
+    point: ALLOWED_,
+    lineString: ALLOWED_,
+    linearRing: ALLOWED_,
+    polygon: ALLOWED_,
+    model: ALLOWED_,
+    geometries: ALLOWED_,
     
     // convenience (pass through to geometry)
-    altitudeMode: GEarthExtensions.ALLOWED,
+    altitudeMode: ALLOWED_,
     
     // styling
-    stockIcon: GEarthExtensions.ALLOWED,
-    icon: GEarthExtensions.ALLOWED,
-    style: GEarthExtensions.ALLOWED,
-    highlightStyle: GEarthExtensions.ALLOWED
+    stockIcon: ALLOWED_,
+    icon: ALLOWED_,
+    style: ALLOWED_,
+    highlightStyle: ALLOWED_
   },
   constructor: function(placemarkObj, options) {
     // geometries
@@ -178,7 +178,7 @@ GEarthExtensions.prototype.dom.buildPlacemark = GEarthExtensions.domBuilder_({
     }
   }
 });
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_buildPlacemark() {
   // TODO: make this the best unit test it possibly can be!
   var placemark = testext_.dom.buildPlacemark({
@@ -279,7 +279,7 @@ function test_dom_buildPlacemark_styles() {
   assertEquals('ff66ccff',
       placemark.getStyleSelector().getLineStyle().getColor().get());
 }
-/***IGNORE_END***/
+//#END_TEST
 
 /**
  * Convenience method to build a point placemark.
@@ -288,8 +288,7 @@ function test_dom_buildPlacemark_styles() {
  * @see GEarthExtensions#dom.buildPlacemark
  * @function
  */
-GEarthExtensions.prototype.dom.buildPointPlacemark =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPointPlacemark = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'point'
 });
@@ -301,8 +300,7 @@ GEarthExtensions.domBuilder_({
  * @see GEarthExtensions#dom.buildPlacemark
  * @function
  */
-GEarthExtensions.prototype.dom.buildLineStringPlacemark =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildLineStringPlacemark = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'lineString'
 });
@@ -314,8 +312,7 @@ GEarthExtensions.domBuilder_({
  * @see GEarthExtensions#dom.buildPlacemark
  * @function
  */
-GEarthExtensions.prototype.dom.buildPolygonPlacemark =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildPolygonPlacemark = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildPlacemark,
   defaultProperty: 'polygon'
 });
@@ -335,18 +332,17 @@ GEarthExtensions.domBuilder_({
  * @param {LinkOptions} [options.link] The link to use.
  * @type KmlNetworkLink
  */
-GEarthExtensions.prototype.dom.buildNetworkLink =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildNetworkLink = domBuilder_({
   apiInterface: 'KmlNetworkLink',
   base: GEarthExtensions.prototype.dom.buildFeature_,
   apiFactoryFn: 'createNetworkLink',
   defaultProperty: 'link',
   propertySpec: {
-    link: GEarthExtensions.ALLOWED,
+    link: ALLOWED_,
     
     // auto properties
-    flyToView: GEarthExtensions.AUTO,
-    refreshVisibility: GEarthExtensions.AUTO
+    flyToView: AUTO_,
+    refreshVisibility: AUTO_
   },
   constructor: function(networkLinkObj, options) {
     if (options.link) {
@@ -357,10 +353,10 @@ GEarthExtensions.domBuilder_({
 // TODO: unit tests
 
 /** @ignore */
-GEarthExtensions.prototype.dom.buildContainer_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildContainer_ = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildFeature_,
   propertySpec: {
-    children: GEarthExtensions.ALLOWED
+    children: ALLOWED_
   },
   constructor: function(containerObj, options) {
     // children
@@ -385,7 +381,7 @@ GEarthExtensions.prototype.dom.buildContainer_ = GEarthExtensions.domBuilder_({
  * @param {KmlFeature[]} [options.children] The children of this folder.
  * @type KmlFolder
  */
-GEarthExtensions.prototype.dom.buildFolder = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildFolder = domBuilder_({
   apiInterface: 'KmlFolder',
   base: GEarthExtensions.prototype.dom.buildContainer_,
   apiFactoryFn: 'createFolder',
@@ -406,7 +402,7 @@ GEarthExtensions.prototype.dom.buildFolder = GEarthExtensions.domBuilder_({
  * @param {KmlFeature[]} [options.children] The children of this document.
  * @type KmlDocument
  */
-GEarthExtensions.prototype.dom.buildDocument = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildDocument = domBuilder_({
   apiInterface: 'KmlDocument',
   base: GEarthExtensions.prototype.dom.buildContainer_,
   apiFactoryFn: 'createDocument',
@@ -415,14 +411,14 @@ GEarthExtensions.prototype.dom.buildDocument = GEarthExtensions.domBuilder_({
 // TODO: unit tests
 
 /** @ignore */
-GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildOverlay_ = domBuilder_({
   base: GEarthExtensions.prototype.dom.buildFeature_,
   propertySpec: {
-    color: GEarthExtensions.ALLOWED,
-    icon: GEarthExtensions.ALLOWED,
+    color: ALLOWED_,
+    icon: ALLOWED_,
     
     // auto properties
-    drawOrder: GEarthExtensions.AUTO
+    drawOrder: AUTO_
   },
   constructor: function(overlayObj, options) {
     // color
@@ -470,19 +466,18 @@ GEarthExtensions.prototype.dom.buildOverlay_ = GEarthExtensions.domBuilder_({
  *     overlay.
  * @type KmlGroundOverlay
  */
-GEarthExtensions.prototype.dom.buildGroundOverlay =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildGroundOverlay = domBuilder_({
   apiInterface: 'KmlGroundOverlay',
   base: GEarthExtensions.prototype.dom.buildOverlay_,
   apiFactoryFn: 'createGroundOverlay',
   defaultProperty: 'icon',
   propertySpec: {
     // required properties
-    box: GEarthExtensions.REQUIRED,
+    box: REQUIRED_,
     
     // auto properties
-    altitude: GEarthExtensions.AUTO,
-    altitudeMode: GEarthExtensions.AUTO
+    altitude: AUTO_,
+    altitudeMode: AUTO_
   },
   constructor: function(groundOverlayObj, options) {
     if (options.box) {
@@ -495,7 +490,7 @@ GEarthExtensions.domBuilder_({
     }
   }
 });
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_dom_buildGroundOverlay() {
   var groundOverlay = testext_.dom.buildGroundOverlay({
     name: 'foo',
@@ -531,7 +526,7 @@ function test_dom_buildGroundOverlay() {
       groundOverlay.getAltitudeMode());
   assertEquals(100000, groundOverlay.getAltitude());
 }
-/***IGNORE_END***/
+//#END_TEST
 
 
 
@@ -567,23 +562,22 @@ function test_dom_buildGroundOverlay() {
  * @param {Number} [options.rotation] The rotation of the overlay, in degrees.
  * @type KmlScreenOverlay
  */
-GEarthExtensions.prototype.dom.buildScreenOverlay =
-GEarthExtensions.domBuilder_({
+GEarthExtensions.prototype.dom.buildScreenOverlay = domBuilder_({
   apiInterface: 'KmlScreenOverlay',
   base: GEarthExtensions.prototype.dom.buildOverlay_,
   apiFactoryFn: 'createScreenOverlay',
   defaultProperty: 'icon',
   propertySpec: {
     // required properties
-    screenXY: GEarthExtensions.REQUIRED,
-    size: GEarthExtensions.REQUIRED,
+    screenXY: REQUIRED_,
+    size: REQUIRED_,
 
     // auto properties
-    rotation: GEarthExtensions.AUTO,
+    rotation: AUTO_,
 
     // optional properties
     overlayXY: { left: 0, top: 0 },
-    rotationXY: GEarthExtensions.ALLOWED
+    rotationXY: ALLOWED_
   },
   constructor: function(screenOverlayObj, options) {
     // NOTE: un-swapped overlayXY and screenXY.
@@ -598,29 +592,22 @@ GEarthExtensions.domBuilder_({
 });
 // TODO: unit tests
 
-//////////////////////////////
-// GEarthExtensions#dom shortcut functions
-
 /**
  * @name GEarthExtensions#dom.addPlacemark
  * Convenience method that calls GEarthExtensions#dom.buildPlacemark and adds
  * the created placemark to the Google Earth Plugin DOM.
  * @function
  */
-(function(){
-  var autoShortcut = ['Placemark',
-                      'PointPlacemark', 'LineStringPlacemark',
-                      'PolygonPlacemark',
-                      'Folder', 'NetworkLink', 'GroundOverlay', 'ScreenOverlay',
-                      'Style'];
-  for (var i = 0; i < autoShortcut.length; i++) {
-    GEarthExtensions.prototype.dom['add' + autoShortcut[i]] =
-      function(shortcutBase) {
-        return function() {
-          var obj = this.dom['build' + shortcutBase].apply(null, arguments);
-          this.pluginInstance.getFeatures().appendChild(obj);
-          return obj;
-        };
-    }(autoShortcut[i]); // escape closure
-  }
-})();
+var autoDomAdd_ = ['Placemark', 'PointPlacemark', 'LineStringPlacemark',
+                   'PolygonPlacemark', 'Folder', 'NetworkLink',
+                   'GroundOverlay', 'ScreenOverlay', 'Style'];
+for (var i = 0; i < autoDomAdd_.length; i++) {
+  GEarthExtensions.prototype.dom['add' + autoDomAdd_[i]] =
+    function(shortcutBase) {
+      return function() {
+        var obj = this.dom['build' + shortcutBase].apply(null, arguments);
+        this.pluginInstance.getFeatures().appendChild(obj);
+        return obj;
+      };
+  }(autoDomAdd_[i]); // escape closure
+}

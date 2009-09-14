@@ -93,7 +93,7 @@ GEarthExtensions.prototype.util.parseColor = function(arg, opacity) {
   
   return null; // couldn't parse, not a string or array
 };
-/***IGNORE_BEGIN***/
+//#BEGIN_TEST
 function test_util_parseColor() {
   assertEquals('ff000000', testext_.util.parseColor([0, 0, 0]));
   assertEquals('ffff8000', testext_.util.parseColor([0, 128, 255]));
@@ -114,7 +114,7 @@ function test_util_parseColor() {
   
   // TODO: add more tests for opacity and null return values
 }
-/***IGNORE_END***/
+//#END_TEST
 
 
 /**
