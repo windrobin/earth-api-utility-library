@@ -14,30 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * Converts heading, tilt, and roll (HTR) to a local orientation matrix
- * that transforms global direction vectors to local direction vectors.
- * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
- *     degrees.
- * @return {geo.linalg.Matrix} A local orientation matrix.
- */
-GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
-  return eulerAnglesToMatrix_([
-      htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
-};
-
-/**
- * Converts a local orientation matrix (right, dir, up vectors) in local
- * cartesian coordinates to heading, tilt, and roll.
- * @param {geo.linalg.Matrix} matrix A local orientation matrix.
- * @return {Number[]} A heading, tilt, roll array, where each angle is in
- *     degrees.
- */
-GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
-  var htr = matrixToEulerAngles_(matrix);
-  return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
-};
-
-/**
  * Converts an array of 3 Euler angle rotations to matrix form.
  * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
  * "Euler Angle Conversion" by Ken Shoemake.
@@ -112,3 +88,27 @@ function matrixToEulerAngles_(matrix) {
           Math.atan2(-matrix.e(K, I), cy),
           Math.atan2( matrix.e(J, I), matrix.e(I, I))];
 }
+
+/**
+ * Converts heading, tilt, and roll (HTR) to a local orientation matrix
+ * that transforms global direction vectors to local direction vectors.
+ * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
+ *     degrees.
+ * @return {geo.linalg.Matrix} A local orientation matrix.
+ */
+GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
+  return eulerAnglesToMatrix_([
+      htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
+};
+
+/**
+ * Converts a local orientation matrix (right, dir, up vectors) in local
+ * cartesian coordinates to heading, tilt, and roll.
+ * @param {geo.linalg.Matrix} matrix A local orientation matrix.
+ * @return {Number[]} A heading, tilt, roll array, where each angle is in
+ *     degrees.
+ */
+GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
+  var htr = matrixToEulerAngles_(matrix);
+  return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
+};

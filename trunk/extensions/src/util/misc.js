@@ -167,7 +167,7 @@ function test_util_callMethod() {
 
   // test on an Earth API object and method
   var placemark = testext_.util.callMethod(testplugin_, 'createPlacemark', '');
-  assertTrue(geo.util.isEarthAPIObject_(placemark));
+  assertTrue(placemark && 'getType' in placemark);
   assertEquals('KmlPlacemark', placemark.getType());
 }
 //#END_TEST

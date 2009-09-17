@@ -164,6 +164,26 @@
     <echo>Docs are ready. Copy to wiki/ folder in SVN repository.</echo>
   </target>
   
+  <target name="lint"
+          depends="init"
+          description="Runs JSLint on the source files.">
+    <delete file="${build.dir}/lint.out"/>
+    <echo>Running JSLint...</echo>
+    <apply executable="java" output="${build.dir}/lint.out" append="true" logError="false">
+      <arg value="-classpath"/>
+      <arg value=".:${tlib.dir}/rhino.jar"/>
+      <arg value="org.mozilla.javascript.tools.shell.Main"/>
+      <arg value="${tlib.dir}/jslint.js"/>
+      
+      <fileset dir="${src.dir}" includes="**/*.js">
+        <exclude name="**/_header.js"/>
+        <exclude name="**/_footer.js"/>
+        <exclude name="**/*.tests.js"/>
+      </fileset>
+    </apply>
+    <echo>JSLint results are stored in ${build.dir}/lint.out.</echo>
+  </target>
+  
   <target name="clean"
           description="Clean up generated files.">
     <delete dir="${build.dir}"/>

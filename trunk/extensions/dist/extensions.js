@@ -1203,7 +1203,7 @@ geo.math.wrapValue = function(value, range, favorMin) {
   
   // When ambiguous (min or max), return max unless favorMin is true.
   return (value === range[0]) ? (favorMin ? range[0] : range[1]) : value;
-}
+};
 
 /**
  * Constrains the given number to the given range.
@@ -1218,7 +1218,7 @@ geo.math.constrainValue = function(value, range) {
   }
   
   return Math.max(range[0], Math.min(range[1], value));
-}
+};
 /**
  * The radius of the Earth, in meters, assuming the Earth is a perfect sphere.
  * @see http://en.wikipedia.org/wiki/Earth_radius
@@ -1474,7 +1474,7 @@ geo.Point = function() {
       }
     
     // GLatLng constructor
-    } else if (geo.util.isGLatLng_(point)) {
+    } else if (isGLatLng_(point)) {
       this.lat_ = point.lat();
       this.lng_ = point.lng();
 
@@ -1491,7 +1491,12 @@ geo.Point = function() {
   
   // construct from an array
   if (pointArraySrc) {
-    // TODO: type check
+    for (var i = 0; i < pointArraySrc.length; i++) {
+      if (typeof pointArraySrc[i] != 'number') {
+        throw new TypeError('Coordinates must be numerical');
+      }
+    }
+    
     this.lat_ = pointArraySrc[0];
     this.lng_ = pointArraySrc[1];
     if (pointArraySrc.length >= 3) {
@@ -2003,7 +2008,7 @@ geo.Bounds.prototype.isFullLng = function() {
 geo.Path = function() {
   this.coords_ = []; // don't use mutable objects in global defs
   var coordArraySrc = null;
-  var i;
+  var i, n;
   
   // 1 argument constructor
   if (arguments.length == 1) {
@@ -2026,7 +2031,7 @@ geo.Path = function() {
       // contruct from KmlLineString
       if (type == 'KmlLineString' ||
           type == 'KmlLinearRing') {
-        var n = path.getCoordinates().getLength();
+        n = path.getCoordinates().getLength();
         for (i = 0; i < n; i++) {
           this.coords_.push(new geo.Point(path.getCoordinates().get(i)));
         }
@@ -2039,7 +2044,7 @@ geo.Path = function() {
     
     // GPolyline or GPolygon constructor
     } else if ('getVertex' in path && 'getVertexCount' in path) {
-      var n = path.getVertexCount();
+      n = path.getVertexCount();
       for (i = 0; i < n; i++) {
         this.coords_.push(new geo.Point(path.getVertex(i)));
       }
@@ -2512,15 +2517,6 @@ geo.util.isFunction = function(object) {
 };
 
 /**
- * Determines whether or not the object is an object literal (a.k.a. hash).
- * @param {Object} object The object to test.
- */
-geo.util.isObjectLiteral = function(object) {
-  return object !== null && typeof object == 'object' &&
-      object.constructor === Object && !isEarthAPIObject_(object);
-};
-
-/**
  * Determines whether or not the given object is an Earth API object.
  * @param {Object} object The object to test.
  * @private
@@ -2530,6 +2526,15 @@ function isEarthAPIObject_(object) {
       (typeof object == 'function' || typeof object == 'object') &&
       'getType' in object;
 }
+
+/**
+ * Determines whether or not the object is an object literal (a.k.a. hash).
+ * @param {Object} object The object to test.
+ */
+geo.util.isObjectLiteral = function(object) {
+  return object !== null && typeof object == 'object' &&
+      object.constructor === Object && !isEarthAPIObject_(object);
+};
 
 /**
  * Determins whether or not the given object is a google.maps.LatLng object
@@ -3774,7 +3779,7 @@ GEarthExtensions.prototype.dom.buildStyle = domBuilder_({
     label: ALLOWED_,
     line: ALLOWED_,
     poly: ALLOWED_,
-    balloon: ALLOWED_,
+    balloon: ALLOWED_
   },
   constructor: function(styleObj, options) {
     // set icon style
@@ -4268,8 +4273,9 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
             var coords = this.getCoordinates();
             if (coords) {
               var n = coords.getLength();
-              for (var i = 0; i < n; i++)
+              for (var i = 0; i < n; i++) {
                 bounds.extend(new geo.Point(coords.get(i)));
+              }
             }
             break;
 
@@ -4278,7 +4284,7 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
           case 'KmlPoint': // points
             bounds.extend(new geo.Point(this));
             break;
-        };
+        }
       }
     }
   });
@@ -4969,8 +4975,9 @@ GEarthExtensions.prototype.edit.editLineString = function(lineString,
   var coordDataArr = [];
   
   var checkDupMidpoints_ = function() {
-    if (!isRing)
+    if (!isRing) {
       return;
+    }
     
     // handle special case for polygons w/ 2 coordinates
     if (numCoords == 3) /* including duplicate first coord */ {
@@ -5548,8 +5555,9 @@ function(duration, renderFn, completionFn) {
  */
 GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
-  if (this.complete)
+  if (this.complete) {
     return;
+  }
   
   if (t > this.duration) {
     this.renderFn.call(this, this.duration);
@@ -5599,7 +5607,7 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
     point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_SEA_FLOOR);
   }
 
-  if (typeof(options.startAltitude) != 'number') {
+  if (typeof options.startAltitude != 'number') {
     options.startAltitude = point.getAltitude();
   }
   
@@ -5863,30 +5871,6 @@ function(obj, property, options) {
  */
 GEarthExtensions.prototype.math3d = {isnamespace_:true};
 /**
- * Converts heading, tilt, and roll (HTR) to a local orientation matrix
- * that transforms global direction vectors to local direction vectors.
- * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
- *     degrees.
- * @return {geo.linalg.Matrix} A local orientation matrix.
- */
-GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
-  return eulerAnglesToMatrix_([
-      htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
-};
-
-/**
- * Converts a local orientation matrix (right, dir, up vectors) in local
- * cartesian coordinates to heading, tilt, and roll.
- * @param {geo.linalg.Matrix} matrix A local orientation matrix.
- * @return {Number[]} A heading, tilt, roll array, where each angle is in
- *     degrees.
- */
-GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
-  var htr = matrixToEulerAngles_(matrix);
-  return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
-};
-
-/**
  * Converts an array of 3 Euler angle rotations to matrix form.
  * NOTE: Adapted from 'Graphics Gems IV', Chapter III.5,
  * "Euler Angle Conversion" by Ken Shoemake.
@@ -5961,6 +5945,30 @@ function matrixToEulerAngles_(matrix) {
           Math.atan2(-matrix.e(K, I), cy),
           Math.atan2( matrix.e(J, I), matrix.e(I, I))];
 }
+
+/**
+ * Converts heading, tilt, and roll (HTR) to a local orientation matrix
+ * that transforms global direction vectors to local direction vectors.
+ * @param {Number[]} htr A heading, tilt, roll array, where each angle is in
+ *     degrees.
+ * @return {geo.linalg.Matrix} A local orientation matrix.
+ */
+GEarthExtensions.prototype.math3d.htrToLocalFrame = function(htr) {
+  return eulerAnglesToMatrix_([
+      htr[0].toRadians(), htr[1].toRadians(), htr[2].toRadians()]);
+};
+
+/**
+ * Converts a local orientation matrix (right, dir, up vectors) in local
+ * cartesian coordinates to heading, tilt, and roll.
+ * @param {geo.linalg.Matrix} matrix A local orientation matrix.
+ * @return {Number[]} A heading, tilt, roll array, where each angle is in
+ *     degrees.
+ */
+GEarthExtensions.prototype.math3d.localFrameToHtr = function(matrix) {
+  var htr = matrixToEulerAngles_(matrix);
+  return [htr[0].toDegrees(), htr[1].toDegrees(), htr[2].toDegrees()];
+};
 /**
  * Creates an orthonormal orientation matrix for a given set of object direction
  * and up vectors. The matrix rows will each be unit length and orthogonal to
@@ -6594,7 +6602,7 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
   var lookAtRange = options.defaultRange;
   
   var boundsSpan = bounds.span();
-  if (boundsSpan.lat != 0 | boundsSpan.lng != 0) {
+  if (boundsSpan.lat || boundsSpan.lng) {
     var distEW = new geo.Point(center.lat(), bounds.east())
        .distance(new geo.Point(center.lat(), bounds.west()));
     var distNS = new geo.Point(bounds.north(), center.lng())
@@ -6611,9 +6619,7 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
                         alpha + expandToDistance / (2 * geo.math.EARTH_RADIUS));
     
     lookAtRange = options.scaleRange * geo.math.EARTH_RADIUS *
-        (Math.sin(beta) *
-         Math.sqrt(1 + 1 / Math.pow(Math.tan(alpha), 2))
-         - 1);
+        (Math.sin(beta) * Math.sqrt(1 + 1 / Math.pow(Math.tan(alpha), 2)) - 1);
   }
   
   return this.dom.buildLookAt(
@@ -6630,6 +6636,34 @@ GEarthExtensions.prototype.view.setToBoundsView = function() {
   this.pluginInstance.getView().setAbstractView(
       this.view.createBoundsView.apply(this, arguments));
 };
+var ENC_OVERFLOW_ = 1073741824;
+
+function encodeCamera_(extInstance, cam) {
+  var alt = Math.floor(cam.altitude * 1e1);
+  return extInstance.util.encodeArray([
+    Math.floor(geo.math.constrainValue(cam.lat, [-90, 90]) * 1e5),
+    Math.floor(geo.math.wrapValue(cam.lng, [-180, 180]) * 1e5),
+    Math.floor(alt / ENC_OVERFLOW_),
+    (alt >= 0) ? alt % ENC_OVERFLOW_
+               : (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
+    Math.floor(geo.math.wrapValue(cam.heading, [0, 360]) * 1e1),
+    Math.floor(geo.math.wrapValue(cam.tilt, [0, 180]) * 1e1),
+    Math.floor(geo.math.wrapValue(cam.roll, [-180, 180]) * 1e1)
+  ]);
+}
+
+function decodeCamera_(extInstance, str) {
+  var arr = extInstance.util.decodeArray(str);
+  return {
+    lat: geo.math.constrainValue(arr[0] * 1e-5, [-90, 90]),
+    lng: geo.math.wrapValue(arr[1] * 1e-5, [-180, 180]),
+    altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
+    heading: geo.math.wrapValue(arr[4] * 1e-1, [0, 360]),
+    tilt: geo.math.wrapValue(arr[5] * 1e-1, [0, 180]),
+    roll: geo.math.wrapValue(arr[6] * 1e-1, [-180, 180])
+  };
+}
+
 /**
  * Serializes the current plugin viewport into a modified base64 alphabet
  * string. This method is platform and browser agnostic, and is safe to
@@ -6672,34 +6706,6 @@ GEarthExtensions.prototype.view.deserialize = function(s) {
       cameraProps.tilt, cameraProps.roll);
   this.pluginInstance.getView().setAbstractView(camera);
 };
-
-var ENC_OVERFLOW_ = 1073741824;
-
-function encodeCamera_(extInstance, cam) {
-  var alt = Math.floor(cam.altitude * 1e1);
-  return extInstance.util.encodeArray([
-    Math.floor(geo.math.constrainValue(cam.lat, [-90, 90]) * 1e5),
-    Math.floor(geo.math.wrapValue(cam.lng, [-180, 180]) * 1e5),
-    Math.floor(alt / ENC_OVERFLOW_),
-    (alt >= 0) ? alt % ENC_OVERFLOW_
-               : (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
-    Math.floor(geo.math.wrapValue(cam.heading, [0, 360]) * 1e1),
-    Math.floor(geo.math.wrapValue(cam.tilt, [0, 180]) * 1e1),
-    Math.floor(geo.math.wrapValue(cam.roll, [-180, 180]) * 1e1)
-  ]);
-}
-
-function decodeCamera_(extInstance, str) {
-  var arr = extInstance.util.decodeArray(str);
-  return {
-    lat: geo.math.constrainValue(arr[0] * 1e-5, [-90, 90]),
-    lng: geo.math.wrapValue(arr[1] * 1e-5, [-180, 180]),
-    altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
-    heading: geo.math.wrapValue(arr[4] * 1e-1, [0, 360]),
-    tilt: geo.math.wrapValue(arr[5] * 1e-1, [0, 180]),
-    roll: geo.math.wrapValue(arr[6] * 1e-1, [-180, 180])
-  };
-}
 
 // Backwards compatibility.
 GEarthExtensions.prototype.util.serializeView =

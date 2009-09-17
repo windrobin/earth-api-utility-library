@@ -52,7 +52,7 @@ GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
     point.setAltitudeMode(this.pluginInstance.ALTITUDE_RELATIVE_TO_SEA_FLOOR);
   }
 
-  if (typeof(options.startAltitude) != 'number') {
+  if (typeof options.startAltitude != 'number') {
     options.startAltitude = point.getAltitude();
   }
   

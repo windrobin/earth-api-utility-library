@@ -14,6 +14,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+var ENC_OVERFLOW_ = 1073741824;
+
+function encodeCamera_(extInstance, cam) {
+  var alt = Math.floor(cam.altitude * 1e1);
+  return extInstance.util.encodeArray([
+    Math.floor(geo.math.constrainValue(cam.lat, [-90, 90]) * 1e5),
+    Math.floor(geo.math.wrapValue(cam.lng, [-180, 180]) * 1e5),
+    Math.floor(alt / ENC_OVERFLOW_),
+    (alt >= 0) ? alt % ENC_OVERFLOW_
+               : (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
+    Math.floor(geo.math.wrapValue(cam.heading, [0, 360]) * 1e1),
+    Math.floor(geo.math.wrapValue(cam.tilt, [0, 180]) * 1e1),
+    Math.floor(geo.math.wrapValue(cam.roll, [-180, 180]) * 1e1)
+  ]);
+}
+
+function decodeCamera_(extInstance, str) {
+  var arr = extInstance.util.decodeArray(str);
+  return {
+    lat: geo.math.constrainValue(arr[0] * 1e-5, [-90, 90]),
+    lng: geo.math.wrapValue(arr[1] * 1e-5, [-180, 180]),
+    altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
+    heading: geo.math.wrapValue(arr[4] * 1e-1, [0, 360]),
+    tilt: geo.math.wrapValue(arr[5] * 1e-1, [0, 180]),
+    roll: geo.math.wrapValue(arr[6] * 1e-1, [-180, 180])
+  };
+}
+
 /**
  * Serializes the current plugin viewport into a modified base64 alphabet
  * string. This method is platform and browser agnostic, and is safe to
@@ -56,34 +84,6 @@ GEarthExtensions.prototype.view.deserialize = function(s) {
       cameraProps.tilt, cameraProps.roll);
   this.pluginInstance.getView().setAbstractView(camera);
 };
-
-var ENC_OVERFLOW_ = 1073741824;
-
-function encodeCamera_(extInstance, cam) {
-  var alt = Math.floor(cam.altitude * 1e1);
-  return extInstance.util.encodeArray([
-    Math.floor(geo.math.constrainValue(cam.lat, [-90, 90]) * 1e5),
-    Math.floor(geo.math.wrapValue(cam.lng, [-180, 180]) * 1e5),
-    Math.floor(alt / ENC_OVERFLOW_),
-    (alt >= 0) ? alt % ENC_OVERFLOW_
-               : (ENC_OVERFLOW_ - Math.abs(alt) % ENC_OVERFLOW_),
-    Math.floor(geo.math.wrapValue(cam.heading, [0, 360]) * 1e1),
-    Math.floor(geo.math.wrapValue(cam.tilt, [0, 180]) * 1e1),
-    Math.floor(geo.math.wrapValue(cam.roll, [-180, 180]) * 1e1)
-  ]);
-}
-
-function decodeCamera_(extInstance, str) {
-  var arr = extInstance.util.decodeArray(str);
-  return {
-    lat: geo.math.constrainValue(arr[0] * 1e-5, [-90, 90]),
-    lng: geo.math.wrapValue(arr[1] * 1e-5, [-180, 180]),
-    altitude: (ENC_OVERFLOW_ * arr[2] + arr[3]) * 1e-1,
-    heading: geo.math.wrapValue(arr[4] * 1e-1, [0, 360]),
-    tilt: geo.math.wrapValue(arr[5] * 1e-1, [0, 180]),
-    roll: geo.math.wrapValue(arr[6] * 1e-1, [-180, 180])
-  };
-}
 
 // Backwards compatibility.
 GEarthExtensions.prototype.util.serializeView =

@@ -37,7 +37,7 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
   var lookAtRange = options.defaultRange;
   
   var boundsSpan = bounds.span();
-  if (boundsSpan.lat != 0 | boundsSpan.lng != 0) {
+  if (boundsSpan.lat || boundsSpan.lng) {
     var distEW = new geo.Point(center.lat(), bounds.east())
        .distance(new geo.Point(center.lat(), bounds.west()));
     var distNS = new geo.Point(bounds.north(), center.lng())
@@ -54,9 +54,7 @@ GEarthExtensions.prototype.view.createBoundsView = function(bounds, options) {
                         alpha + expandToDistance / (2 * geo.math.EARTH_RADIUS));
     
     lookAtRange = options.scaleRange * geo.math.EARTH_RADIUS *
-        (Math.sin(beta) *
-         Math.sqrt(1 + 1 / Math.pow(Math.tan(alpha), 2))
-         - 1);
+        (Math.sin(beta) * Math.sqrt(1 + 1 / Math.pow(Math.tan(alpha), 2)) - 1);
   }
   
   return this.dom.buildLookAt(
