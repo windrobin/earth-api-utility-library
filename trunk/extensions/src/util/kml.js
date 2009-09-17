@@ -17,15 +17,15 @@ limitations under the License.
  * Loads and shows the given KML URL in the Google Earth Plugin instance.
  * @param {String} url The URL of the KML content to show.
  * @param {Object} [options] KML display options.
- * @param {Boolean} [options.cacheBuster] Enforce freshly downloading the KML
- *     by introducing a cache-busting query parameter.
- * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
- *     in the loaded KML after loading it. If no explicit view is available,
- *     a default bounds view will be calculated and used unless
+ * @param {Boolean} [options.cacheBuster=false] Enforce freshly downloading the
+ *     KML by introducing a cache-busting query parameter.
+ * @param {Boolean} [options.flyToView=false] Fly to the document-level abstract
+ *     view in the loaded KML after loading it. If no explicit view is
+ *     available, a default bounds view will be calculated and used unless
  *     options.flyToBoundsFallback is false.
  *     See GEarthExtensions#util.flyToObject for more information.
- * @param {Boolean} [options.flyToBoundsFallback] If options.flyToView is true
- *     and no document-level abstract view is explicitly defined, do not
+ * @param {Boolean} [options.flyToBoundsFallback=true] If options.flyToView is
+ *     true and no document-level abstract view is explicitly defined,
  *     calculate and fly to a bounds view.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
@@ -61,13 +61,13 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * Loads and shows the given KML string in the Google Earth Plugin instance.
  * @param {String} str The KML string to show.
  * @param {Object} [options] KML display options.
- * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
- *     in the parsed KML. If no explicit view is available,
+ * @param {Boolean} [options.flyToView=false] Fly to the document-level abstract
+ *     view in the parsed KML. If no explicit view is available,
  *     a default bounds view will be calculated and used unless
  *     options.flyToBoundsFallback is false.
  *     See GEarthExtensions#util.flyToObject for more information.
- * @param {Boolean} [options.flyToBoundsFallback] If options.flyToView is true
- *     and no document-level abstract view is explicitly defined, do not
+ * @param {Boolean} [options.flyToBoundsFallback=true] If options.flyToView is
+ *     true and no document-level abstract view is explicitly defined,
  *     calculate and fly to a bounds view.
  * @return Returns the parsed object on success, or null if there was an error.
  */

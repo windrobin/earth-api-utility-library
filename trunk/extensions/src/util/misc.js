@@ -59,7 +59,7 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
  * true).
  * @param {KmlObject} obj The object to fly to.
  * @param {Object} [options] Flyto options.
- * @param {Boolean} [options.boundsFallback] Whether or not to attempt to
+ * @param {Boolean} [options.boundsFallback=true] Whether or not to attempt to
  *     calculate a bounding box view of the object if it doesn't have an
  *     abstract view.
  * @param {Number} [options.aspectRatio=1.0] When calculating a bounding box

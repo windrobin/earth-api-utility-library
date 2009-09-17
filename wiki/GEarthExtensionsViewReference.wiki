@@ -1,7 +1,7 @@
 #labels Phase-Reference
 #summary GEarthExtensions.view Namespace Reference
 
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/view/__init__.js src/view/__init__.js]
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/view/_header.js src/view/_header.js]
 
 This class/namespace hybrid contains various camera/view related.
 
@@ -22,6 +22,24 @@ Creates a KmlAbstractView from a bounding box.
     * *aspectRatio* _{{{Number}}}_  The aspect ratio (width : height) of the plugin viewport.
     * *defaultRange* _{{{Number}}}_ (Optional, Default: 1000) The default lookat range to use when creating a view for a degenerate, single-point bounding box.
     * *rangeMultiplier* _{{{Number}}}_ (Optional, Default: 1.5) A scaling factor by which to multiple the lookat range.
+
+===Type:===
+{{{KmlAbstractView}}}
+
+----
+
+==createVantageView(cameraPoint, lookAtPoint)==
+
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/view/vantageview.js src/view/vantageview.js]
+
+Creates an abstract view with the viewer at the given camera point, looking towards the given look at point. For best results, use ALTITUDE_ABSOLUTE camera and look at points.
+
+===Parameters:===
+  * *cameraPoint* _{{{PointOptions}}}|{{{geo.Point}}}_  The viewer location.
+  * *lookAtPoint* _{{{PointOptions}}}|{{{geo.Point}}}_  The location to look at/towards.
+
+===Type:===
+{{{KmlAbstractView}}}
 
 ----
 

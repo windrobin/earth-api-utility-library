@@ -14,7 +14,7 @@ Base class for all [GEarthExtensionsFxReference GEarthExtensions.fx] animations.
 
 ===Parameters:===
   * *renderCallback* _{{{Function}}}_  A method that will be called to render a frame of the animation. Its sole parameter will be the time, in seconds, of the frame to render.
-  * *completionCallback* _{{{Function}}}_ (Optional) A callback method to fire when the animation is completed/stopped.
+  * *completionCallback* _{{{Function}}}_ (Optional) A callback method to fire when the animation is completed/stopped. The callback will receive an object literal argument that will contain a 'cancelled' boolean value that will be true if the effect was cancelled.
 
 ----
 =Methods=
@@ -45,5 +45,5 @@ Start this animation.
 Stop this animation.
 
 ===Parameters:===
-  * *completed* _{{{Boolean}}}_ (Optional, Default: true) Whether or not to call the completion callback.
+  * *completed* _{{{Boolean}}}_ (Optional, Default: true) Whether or not the animation is being stopped due to a successful completion. If not, the stop call is treated as a cancellation of the animation.
 

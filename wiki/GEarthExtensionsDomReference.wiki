@@ -1,7 +1,7 @@
 #labels Phase-Reference
 #summary GEarthExtensions.dom Namespace Reference
 
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/__init__.js src/dom/__init__.js]
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/dom/_header.js src/dom/_header.js]
 
 Contains DOM builder functions (buildXX) and DOM manipulation/traversal functions.
 
@@ -365,6 +365,7 @@ Creates a new region with the given parameters.
     * *box.minAltitude* _{{{Number}}}_ (Optional) The low altitude for the region.
     * *box.maxAltitude* _{{{Number}}}_ (Optional) The high altitude for the region.
     * *box.altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the region, pertaining to min and max altitude.
+    * *lod* _{{{Number}}}`[``]`_ (Optional) An array of values indicating the LOD range for the region. The array can either contain 2 values, i.e. [minLodPixels, maxLodPixels], or 4 values to indicate fade extents, i.e. [minLodPixels, minFadeExtent, maxFadeExtent, maxLodPixels].
 
 ===Type:===
 {{{KmlRegion}}}
@@ -387,8 +388,8 @@ Creates a new screen overlay with the given parameters.
     * *icon* _{{{String}}}_ (Optional) The URL of the overlay image.
     * *drawOrder* _{{{Number}}}_ (Optional) The drawing order of the overlay; overlays with higher draw orders appear on top of those with lower draw orders.
     * *overlayXY* _{{{Vec2Src}}}_ (Optional) The registration point in the overlay that will be placed at the given screenXY point and potentially rotated about. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. The default is the top left of the overlay. Note that the behavior of overlayXY in [GEarthExtensionsReference GEarthExtensions] is KML-correct; whereas in the Earth API overlayXY and screenXY are swapped.
-    * *screenXY* _{{{Vec2Src}}}_ (Optional) The position in the plugin window that the screen overlay should appear at. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. Note that the behavior of overlayXY in [GEarthExtensionsReference GEarthExtensions] is KML-correct; whereas in the Earth API overlayXY and screenXY are swapped.
-    * *size* _{{{Vec2Src}}}_ (Optional) The size of the overlay. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2].
+    * *screenXY* _{{{Vec2Src}}}_  The position in the plugin window that the screen overlay should appear at. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2]. Note that the behavior of overlayXY in [GEarthExtensionsReference GEarthExtensions] is KML-correct; whereas in the Earth API overlayXY and screenXY are swapped.
+    * *size* _{{{Vec2Src}}}_  The size of the overlay. This object will be passed to [GEarthExtensionsDomReference#setVec2(vec2,_options) GEarthExtensions#dom.setVec2].
     * *altitudeMode* _{{{KmlAltitudeModeEnum}}}_ (Optional) The altitude mode of the ground overlay.
     * *rotation* _{{{Number}}}_ (Optional) The rotation of the overlay, in degrees.
 
@@ -425,6 +426,10 @@ Creates a new style with the given parameters.
     * *poly.outline* _{{{Boolean}}}_ (Optional) Whether or not the polygon will have an outline.
     * *poly.color* _{{{ColorSpec}}}_ (Optional) The color of the polygon fill.
     * *icon.opacity* _{{{ColorSpec}}}_ (Optional) The opacity of the polygon, between 0.0 and 1.0. This is a convenience property, since opacity can be defined in the color.
+    * *balloon* _{{{ColorSpec}}}|{{{Object}}}_ (Optional) The balloon bgColor or a balloon style object literal.
+    * *balloon.bgColor* _{{{Boolean}}}_ (Optional) The balloon background color.
+    * *balloon.textColor* _{{{Boolean}}}_ (Optional) The balloon text color.
+    * *balloon.text* _{{{String}}}_ (Optional) The balloon text template.
 
 ===Type:===
 {{{KmlStyle}}}
@@ -488,7 +493,7 @@ Sets the given KmlVec2 object to the point defined in the options.
 
 ===Parameters:===
   * *vec2* _{{{KmlVec2}}}_  The object to set, for example a screen overlay's screenXY.
-  * *options* _{{{Object}}}_  The options literal defining the point.
+  * *options* _{{{Object}}}|{{{KmlVec2}}}_  The options literal defining the point, or an existing KmlVec2 object to copy.
     * *left* _{{{Number}}}|{{{String}}}_ (Optional) The left offset, in pixels (i.e. 5), or as a percentage (i.e. '25%').
     * *top* _{{{Number}}}|{{{String}}}_ (Optional) The top offset, in pixels or a string percentage.
     * *right* _{{{Number}}}|{{{String}}}_ (Optional) The right offset, in pixels or a string percentage.

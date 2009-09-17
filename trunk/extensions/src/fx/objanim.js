@@ -107,6 +107,7 @@ function(obj, property, options) {
 
   var me = this;
   
+  /** @private */
   var doAnimate_;
   if (property == 'color') {
     // KmlColor blending
@@ -125,6 +126,7 @@ function(obj, property, options) {
       options.end = colorObj.get();
     }
   
+    /** @private */
     doAnimate_ = function(f) {
       colorObj.set(me.util.blendColors(options.start, options.end,
           options.easing.call(null, f)));
@@ -159,6 +161,7 @@ function(obj, property, options) {
       }
     }
   
+    /** @private */
     doAnimate_ = function(f) {
       setter(options.start + (options.end - options.start) *
                              options.easing.call(null, f));

@@ -1,7 +1,7 @@
 #labels Phase-Reference
 #summary GEarthExtensions.edit Namespace Reference
 
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/__init__.js src/edit/__init__.js]
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/edit/_header.js src/edit/_header.js]
 
 Contains methods for allowing user-interactive editing of features inside the Google Earth Plugin.
 
@@ -19,9 +19,10 @@ Enters a mode in which the user can draw the given line string geometry on the g
 ===Parameters:===
   * *lineString* _{{{KmlLineString}}}|{{{KmlLinearRing}}}_  The line string geometry to allow the user to draw (or append points to).
   * *options* _{{{Object}}}_ (Optional) The edit options.
-    * *bounce* _{{{Boolean}}}_ (Optional) Whether or not to enable bounce effects while drawing coordinates.
-    * *drawCallback* _{{{Function}}}_ (Optional) A callback to fire when new vertices are drawn.
+    * *bounce* _{{{Boolean}}}_ (Optional, Default: true) Whether or not to enable bounce effects while drawing coordinates.
+    * *drawCallback* _{{{Function}}}_ (Optional) A callback to fire when new vertices are drawn. The only argument passed will be the index of the new coordinate (it can either be prepended or appended, depending on whether or not ensuring counter-clockwisedness).
     * *finishCallback* _{{{Function}}}_ (Optional) A callback to fire when drawing is successfully completed (via double click or by clicking on the first coordinate again).
+    * *ensureCounterClockwise* _{{{Boolean}}}_ (Optional, Default: true) Whether or not to automatically keep polygon coordinates in counter clockwise order.
 
 ----
 

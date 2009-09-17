@@ -44,7 +44,7 @@ GEarthExtensions.prototype.dom.buildLink = domBuilder_({
  * Creates a new region with the given parameters.
  * @function
  * @param {Object} options The parameters of the region to create.
- * @param {String} [options.box] The bounding box of the region, defined by
+ * @param {String} options.box The bounding box of the region, defined by
  *     either N/E/S/W, or center+span, and optional altitudes.
  * @param {Number} [options.box.north] The north latitude for the region.
  * @param {Number} [options.box.east] The east longitude for the region.

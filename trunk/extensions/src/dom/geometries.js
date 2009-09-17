@@ -28,7 +28,7 @@ GEarthExtensions.prototype.dom.buildExtrudableGeometry_ = domBuilder_({
  * @param {PointOptions|geo.Point|KmlPoint} [point] The point data. Anything
  *     that can be passed to the geo.Point constructor.
  * @param {Object} options The parameters of the point object to create.
- * @param {PointOptions|geo.Point|KmlPoint} [options.point] The point data.
+ * @param {PointOptions|geo.Point|KmlPoint} options.point The point data.
  *     Anything that can be passed to the geo.Point constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -64,7 +64,7 @@ GEarthExtensions.prototype.dom.buildPoint = domBuilder_({
  * @param {PathOptions|geo.Path|KmlLineString} [path] The path data.
  *     Anything that can be passed to the geo.Path constructor.
  * @param {Object} options The parameters of the line string to create.
- * @param {PathOptions|geo.Path|KmlLineString} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLineString} options.path The path data.
  *     Anything that can be passed to the geo.Path constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -104,7 +104,7 @@ GEarthExtensions.prototype.dom.buildLineString = domBuilder_({
  *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {Object} options The parameters of the linear ring to create.
- * @param {PathOptions|geo.Path|KmlLinearRing} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLinearRing} options.path The path data.
  *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
@@ -136,7 +136,7 @@ GEarthExtensions.prototype.dom.buildLinearRing = domBuilder_({
  * @param {PolygonOptions|geo.Polygon|KmlPolygon} [polygon] The polygon data.
  *     Anything that can be passed to the geo.Polygon constructor.
  * @param {Object} options The parameters of the polygon to create.
- * @param {PolygonOptions|geo.Polygon|KmlPolygon} [options.polygon] The polygon
+ * @param {PolygonOptions|geo.Polygon|KmlPolygon} options.polygon The polygon
  *     data. Anything that can be passed to the geo.Polygon constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.

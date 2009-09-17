@@ -1,7 +1,7 @@
 #labels Phase-Reference,Featured
 #summary GEarthExtensions Class Reference
 
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/__init__.js src/__init__.js]
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_header.js src/_header.js]
 
 The root class/namespace hybrid for the Earth API extensions library. This class groups functionality into namespaces such as [GEarthExtensionsDomReference GEarthExtensions.dom] and [GEarthExtensionsFxReference GEarthExtensions.fx].
 
@@ -29,7 +29,7 @@ gex.dom.clearFeatures(); // gex is an instance of a class, and gex.dom
 
 ==isInstanceOfEarthInterface(object, type)==
 
-Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_globals_.js src/_globals_.js]
+Defined in [http://code.google.com/p/earth-api-utility-library/source/browse/trunk/extensions/src/_globals.js src/_globals.js]
 
 Determines whether or not the given object is directly an instance of the specified Earth API type.
 

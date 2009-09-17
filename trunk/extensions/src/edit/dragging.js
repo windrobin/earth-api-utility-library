@@ -138,8 +138,8 @@ function stopDragging_(extInstance, abort) {
  * Turns on draggability for the given point placemark.
  * @param {KmlPlacemark} placemark The point placemark to enable dragging on.
  * @param {Object} [options] The draggable options.
- * @param {Boolean} [options.bounce] Whether or not to bounce up upon dragging
- *     and bounce back down upon dropping.
+ * @param {Boolean} [options.bounce=true] Whether or not to bounce up upon
+ *     dragging and bounce back down upon dropping.
  * @param {Function} [options.dragCallback] A callback function to fire
  *     continuously while dragging occurs.
  * @param {Function} [options.dropCallback] A callback function to fire
