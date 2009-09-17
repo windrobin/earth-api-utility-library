@@ -223,8 +223,9 @@ function(duration, renderFn, completionFn) {
  */
 GEarthExtensions.prototype.fx.TimedAnimation.prototype.renderFrame =
 function(t) {
-  if (this.complete)
+  if (this.complete) {
     return;
+  }
   
   if (t > this.duration) {
     this.renderFn.call(this, this.duration);

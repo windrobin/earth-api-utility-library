@@ -272,8 +272,9 @@ GEarthExtensions.prototype.edit.editLineString = function(lineString,
   var coordDataArr = [];
   
   var checkDupMidpoints_ = function() {
-    if (!isRing)
+    if (!isRing) {
       return;
+    }
     
     // handle special case for polygons w/ 2 coordinates
     if (numCoords == 3) /* including duplicate first coord */ {

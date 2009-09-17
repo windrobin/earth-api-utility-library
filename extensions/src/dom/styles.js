@@ -76,7 +76,7 @@ GEarthExtensions.prototype.dom.buildStyle = domBuilder_({
     label: ALLOWED_,
     line: ALLOWED_,
     poly: ALLOWED_,
-    balloon: ALLOWED_,
+    balloon: ALLOWED_
   },
   constructor: function(styleObj, options) {
     // set icon style

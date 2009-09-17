@@ -440,8 +440,9 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
             var coords = this.getCoordinates();
             if (coords) {
               var n = coords.getLength();
-              for (var i = 0; i < n; i++)
+              for (var i = 0; i < n; i++) {
                 bounds.extend(new geo.Point(coords.get(i)));
+              }
             }
             break;
 
@@ -450,7 +451,7 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
           case 'KmlPoint': // points
             bounds.extend(new geo.Point(this));
             break;
-        };
+        }
       }
     }
   });
