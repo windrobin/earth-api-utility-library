@@ -36,7 +36,7 @@
   <property name="docs.featuredpages" value="GEarthExtensions"/>
   <property
     name="docs.srcroot"
-    value="earth-api-utility-library/source/browse/trunk"/>
+    value="earth-api-utility-library/source/browse/trunk/extensions"/>
   
   <!-- init target -->
   <target name="init">
@@ -151,7 +151,7 @@
       <arg value="-s"/>
       <arg value="-r"/>
       <arg value="-t=${tlib.dir}/jsdoc-toolkit/templates/${docs.template}/"/>
-      <arg value="-D=featuredPages:${docs.featuredpages}/"/>
+      <arg value="-D=featuredPages:${docs.featuredpages}"/>
       <arg value="-D=srcRoot:${docs.srcroot}/"/>
       <arg value="-d=${docs.dir}"/>
       <arg value="${src.reldir}"/>
@@ -175,11 +175,7 @@
       <arg value="org.mozilla.javascript.tools.shell.Main"/>
       <arg value="${tlib.dir}/jslint.js"/>
       
-      <fileset dir="${src.dir}" includes="**/*.js">
-        <exclude name="**/_header.js"/>
-        <exclude name="**/_footer.js"/>
-        <exclude name="**/*.tests.js"/>
-      </fileset>
+      <fileset dir="${src.dir}" includes="**/*.js"/>
     </apply>
     <echo>JSLint results are stored in ${build.dir}/lint.out.</echo>
   </target>

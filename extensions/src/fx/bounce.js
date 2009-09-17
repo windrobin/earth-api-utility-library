@@ -14,7 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * Bounce a placemark once.
+ * Bounces a point placemark by animating its altitude.
+ * @param {KmlPlacemark} placemark The point placemark to bounce.
+ * @param {Object} [options] The bounce options.
+ * @param {Number} [options.duration=300] The duration of the initial bounce,
+ *     in milliseconds.
+ * @param {Number} [options.startAltitude] The altitude at which to start the
+ *     bounce, in meters. The default is the point's current altitude.
+ * @param {Number} [options.altitude] The altitude by which the placemark
+ *     should rise at its peak, in meters. The default is the computed based
+ *     on the current plugin viewport.
+ * @param {Number} [options.phase] The bounce phase. If no phase is specified,
+ *     both ascent and descent are performed. If phase=1, then only the ascent
+ *     is performed. If phase=2, then only the descent and repeat are performed.
+ * @param {Number} [options.repeat=0] The number of times to repeat the bounce.
+ * @param {Number} [options.dampen=0.3] The altitude and duration dampening
+ *     factor that repeat bounces should be scaled by.
+ * @param {Function} [options.callback] A callback function to be triggered
+ *     after the bounce is completed. The callback's 'this' variable will be
+ *     bound to the placemark object, and it will receive a single boolean
+ *     argument that will be true if the bounce was cancelled.
+ *     Note that the callback is not fired if phase=2.
  */
 GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
   options = checkParameters_(options, false, {

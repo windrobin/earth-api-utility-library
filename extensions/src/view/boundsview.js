@@ -21,7 +21,7 @@ limitations under the License.
  *     of the plugin viewport.
  * @param {Number} [options.defaultRange=1000] The default lookat range to use
  *     when creating a view for a degenerate, single-point bounding box.
- * @param {Number} [options.rangeMultiplier=1.5] A scaling factor by which
+ * @param {Number} [options.scaleRange=1.5] A scaling factor by which
  *     to multiple the lookat range.
  * @type KmlAbstractView
  */

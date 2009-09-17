@@ -42,7 +42,7 @@ function test_dom_clearFeatures() {
  * incur some overhead in the API.
  * 
  * @param {Object} [options] The walk options:
- * @param {Function} [options.visitCallback] The function to call upon visiting
+ * @param {Function} options.visitCallback The function to call upon visiting
  *     a node in the DOM. The 'this' variable in the callback function will be
  *     bound to the object being visited. The lone argument passed to this
  *     function will be an object literal for the call context. To get the
@@ -53,11 +53,9 @@ function test_dom_clearFeatures() {
  *     object to false. To stop the walking process altogether,
  *     return false in the function.
  * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
- *     to walk.
- * @param {Boolean} [options.features] Descend into feature containers?
- *     Default true.
- * @param {Boolean} [options.geometries] Descend into geometry containers?
- *     Default false.
+ *     to walk. The default is to walk the entire Earth Plugin DOM.
+ * @param {Boolean} [options.features=true] Descend into feature containers?
+ * @param {Boolean} [options.geometries=false] Descend into geometry containers?
  * @param {Object} [options.rootContext] The application-specific context to
  *     pass to the root item.
  */
@@ -207,23 +205,28 @@ function test_dom_walk() {
 /**
  * Gets the object in the Earth DOM with the given id.
  * @param {String} id The id of the object to retrieve.
+ * @param {Object} [options] An options literal.
+ * @param {Boolean} [options.recursive=true] Whether or not to walk the entire
+ *     object (true) or just its immediate children (false).
+ * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
+ *     to search. The default is to search the entire Earth Plugin DOM.
  * @return Returns the object with the given id, or null if it was not found.
  */
 GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
   options = checkParameters_(options, false, {
     recursive: true,
-    root: this.pluginInstance
+    rootObject: this.pluginInstance
   });
   
   // check self
-  if ('getId' in options.root && options.root.getId() == id) {
-    return options.root;
+  if ('getId' in options.rootObject && options.rootObject.getId() == id) {
+    return options.rootObject;
   }
   
   var returnObject = null;
   
   this.dom.walk({
-    rootObject: options.root,
+    rootObject: options.rootObject,
     features: true,
     geometries: true,
     visitCallback: function() {

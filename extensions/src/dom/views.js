@@ -18,9 +18,9 @@ limitations under the License.
  * @function
  * @param {PointSpec} [point] The point to look at.
  * @param {Object} options The parameters of the lookat object to create.
- * @param {PointSpec} [options.point] The point to look at.
- * @param {Boolean} [options.copy] Whether or not to copy parameters from the
- *     existing view if they aren't explicitly specified in the options.
+ * @param {PointSpec} options.point The point to look at.
+ * @param {Boolean} [options.copy=false] Whether or not to copy parameters from
+ *     the existing view if they aren't explicitly specified in the options.
  * @param {Number} [options.heading] The lookat heading/direction.
  * @param {Number} [options.tilt] The lookat tilt.
  * @param {Number} [options.range] The range of the camera (distance from the
@@ -32,7 +32,7 @@ GEarthExtensions.prototype.dom.buildLookAt = domBuilder_({
   apiFactoryFn: 'createLookAt',
   defaultProperty: 'point',
   propertySpec: {
-    copy: ALLOWED_,
+    copy: false,
     point: REQUIRED_,
     heading: ALLOWED_,
     tilt: ALLOWED_,
@@ -73,9 +73,9 @@ GEarthExtensions.prototype.dom.buildLookAt = domBuilder_({
  * @function
  * @param {PointSpec} [point] The point at which to place the camera.
  * @param {Object} options The parameters of the camera object to create.
- * @param {PointSpec} [options.point] The point at which to place the camera.
- * @param {Boolean} [options.copy] Whether or not to copy parameters from the
- *     existing view if they aren't explicitly specified in the options.
+ * @param {PointSpec} options.point The point at which to place the camera.
+ * @param {Boolean} [options.copy=false] Whether or not to copy parameters from
+ *     the existing view if they aren't explicitly specified in the options.
  * @param {Number} [options.heading] The camera heading/direction.
  * @param {Number} [options.tilt] The camera tilt.
  * @param {Number} [options.range] The camera roll.
@@ -86,7 +86,7 @@ GEarthExtensions.prototype.dom.buildCamera = domBuilder_({
   apiFactoryFn: 'createCamera',
   defaultProperty: 'point',
   propertySpec: {
-    copy: ALLOWED_,
+    copy: false,
     point: REQUIRED_,
     heading: ALLOWED_,
     tilt: ALLOWED_,

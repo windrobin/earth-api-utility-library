@@ -14,18 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
- * Returns the singleton animation manager for the plugin instance.
- * @private
- */
-GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
-  if (!this.animationManager_) {
-    this.animationManager_ = new this.fx.AnimationManager_();
-  }
-  
-  return this.animationManager_;
-};
-
-/**
  * @class Private singleton class for managing GEarthExtensions#fx animations
  * in a plugin instance.
  * @private
@@ -137,6 +125,18 @@ function() {
   if (this.animations_.length === 0) {
     this.stop_();
   }
+};
+
+/**
+ * Returns the singleton animation manager for the plugin instance.
+ * @private
+ */
+GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
+  if (!this.fx.animationManager_) {
+    this.fx.animationManager_ = new this.fx.AnimationManager_();
+  }
+  
+  return this.fx.animationManager_;
 };
 
 /**

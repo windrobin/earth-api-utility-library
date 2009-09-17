@@ -330,6 +330,10 @@ GEarthExtensions.prototype.dom.buildPolygonPlacemark = domBuilder_({
  * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
  * @param {LinkOptions} [options.link] The link to use.
+ * @param {Boolean} [options.flyToView] Whether or not to fly to the default
+ *     view of the network link'd content.
+ * @param {Boolean} [options.refreshVisibility] Whether or not a refresh should
+ *     reset the visibility of child features.
  * @type KmlNetworkLink
  */
 GEarthExtensions.prototype.dom.buildNetworkLink = domBuilder_({
@@ -457,11 +461,11 @@ GEarthExtensions.prototype.dom.buildOverlay_ = domBuilder_({
  *     meters.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     ground overlay.
- * @param {Object} [options.box] The bounding box for the overlay.
- * @param {Number} [options.box.north] The north latitude for the overlay.
- * @param {Number} [options.box.east] The east longitude for the overlay.
- * @param {Number} [options.box.south] The south latitude for the overlay.
- * @param {Number} [options.box.west] The west longitude for the overlay.
+ * @param {Object} options.box The bounding box for the overlay.
+ * @param {Number} options.box.north The north latitude for the overlay.
+ * @param {Number} options.box.east The east longitude for the overlay.
+ * @param {Number} options.box.south The south latitude for the overlay.
+ * @param {Number} options.box.west The west longitude for the overlay.
  * @param {Number} [options.box.rotation] The rotation, in degrees, of the
  *     overlay.
  * @type KmlGroundOverlay
@@ -550,12 +554,12 @@ function test_dom_buildGroundOverlay() {
  *     GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
  *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
  *     whereas in the Earth API overlayXY and screenXY are swapped.
- * @param {Vec2Src} [options.screenXY] The position in the plugin window
+ * @param {Vec2Src} options.screenXY The position in the plugin window
  *     that the screen overlay should appear at. This object will
  *     be passed to GEarthExtensions#dom.setVec2.
  *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
  *     whereas in the Earth API overlayXY and screenXY are swapped.
- * @param {Vec2Src} [options.size] The size of the overlay. This object will
+ * @param {Vec2Src} options.size The size of the overlay. This object will
  *     be passed to GEarthExtensions#dom.setVec2.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     ground overlay.

@@ -2611,8 +2611,9 @@ var GEarthExtensions = function(pluginInstance) {
       // work) and bind functions of all sub-namespaces
       if (isExtensionsNamespace_(member)) {
         var nsDuplicate = {};
-        for (var subMstr in member)
+        for (var subMstr in member) {
           nsDuplicate[subMstr] = member[subMstr];
+        }
         
         bindNamespaceMembers_(nsDuplicate);
         
@@ -3107,6 +3108,10 @@ GEarthExtensions.prototype.dom.buildPolygonPlacemark = domBuilder_({
  * @param {String} [options.description] An HTML description for the feature;
  *     may be used as balloon text.
  * @param {LinkOptions} [options.link] The link to use.
+ * @param {Boolean} [options.flyToView] Whether or not to fly to the default
+ *     view of the network link'd content.
+ * @param {Boolean} [options.refreshVisibility] Whether or not a refresh should
+ *     reset the visibility of child features.
  * @type KmlNetworkLink
  */
 GEarthExtensions.prototype.dom.buildNetworkLink = domBuilder_({
@@ -3234,11 +3239,11 @@ GEarthExtensions.prototype.dom.buildOverlay_ = domBuilder_({
  *     meters.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     ground overlay.
- * @param {Object} [options.box] The bounding box for the overlay.
- * @param {Number} [options.box.north] The north latitude for the overlay.
- * @param {Number} [options.box.east] The east longitude for the overlay.
- * @param {Number} [options.box.south] The south latitude for the overlay.
- * @param {Number} [options.box.west] The west longitude for the overlay.
+ * @param {Object} options.box The bounding box for the overlay.
+ * @param {Number} options.box.north The north latitude for the overlay.
+ * @param {Number} options.box.east The east longitude for the overlay.
+ * @param {Number} options.box.south The south latitude for the overlay.
+ * @param {Number} options.box.west The west longitude for the overlay.
  * @param {Number} [options.box.rotation] The rotation, in degrees, of the
  *     overlay.
  * @type KmlGroundOverlay
@@ -3290,12 +3295,12 @@ GEarthExtensions.prototype.dom.buildGroundOverlay = domBuilder_({
  *     GEarthExtensions#dom.setVec2. The default is the top left of the overlay.
  *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
  *     whereas in the Earth API overlayXY and screenXY are swapped.
- * @param {Vec2Src} [options.screenXY] The position in the plugin window
+ * @param {Vec2Src} options.screenXY The position in the plugin window
  *     that the screen overlay should appear at. This object will
  *     be passed to GEarthExtensions#dom.setVec2.
  *     Note that the behavior of overlayXY in GEarthExtensions is KML-correct;
  *     whereas in the Earth API overlayXY and screenXY are swapped.
- * @param {Vec2Src} [options.size] The size of the overlay. This object will
+ * @param {Vec2Src} options.size The size of the overlay. This object will
  *     be passed to GEarthExtensions#dom.setVec2.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     ground overlay.
@@ -3366,7 +3371,7 @@ GEarthExtensions.prototype.dom.buildExtrudableGeometry_ = domBuilder_({
  * @param {PointOptions|geo.Point|KmlPoint} [point] The point data. Anything
  *     that can be passed to the geo.Point constructor.
  * @param {Object} options The parameters of the point object to create.
- * @param {PointOptions|geo.Point|KmlPoint} [options.point] The point data.
+ * @param {PointOptions|geo.Point|KmlPoint} options.point The point data.
  *     Anything that can be passed to the geo.Point constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -3402,7 +3407,7 @@ GEarthExtensions.prototype.dom.buildPoint = domBuilder_({
  * @param {PathOptions|geo.Path|KmlLineString} [path] The path data.
  *     Anything that can be passed to the geo.Path constructor.
  * @param {Object} options The parameters of the line string to create.
- * @param {PathOptions|geo.Path|KmlLineString} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLineString} options.path The path data.
  *     Anything that can be passed to the geo.Path constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -3442,7 +3447,7 @@ GEarthExtensions.prototype.dom.buildLineString = domBuilder_({
  *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {Object} options The parameters of the linear ring to create.
- * @param {PathOptions|geo.Path|KmlLinearRing} [options.path] The path data.
+ * @param {PathOptions|geo.Path|KmlLinearRing} options.path The path data.
  *     Anything that can be passed to the geo.Path constructor.
  *     The first coordinate doesn't need to be repeated at the end.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
@@ -3474,7 +3479,7 @@ GEarthExtensions.prototype.dom.buildLinearRing = domBuilder_({
  * @param {PolygonOptions|geo.Polygon|KmlPolygon} [polygon] The polygon data.
  *     Anything that can be passed to the geo.Polygon constructor.
  * @param {Object} options The parameters of the polygon to create.
- * @param {PolygonOptions|geo.Polygon|KmlPolygon} [options.polygon] The polygon
+ * @param {PolygonOptions|geo.Polygon|KmlPolygon} options.polygon The polygon
  *     data. Anything that can be passed to the geo.Polygon constructor.
  * @param {KmlAltitudeModeEnum} [options.altitudeMode] The altitude mode of the
  *     geometry.
@@ -3635,7 +3640,7 @@ GEarthExtensions.prototype.dom.buildLink = domBuilder_({
  * Creates a new region with the given parameters.
  * @function
  * @param {Object} options The parameters of the region to create.
- * @param {String} [options.box] The bounding box of the region, defined by
+ * @param {String} options.box The bounding box of the region, defined by
  *     either N/E/S/W, or center+span, and optional altitudes.
  * @param {Number} [options.box.north] The north latitude for the region.
  * @param {Number} [options.box.east] The east longitude for the region.
@@ -3955,7 +3960,7 @@ GEarthExtensions.prototype.dom.clearFeatures = function() {
  * incur some overhead in the API.
  * 
  * @param {Object} [options] The walk options:
- * @param {Function} [options.visitCallback] The function to call upon visiting
+ * @param {Function} options.visitCallback The function to call upon visiting
  *     a node in the DOM. The 'this' variable in the callback function will be
  *     bound to the object being visited. The lone argument passed to this
  *     function will be an object literal for the call context. To get the
@@ -3966,11 +3971,9 @@ GEarthExtensions.prototype.dom.clearFeatures = function() {
  *     object to false. To stop the walking process altogether,
  *     return false in the function.
  * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
- *     to walk.
- * @param {Boolean} [options.features] Descend into feature containers?
- *     Default true.
- * @param {Boolean} [options.geometries] Descend into geometry containers?
- *     Default false.
+ *     to walk. The default is to walk the entire Earth Plugin DOM.
+ * @param {Boolean} [options.features=true] Descend into feature containers?
+ * @param {Boolean} [options.geometries=false] Descend into geometry containers?
  * @param {Object} [options.rootContext] The application-specific context to
  *     pass to the root item.
  */
@@ -4068,23 +4071,28 @@ GEarthExtensions.prototype.dom.walk = function() {
 /**
  * Gets the object in the Earth DOM with the given id.
  * @param {String} id The id of the object to retrieve.
+ * @param {Object} [options] An options literal.
+ * @param {Boolean} [options.recursive=true] Whether or not to walk the entire
+ *     object (true) or just its immediate children (false).
+ * @param {KmlObject} [options.rootObject] The root of the KML object hierarchy
+ *     to search. The default is to search the entire Earth Plugin DOM.
  * @return Returns the object with the given id, or null if it was not found.
  */
 GEarthExtensions.prototype.dom.getObjectById = function(id, options) {
   options = checkParameters_(options, false, {
     recursive: true,
-    root: this.pluginInstance
+    rootObject: this.pluginInstance
   });
   
   // check self
-  if ('getId' in options.root && options.root.getId() == id) {
-    return options.root;
+  if ('getId' in options.rootObject && options.rootObject.getId() == id) {
+    return options.rootObject;
   }
   
   var returnObject = null;
   
   this.dom.walk({
-    rootObject: options.root,
+    rootObject: options.rootObject,
     features: true,
     geometries: true,
     visitCallback: function() {
@@ -4296,9 +4304,9 @@ GEarthExtensions.prototype.dom.computeBounds = function(object) {
  * @function
  * @param {PointSpec} [point] The point to look at.
  * @param {Object} options The parameters of the lookat object to create.
- * @param {PointSpec} [options.point] The point to look at.
- * @param {Boolean} [options.copy] Whether or not to copy parameters from the
- *     existing view if they aren't explicitly specified in the options.
+ * @param {PointSpec} options.point The point to look at.
+ * @param {Boolean} [options.copy=false] Whether or not to copy parameters from
+ *     the existing view if they aren't explicitly specified in the options.
  * @param {Number} [options.heading] The lookat heading/direction.
  * @param {Number} [options.tilt] The lookat tilt.
  * @param {Number} [options.range] The range of the camera (distance from the
@@ -4310,7 +4318,7 @@ GEarthExtensions.prototype.dom.buildLookAt = domBuilder_({
   apiFactoryFn: 'createLookAt',
   defaultProperty: 'point',
   propertySpec: {
-    copy: ALLOWED_,
+    copy: false,
     point: REQUIRED_,
     heading: ALLOWED_,
     tilt: ALLOWED_,
@@ -4351,9 +4359,9 @@ GEarthExtensions.prototype.dom.buildLookAt = domBuilder_({
  * @function
  * @param {PointSpec} [point] The point at which to place the camera.
  * @param {Object} options The parameters of the camera object to create.
- * @param {PointSpec} [options.point] The point at which to place the camera.
- * @param {Boolean} [options.copy] Whether or not to copy parameters from the
- *     existing view if they aren't explicitly specified in the options.
+ * @param {PointSpec} options.point The point at which to place the camera.
+ * @param {Boolean} [options.copy=false] Whether or not to copy parameters from
+ *     the existing view if they aren't explicitly specified in the options.
  * @param {Number} [options.heading] The camera heading/direction.
  * @param {Number} [options.tilt] The camera tilt.
  * @param {Number} [options.range] The camera roll.
@@ -4364,7 +4372,7 @@ GEarthExtensions.prototype.dom.buildCamera = domBuilder_({
   apiFactoryFn: 'createCamera',
   defaultProperty: 'point',
   propertySpec: {
-    copy: ALLOWED_,
+    copy: false,
     point: REQUIRED_,
     heading: ALLOWED_,
     tilt: ALLOWED_,
@@ -4530,8 +4538,8 @@ function stopDragging_(extInstance, abort) {
  * Turns on draggability for the given point placemark.
  * @param {KmlPlacemark} placemark The point placemark to enable dragging on.
  * @param {Object} [options] The draggable options.
- * @param {Boolean} [options.bounce] Whether or not to bounce up upon dragging
- *     and bounce back down upon dropping.
+ * @param {Boolean} [options.bounce=true] Whether or not to bounce up upon
+ *     dragging and bounce back down upon dropping.
  * @param {Function} [options.dragCallback] A callback function to fire
  *     continuously while dragging occurs.
  * @param {Function} [options.dropCallback] A callback function to fire
@@ -5359,18 +5367,6 @@ GEarthExtensions.prototype.edit.endEditLineString = function(lineString) {
  */
 GEarthExtensions.prototype.fx = {isnamespace_:true};
 /**
- * Returns the singleton animation manager for the plugin instance.
- * @private
- */
-GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
-  if (!this.animationManager_) {
-    this.animationManager_ = new this.fx.AnimationManager_();
-  }
-  
-  return this.animationManager_;
-};
-
-/**
  * @class Private singleton class for managing GEarthExtensions#fx animations
  * in a plugin instance.
  * @private
@@ -5485,6 +5481,18 @@ function() {
 };
 
 /**
+ * Returns the singleton animation manager for the plugin instance.
+ * @private
+ */
+GEarthExtensions.prototype.fx.getAnimationManager_ = function() {
+  if (!this.fx.animationManager_) {
+    this.fx.animationManager_ = new this.fx.AnimationManager_();
+  }
+  
+  return this.fx.animationManager_;
+};
+
+/**
  * @class Base class for all GEarthExtensions#fx animations. Animations of this
  * base class are not bounded by a given time duration and must manually be
  * stopped when they are 'complete'.
@@ -5582,7 +5590,27 @@ function(t) {
   this.renderFn.call(this, t);
 };
 /**
- * Bounce a placemark once.
+ * Bounces a point placemark by animating its altitude.
+ * @param {KmlPlacemark} placemark The point placemark to bounce.
+ * @param {Object} [options] The bounce options.
+ * @param {Number} [options.duration=300] The duration of the initial bounce,
+ *     in milliseconds.
+ * @param {Number} [options.startAltitude] The altitude at which to start the
+ *     bounce, in meters. The default is the point's current altitude.
+ * @param {Number} [options.altitude] The altitude by which the placemark
+ *     should rise at its peak, in meters. The default is the computed based
+ *     on the current plugin viewport.
+ * @param {Number} [options.phase] The bounce phase. If no phase is specified,
+ *     both ascent and descent are performed. If phase=1, then only the ascent
+ *     is performed. If phase=2, then only the descent and repeat are performed.
+ * @param {Number} [options.repeat=0] The number of times to repeat the bounce.
+ * @param {Number} [options.dampen=0.3] The altitude and duration dampening
+ *     factor that repeat bounces should be scaled by.
+ * @param {Function} [options.callback] A callback function to be triggered
+ *     after the bounce is completed. The callback's 'this' variable will be
+ *     bound to the placemark object, and it will receive a single boolean
+ *     argument that will be true if the bounce was cancelled.
+ *     Note that the callback is not fired if phase=2.
  */
 GEarthExtensions.prototype.fx.bounce = function(placemark, options) {
   options = checkParameters_(options, false, {
@@ -5777,6 +5805,7 @@ function(obj, property, options) {
 
   var me = this;
   
+  /** @private */
   var doAnimate_;
   if (property == 'color') {
     // KmlColor blending
@@ -5795,6 +5824,7 @@ function(obj, property, options) {
       options.end = colorObj.get();
     }
   
+    /** @private */
     doAnimate_ = function(f) {
       colorObj.set(me.util.blendColors(options.start, options.end,
           options.easing.call(null, f)));
@@ -5829,6 +5859,7 @@ function(obj, property, options) {
       }
     }
   
+    /** @private */
     doAnimate_ = function(f) {
       setter(options.start + (options.end - options.start) *
                              options.easing.call(null, f));
@@ -6294,15 +6325,15 @@ GEarthExtensions.prototype.util.clearJsDataValue = function(object, key) {
  * Loads and shows the given KML URL in the Google Earth Plugin instance.
  * @param {String} url The URL of the KML content to show.
  * @param {Object} [options] KML display options.
- * @param {Boolean} [options.cacheBuster] Enforce freshly downloading the KML
- *     by introducing a cache-busting query parameter.
- * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
- *     in the loaded KML after loading it. If no explicit view is available,
- *     a default bounds view will be calculated and used unless
+ * @param {Boolean} [options.cacheBuster=false] Enforce freshly downloading the
+ *     KML by introducing a cache-busting query parameter.
+ * @param {Boolean} [options.flyToView=false] Fly to the document-level abstract
+ *     view in the loaded KML after loading it. If no explicit view is
+ *     available, a default bounds view will be calculated and used unless
  *     options.flyToBoundsFallback is false.
  *     See GEarthExtensions#util.flyToObject for more information.
- * @param {Boolean} [options.flyToBoundsFallback] If options.flyToView is true
- *     and no document-level abstract view is explicitly defined, do not
+ * @param {Boolean} [options.flyToBoundsFallback=true] If options.flyToView is
+ *     true and no document-level abstract view is explicitly defined,
  *     calculate and fly to a bounds view.
  */
 GEarthExtensions.prototype.util.displayKml = function(url, options) {
@@ -6338,13 +6369,13 @@ GEarthExtensions.prototype.util.displayKml = function(url, options) {
  * Loads and shows the given KML string in the Google Earth Plugin instance.
  * @param {String} str The KML string to show.
  * @param {Object} [options] KML display options.
- * @param {Boolean} [options.flyToView] Fly to the document-level abstract view
- *     in the parsed KML. If no explicit view is available,
+ * @param {Boolean} [options.flyToView=false] Fly to the document-level abstract
+ *     view in the parsed KML. If no explicit view is available,
  *     a default bounds view will be calculated and used unless
  *     options.flyToBoundsFallback is false.
  *     See GEarthExtensions#util.flyToObject for more information.
- * @param {Boolean} [options.flyToBoundsFallback] If options.flyToView is true
- *     and no document-level abstract view is explicitly defined, do not
+ * @param {Boolean} [options.flyToBoundsFallback=true] If options.flyToView is
+ *     true and no document-level abstract view is explicitly defined,
  *     calculate and fly to a bounds view.
  * @return Returns the parsed object on success, or null if there was an error.
  */
@@ -6415,7 +6446,7 @@ GEarthExtensions.prototype.util.getCamera = function(altitudeMode) {
  * true).
  * @param {KmlObject} obj The object to fly to.
  * @param {Object} [options] Flyto options.
- * @param {Boolean} [options.boundsFallback] Whether or not to attempt to
+ * @param {Boolean} [options.boundsFallback=true] Whether or not to attempt to
  *     calculate a bounding box view of the object if it doesn't have an
  *     abstract view.
  * @param {Number} [options.aspectRatio=1.0] When calculating a bounding box
@@ -6599,7 +6630,7 @@ GEarthExtensions.prototype.view = {isnamespace_:true};
  *     of the plugin viewport.
  * @param {Number} [options.defaultRange=1000] The default lookat range to use
  *     when creating a view for a degenerate, single-point bounding box.
- * @param {Number} [options.rangeMultiplier=1.5] A scaling factor by which
+ * @param {Number} [options.scaleRange=1.5] A scaling factor by which
  *     to multiple the lookat range.
  * @type KmlAbstractView
  */
