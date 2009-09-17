@@ -174,10 +174,23 @@ GEarthExtensions.prototype.edit.drawLineString = function(lineString,
 
           if (placemarks.length == 1) {
             // set up a click listener on the first placemark -- if it gets
-            // clicked, stop drawing the linestring
+            // clicked, repeat the first coordinate and stop drawing the
+            // linestring
             placemarks[0].setStyleUrl('#_GEarthExtensions_firstCoordinate');
             google.earth.addEventListener(placemarks[0], 'mousedown',
-                finishListener);
+                function(firstCoord) {
+                  return function(event) {
+                    if (isReverse) {
+                      coords.unshiftLatLngAlt(firstCoord[0], firstCoord[1],
+                                              firstCoord[2]);
+                    } else {
+                      coords.pushLatLngAlt(firstCoord[0], firstCoord[1],
+                                           firstCoord[2]);
+                    }
+                  
+                    finishListener(event);
+                  };
+                }(coord));
           }
 
           setTimeout(drawNext, 0);
