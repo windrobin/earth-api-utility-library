@@ -123,14 +123,18 @@ function stopDragging_(extInstance, abort) {
         });
       }
     }
-
-    if (currentDragContext_.dragged &&
-        currentDragContext_.draggableOptions.dropCallback && !abort) {
-      currentDragContext_.draggableOptions.dropCallback.call(
-          currentDragContext_.placemark);
-    }
-
+    
+    // in case the drop callback does something with dragging, don't
+    // mess with the global currentDragContext_ variable after the drop
+    // callback returns
+    var dragContext_ = currentDragContext_;
     currentDragContext_ = null;
+
+    if (dragContext_.dragged &&
+        dragContext_.draggableOptions.dropCallback && !abort) {
+      dragContext_.draggableOptions.dropCallback.call(
+          dragContext_.placemark);
+    }
   }
 }
 
