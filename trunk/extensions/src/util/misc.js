@@ -129,6 +129,8 @@ test_util_batchExecute.async = true;
  * @param {String} method The method to call.
  */
 GEarthExtensions.prototype.util.callMethod = function(object, method) {
+  "object:nomunge, method:nomunge, args:nomunge";
+
   var i;
 
   // strip out 'object' and 'method' arguments

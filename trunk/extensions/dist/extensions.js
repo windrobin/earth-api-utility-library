@@ -6501,6 +6501,8 @@ GEarthExtensions.prototype.util.batchExecute = function(batchFn, context) {
  * @param {String} method The method to call.
  */
 GEarthExtensions.prototype.util.callMethod = function(object, method) {
+  "object:nomunge, method:nomunge, args:nomunge";
+
   var i;
 
   // strip out 'object' and 'method' arguments
