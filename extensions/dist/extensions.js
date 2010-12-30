@@ -22,28 +22,20 @@ limitations under the License.
  */
 var geo = {isnamespace_:true};
 /*
-see https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference:Objects:Array:map
+Copyright 2009 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
-//#JSCOVERAGE_IF !('map' in Array.prototype)
-if (!('map' in Array.prototype)) {
-  Array.prototype.map = function(mapFn) {
-    var len = this.length;
-    if (typeof mapFn != 'function') {
-      throw new TypeError('map() requires a mapping function.');
-    }
-
-    var res = new Array(len);
-    var thisp = arguments[1];
-    for (var i = 0; i < len; i++) {
-      if (i in this) {
-        res[i] = mapFn.call(thisp, this[i], i, this);
-      }
-    }
-
-    return res;
-  };
-}
-//#JSCOVERAGE_ENDIF
 // TODO: geo.ALTITUDE_NONE to differentiate 2D/3D coordinates
 geo.ALTITUDE_CLAMP_TO_GROUND = 0;
 geo.ALTITUDE_RELATIVE_TO_GROUND = 1;
@@ -2087,7 +2079,7 @@ geo.Path.prototype.coords_ = null; // don't use mutable objects here
  * @type String
  */
 geo.Path.prototype.toString = function() {
-  return '[' + this.coords_.map(function(p) {
+  return '[' + geo.util.arrayMap(this.coords_,function(p) {
                                   return p.toString();
                                 }).join(', ') + ']';
 };
@@ -2486,6 +2478,44 @@ geo.Polygon.prototype.makeCounterClockwise = function() {
  * @namespace
  */
 geo.util = {isnamespace_:true};
+
+/**
+ * Ensures that Array.prototype.map is available
+ * @param {Array} arr Array target of mapFn
+ * @param {function(*, number,Array):*} mapFn Function that produces an element of the new Array from an element of the current one.
+ * @param {Object=} thisp Object to use as this when executing mapFn. (optional).
+ * @return {Array} A new array with the results of calling mapFn on every element in arr.
+ */
+geo.util.arrayMap = (function() {
+  function arrayMap(arr, mapFn, thisp) {
+    return arr.map(mapFn, thisp);
+  }
+
+  //see https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference:Objects:Array:map
+  function noArrayMap(arr, mapFn, thisp) {
+    if (typeof mapFn != 'function') {
+      throw new TypeError('map() requires a mapping function.');
+    }
+
+    var len = arr.length,
+        res = new Array(len);
+
+    for (var i = 0; i < len; i++) {
+      if (i in arr) {
+        res[i] = mapFn.call(thisp, arr[i], i, arr);
+      }
+    }
+
+    return res;
+  }
+  
+  if (!('map' in Array.prototype)) {
+    return noArrayMap;
+    
+  } else {
+    return arrayMap;
+  }
+})();
 
 /**
  * Determines whether or not the object is `undefined`.
