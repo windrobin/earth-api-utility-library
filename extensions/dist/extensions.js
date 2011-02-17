@@ -2886,8 +2886,7 @@ function domBuilder_(params) {
         false, params.propertySpec);
     
     // call Earth API factory function, i.e. createXX(...)
-    var newObj = this.util.callMethod(
-                     this.pluginInstance, params.apiFactoryFn, options.id);
+    var newObj = this.pluginInstance[params.apiFactoryFn](options.id);
 
     // call constructor fn with factory-created object and options literal
     if (!geo.util.isUndefined(params.constructor)) {
@@ -2911,9 +2910,7 @@ function domBuilder_(params) {
       if (params.propertySpec[property] === AUTO_ &&
           property in options) {
         // auto setters calls newObj.setXx(options[xx]) if xx is in options
-        this.util.callMethod(newObj,
-            'set' + property.charAt(0).toUpperCase() + property.substr(1),
-            options[property]);
+        newObj['set' + property.charAt(0).toUpperCase() + property.substr(1)](options[property]);
       }
     }
     
@@ -5866,11 +5863,11 @@ function(obj, property, options) {
   } else {
     // numerical property blending
     var getter = function() {
-      return me.util.callMethod(obj, 'get' + propertyTitleCase);
+      return obj['get' + propertyTitleCase]();
     };
   
     var setter = function(val) {
-      return me.util.callMethod(obj, 'set' + propertyTitleCase, val);
+      return obj['set' + propertyTitleCase](val);
     };
     
     // use EITHER start/end or delta
@@ -6522,38 +6519,6 @@ GEarthExtensions.prototype.util.batchExecute = function(batchFn, context) {
   google.earth.executeBatch(this.pluginInstance, function() {
     batchFn.call(me, context);
   });
-};
-
-/**
- * Calls method on object with optional arguments. Arguments to pass to the
- * method should be given in order after the 'method' argument.
- * @param {Object} object The object to call the method on.
- * @param {String} method The method to call.
- */
-GEarthExtensions.prototype.util.callMethod = function(object, method) {
-  "object:nomunge, method:nomunge, args:nomunge";
-
-  var i;
-
-  // strip out 'object' and 'method' arguments
-  var args = [];
-  for (i = 2; i < arguments.length; i++) {
-    args.push(arguments[i]);
-  }
-
-  if (typeof object[method] == 'function') {
-    // most browsers, most object/method pairs
-    return object[method].apply(object, args);
-  } else {
-    // In the Earth API in Internet Explorer, typeof returns 'unknown'
-    var reprArgs = [];
-    for (i = 0; i < args.length; i++) {
-      reprArgs.push('args[' + i + ']');
-    }
-
-    // Don't use eval directly due to a YUI Compressor bug/feature.
-    return window['eval']('object.' + method + '(' + reprArgs.join(',') + ')');
-  }
 };
 
 /**

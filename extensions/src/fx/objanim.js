@@ -134,11 +134,11 @@ function(obj, property, options) {
   } else {
     // numerical property blending
     var getter = function() {
-      return me.util.callMethod(obj, 'get' + propertyTitleCase);
+      return obj['get' + propertyTitleCase]();
     };
   
     var setter = function(val) {
-      return me.util.callMethod(obj, 'set' + propertyTitleCase, val);
+      return obj['set' + propertyTitleCase](val);
     };
     
     // use EITHER start/end or delta
