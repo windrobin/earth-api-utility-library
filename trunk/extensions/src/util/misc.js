@@ -123,58 +123,6 @@ test_util_batchExecute.async = true;
 //#END_TEST
 
 /**
- * Calls method on object with optional arguments. Arguments to pass to the
- * method should be given in order after the 'method' argument.
- * @param {Object} object The object to call the method on.
- * @param {String} method The method to call.
- */
-GEarthExtensions.prototype.util.callMethod = function(object, method) {
-  "object:nomunge, method:nomunge, args:nomunge";
-
-  var i;
-
-  // strip out 'object' and 'method' arguments
-  var args = [];
-  for (i = 2; i < arguments.length; i++) {
-    args.push(arguments[i]);
-  }
-
-  if (typeof object[method] == 'function') {
-    // most browsers, most object/method pairs
-    return object[method].apply(object, args);
-  } else {
-    // In the Earth API in Internet Explorer, typeof returns 'unknown'
-    var reprArgs = [];
-    for (i = 0; i < args.length; i++) {
-      reprArgs.push('args[' + i + ']');
-    }
-
-    // Don't use eval directly due to a YUI Compressor bug/feature.
-    return window['eval']('object.' + method + '(' + reprArgs.join(',') + ')');
-  }
-};
-//#BEGIN_TEST
-function test_util_callMethod() {
-  function Adder(a) {
-    this.a = a;
-  }
-
-  // test on a pure JavaScript object and method
-  Adder.prototype.add2 = function(b, c) {
-    return this.a + b + c;
-  };
-
-  var adder = new Adder(5);
-  assertEquals(8, testext_.util.callMethod(adder, 'add2', 1, 2));
-
-  // test on an Earth API object and method
-  var placemark = testext_.util.callMethod(testplugin_, 'createPlacemark', '');
-  assertTrue(placemark && 'getType' in placemark);
-  assertEquals('KmlPlacemark', placemark.getType());
-}
-//#END_TEST
-
-/**
  * Enables or disables full camera ownership mode, which sets fly to speed
  * to teleport, disables user mouse interaction, and hides the navigation
  * controls.

@@ -128,8 +128,7 @@ function domBuilder_(params) {
         false, params.propertySpec);
     
     // call Earth API factory function, i.e. createXX(...)
-    var newObj = this.util.callMethod(
-                     this.pluginInstance, params.apiFactoryFn, options.id);
+    var newObj = this.pluginInstance[params.apiFactoryFn](options.id);
 
     // call constructor fn with factory-created object and options literal
     if (!geo.util.isUndefined(params.constructor)) {
@@ -153,9 +152,7 @@ function domBuilder_(params) {
       if (params.propertySpec[property] === AUTO_ &&
           property in options) {
         // auto setters calls newObj.setXx(options[xx]) if xx is in options
-        this.util.callMethod(newObj,
-            'set' + property.charAt(0).toUpperCase() + property.substr(1),
-            options[property]);
+        newObj['set' + property.charAt(0).toUpperCase() + property.substr(1)](options[property]);
       }
     }
     
